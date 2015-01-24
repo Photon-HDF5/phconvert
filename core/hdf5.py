@@ -109,6 +109,7 @@ setup_fields = ['excitation_wavelengths', 'excitation_powers',
 provenance_fields = ['filename', 'full_filename', 'creation_time',
                      'modification_time']
 
+
 class H5Writer(object):
     """Helper class for writing fields from a dict to HDF5.
 
@@ -138,8 +139,8 @@ class H5Writer(object):
                                         title=fields_descr[name])
 
 
-def store_dict(d, compression=dict(complevel=6, complib='zlib'),
-               h5_fname=None, title="Confocal smFRET data"):
+def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
+                h5_fname=None, title="Confocal smFRET data"):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -172,7 +173,7 @@ def store_dict(d, compression=dict(complevel=6, complib='zlib'),
 
     print('Saving: %s' % h5_fname)
     data_file = tables.open_file(h5_fname, mode="w", title=title)
-    d.add(data_file=data_file)
+    d.update(data_file=data_file)
     writer = H5Writer(data_file, d, comp_filter)
 
     ## Save the root-node metadata
