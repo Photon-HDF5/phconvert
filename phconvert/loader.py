@@ -1,7 +1,5 @@
 #
-# FRETBursts - A single-molecule FRET burst analysis toolkit.
-#
-# Copyright (C) 2014 Antonino Ingargiola <tritemio@gmail.com>
+# Copyright (C) 2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
 This module contains functions to load each supported data format.
@@ -11,9 +9,10 @@ data fields.
 """
 
 from __future__ import print_function, absolute_import, division
+del print_function, absolute_import, division
 
-from .smreader import load_sm
-from .spcreader import load_spc
+from .smreader import load_sm as _load_sm
+from .spcreader import load_spc as _load_spc
 
 
 def usalex_sm(
@@ -23,7 +22,7 @@ def usalex_sm(
     """Load a .sm us-ALEX file and returns a dictionary.
     """
     print(" - Loading '%s' ... " % filename)
-    timestamps, detectors, labels = load_sm(filename, return_labels=True)
+    timestamps, detectors, labels = _load_sm(filename, return_labels=True)
     print(" [DONE]\n")
 
     dx = dict(filename=filename,
@@ -55,7 +54,7 @@ def nsalex_spc(
     """Load a .spc ns-ALEX file and returns a dictionary.
     """
     print(" - Loading '%s' ... " % filename)
-    timestamps, detectors, nanotimes = load_spc(filename)
+    timestamps, detectors, nanotimes = _load_spc(filename)
     print(" [DONE]\n")
 
     tcspc_num_bins = 4096
