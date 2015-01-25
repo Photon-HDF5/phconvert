@@ -12,7 +12,7 @@ from __future__ import print_function, absolute_import, division
 del print_function, absolute_import, division
 
 from .smreader import load_sm as _load_sm
-from .spcreader import load_spc as _load_spc
+from .bhreader import load_spc as _load_spc
 
 
 def usalex_sm(

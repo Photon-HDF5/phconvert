@@ -1,2 +1,6 @@
 *.pyc
 *ipynb_checkpoints*
+*.swp
+*.hdf5
+*.h5
+

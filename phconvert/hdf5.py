@@ -235,7 +235,7 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
         nanotimes_specs = ['tau_accept_only', 'tau_donor_only',
                            'tau_fret_donor', 'inverse_fret_rate']
         for spec in nanotimes_specs:
-            if spec in d.nanotimes_params:
+            if spec in d:
                 writer.add_array(nt_group, spec)
 
     if 'particles' in d:
@@ -266,8 +266,27 @@ def get_file_metadata(fname):
 
 
 def dict_from_group(group):
-    """Return a dict with the content of a PyTables group."""
-    return {node.name: node.read() for node in group}
+    """Return a dict with the content of a PyTables `group`."""
+    out = {}
+    for node in group:
+        if isinstance(node, tables.Group):
+            value = dict_from_group(node)
+        else:
+            value = node.read()
+        out[node._v_name] = value
+    return out
+
+def dict_to_group(group, dictionary):
+    """Save `dictionary` into HDF5 format in `group`.
+    """
+    h5file = group._v_file
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            subgroup = h5file.create_group(group, key)
+            dict_to_group(subgroup, value)
+        else:
+            h5file.create_array(group, name=key, obj=value)
+    h5file.flush()
 
 def print_attrs(data_file, node_name='/', which='user'):
     """Print the HDF5 attributes for `node_name`.
@@ -309,3 +328,6 @@ def print_children(data_file, group='/'):
         print('\t%s, %s' % (node.name, info))
         if len(node.title) > 0:
             print('\t    %s' % node.title)
+
+del print_function
+

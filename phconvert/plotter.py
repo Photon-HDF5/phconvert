@@ -83,8 +83,8 @@ def alternation_hist_nsalex(d, bins=None, ax=None):
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
 
-    nanotimes_d = d.nanotimes_t[d.det_t == d_ch]
-    nanotimes_a = d.nanotimes_t[d.det_t == a_ch]
+    nanotimes_d = d['nanotimes'][d['detectors'] == d_ch]
+    nanotimes_a = d['nanotimes'][d['detectors'] == a_ch]
     plt.hist(nanotimes_d, bins=bins, histtype='step', label=D_label, lw=1.2,
              alpha=0.5, color=_green)
     plt.hist(nanotimes_a, bins=bins, histtype='step', label=A_label, lw=1.2,
