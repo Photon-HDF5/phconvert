@@ -10,9 +10,10 @@ data fields.
 
 from __future__ import print_function, absolute_import, division
 del print_function, absolute_import, division
+import os
 
-from .smreader import load_sm as _load_sm
-from .bhreader import load_spc as _load_spc
+from . import smreader 
+from . import bhreader 
 
 
 def usalex_sm(
@@ -22,7 +23,8 @@ def usalex_sm(
     """Load a .sm us-ALEX file and returns a dictionary.
     """
     print(" - Loading '%s' ... " % filename)
-    timestamps, detectors, labels = _load_sm(filename, return_labels=True)
+    timestamps, detectors, labels = smreader.load_sm(filename, 
+                                                     return_labels=True)
     print(" [DONE]\n")
 
     dx = dict(filename=filename,
@@ -46,20 +48,42 @@ def usalex_sm(
               )
     return dx
 
-def nsalex_spc(
-        filename, donor=4, acceptor=6, laser_pulse_rate=40e6,
-        tcspc_range=50e-9, timestamps_unit=50e-9,
+def nsalex_bh(
+        filename_spc, donor=4, acceptor=6, laser_pulse_rate=40e6,
+        tcspc_range=60e-9, timestamps_unit=60e-9,
         alex_period_donor=(10, 1500), alex_period_acceptor=(2000, 3500),
         excitation_wavelengths=(532e-9, 635e-9)):
-    """Load a .spc ns-ALEX file and returns a dictionary.
+    """Load a .spc and (optionally) .set files for ns-ALEX and return 2 dict.
     """
-    print(" - Loading '%s' ... " % filename)
-    timestamps, detectors, nanotimes = _load_spc(filename)
+    # Load .SPC file
+    assert os.path.isfile(filename_spc), "File '%s' not found." % filename_spc
+    print(" - Loading '%s' ... " % filename_spc)
+    timestamps, detectors, nanotimes = bhreader.load_spc(filename_spc)
     print(" [DONE]\n")
 
+    # Load .SET file
+    filename_set = filename_spc[:-3] + 'set'
+    if os.path.isfile(filename_set):
+        dict_set = bhreader.load_set(filename_set)
+    elif allow_missing_set:
+        dict_set = {}
+    else:
+        raise IOError("File '%s' not found." % filename_set)
+    
     tcspc_num_bins = 4096
+    if dict_set is not None:
+        print('Ignoring arguments `timestamps_units` and `tcspc_range`.')
+        print('These values were retrived from .SET file.')
+        sys_params = dict_set['sys_params'] 
+        tcspc_unit = sys_params['SP_TAC_TC']
+        #tcspc_range = sys_params['SP_TAC_R']
+        tcspc_range = tcspc_num_bins*tcspc_unit
+        timestamps_unit = tcspc_range
+    else:
+        print('Using timestamps_units and tcspc_range from function arguments.')
+        tcspc_unit = tcspc_range/tcspc_num_bins
 
-    dx = dict(filename=filename,
+    dict_spc = dict(filename=filename_spc,
               alex=True,
               lifetime=True,
               timestamps_unit=timestamps_unit,
@@ -79,8 +103,9 @@ def nsalex_spc(
               acceptor=acceptor,
               tcspc_num_bins=tcspc_num_bins,
               tcspc_range=tcspc_range,
-              tcspc_unit=tcspc_range/tcspc_num_bins,
+              tcspc_unit=tcspc_unit,
 
               excitation_wavelengths=excitation_wavelengths,
               )
-    return dx
+    return dict_spc, dict_set
+
