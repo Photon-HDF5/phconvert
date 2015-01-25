@@ -1,13 +1,15 @@
 #
+# phconvert - Convert files to Photon-HDF5 format
+#
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
-This module the function :func:`photon_hdf5` to save data from a dictionary 
-to **Photon-HDF5** format. The keys of the dictionary must be valid field 
-names in the Photon-HDF5 format.
+This module defines the function :func:`photon_hdf5` to save data from a
+dictionary to **Photon-HDF5** format. The keys of the dictionary must be
+valid field names in the Photon-HDF5 format.
 
-It also provides functions to save free-form dict to HDF5 
-(:func:`dict_to_group`) and read a HDF5 group into a dict 
+It also provides functions to save free-form dict to HDF5
+(:func:`dict_to_group`) and read a HDF5 group into a dict
 (:func:`dict_from_group`).
 
 Finally there are utility functions to easily print HDF5 nodes and attributes.

@@ -1,5 +1,7 @@
 #
-# Copyright (C) 2015 Antonino Ingargiola <tritemio@gmail.com>
+# phconvert - Convert files to Photon-HDF5 format
+#
+# Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
 This module contains functions to load each supported data format.
@@ -12,8 +14,8 @@ from __future__ import print_function, absolute_import, division
 del print_function, absolute_import, division
 import os
 
-from . import smreader 
-from . import bhreader 
+from . import smreader
+from . import bhreader
 
 
 def usalex_sm(
@@ -23,7 +25,7 @@ def usalex_sm(
     """Load a .sm us-ALEX file and returns a dictionary.
     """
     print(" - Loading '%s' ... " % filename)
-    timestamps, detectors, labels = smreader.load_sm(filename, 
+    timestamps, detectors, labels = smreader.load_sm(filename,
                                                      return_labels=True)
     print(" [DONE]\n")
 
@@ -69,12 +71,12 @@ def nsalex_bh(
         dict_set = {}
     else:
         raise IOError("File '%s' not found." % filename_set)
-    
+
     tcspc_num_bins = 4096
     if dict_set is not None:
         print('Ignoring arguments `timestamps_units` and `tcspc_range`.')
         print('These values were retrived from .SET file.')
-        sys_params = dict_set['sys_params'] 
+        sys_params = dict_set['sys_params']
         tcspc_unit = sys_params['SP_TAC_TC']
         #tcspc_range = sys_params['SP_TAC_R']
         tcspc_range = tcspc_num_bins*tcspc_unit

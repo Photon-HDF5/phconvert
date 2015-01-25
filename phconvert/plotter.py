@@ -1,5 +1,7 @@
 #
-# Copyright (C) 2015 Antonino Ingargiola <tritemio@gmail.com>
+# phconvert - Convert files to Photon-HDF5 format
+#
+# Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 
 import matplotlib.pyplot as plt
