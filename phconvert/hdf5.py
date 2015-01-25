@@ -192,11 +192,14 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
 
     if d['alex']:
         if d['lifetime']:
-            writer.add_array('/', 'laser_pulse_rate')
+            if 'laser_pulse_rate' in d:
+                writer.add_array('/', 'laser_pulse_rate')
         else:
             writer.add_array('/', 'alex_period')
-        writer.add_array('/', 'alex_period_donor')
-        writer.add_array('/', 'alex_period_acceptor')
+
+        for field in ['alex_period_donor', 'alex_period_acceptor']:
+            if field in d:
+                writer.add_array('/', field)
 
     ## Add provenance metadata
     orig_file_metadata = dict(filename=d['filename'])
