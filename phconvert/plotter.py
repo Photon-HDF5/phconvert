@@ -77,7 +77,7 @@ def alternation_hist_nsalex(d, bins=None, ax=None):
         ax = plt.gca()
 
     if bins is None:
-        bins = np.arange(4096)
+        bins = np.arange(d['tcspc_num_bins'])
 
     d_ch, a_ch = d['donor'], d['acceptor']
     D_ON = d['alex_period_donor']
