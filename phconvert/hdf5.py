@@ -21,6 +21,8 @@ import time
 import tables
 from collections import OrderedDict
 
+import phconvert    # To get the version
+
 
 # Metadata for the HDF5 root node
 _root_attributes = OrderedDict([
@@ -283,7 +285,7 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
                              identity_full_filename=full_h5filename,
                              identity_creation_time=creation_time,
                              identity_software='phconvert',
-                             identity_software_version='0.1')
+                             identity_software_version=phconvert.__version__)
     identity_group = writer.add_group('/', 'identity')
     for field, value in identity_metadata.items():
         writer.add_array(identity_group, field, obj=value.encode('latin-1'),

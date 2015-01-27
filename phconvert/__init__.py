@@ -5,3 +5,5 @@
 from . import loader
 from . import plotter
 from . import hdf5
+
+__version__ = '0.1'
