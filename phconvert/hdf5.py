@@ -42,7 +42,7 @@ fields_descr = OrderedDict([
                         'are recorded.')),
     ('num_detectors', ('Total number of detector pixels used in the '
                        'measurement.')),
-    ('measurement_duration', 'Measurement duration in seconds.'),
+    ('acquisition_time', 'Measurement duration in seconds.'),
     ('lifetime', ('If True (or 1) the data contains nanotimes from TCSPC '
                   'hardware')),
     ('alex', 'If True (or 1) the file contains ALternated EXcitation data.'),
@@ -107,6 +107,8 @@ fields_descr = OrderedDict([
 mandatory_root_fields = ['timestamps_unit', 'num_spots', 'num_detectors',
                          'num_spectral_ch', 'num_polariz_ch',
                          'alex', 'lifetime',]
+
+optional_root_fields = ['acquisition_time']
 
 setup_fields = ['excitation_wavelengths', 'excitation_powers',
                 'excitation_polarizations', 'detection_polarization1',
@@ -189,6 +191,11 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
     ## Save the mandatory parameters
     for field in mandatory_root_fields:
         writer.add_array('/', field)
+
+    ## Save optional parameters
+    for field in optional_root_fields:
+        if field in d:
+            writer.add_array('/', field)
 
     if d['alex']:
         if d['lifetime']:

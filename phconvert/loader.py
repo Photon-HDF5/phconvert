@@ -140,12 +140,14 @@ def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
     tcspc_unit = metadata.pop('nanotimes_unit')
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins*tcspc_unit
+    acquisition_time = metadata['header']['Tacq'][0]*1e-3
 
     dict_pq = dict(
         filename=filename,
         alex=True,
         lifetime=True,
         timestamps_unit=timestamps_unit,
+        acquisition_time=acquisition_time,
 
         num_spots=1,
         num_detectors=2,
