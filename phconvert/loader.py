@@ -18,6 +18,7 @@ function to save the data in Photon-HDF5 format.
 from __future__ import print_function, absolute_import, division
 del print_function, absolute_import, division
 import os
+import time
 
 from . import smreader
 from . import bhreader
@@ -142,12 +143,20 @@ def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
     tcspc_range = tcspc_num_bins*tcspc_unit
     acquisition_time = metadata['header']['Tacq'][0]*1e-3
 
+    # Estract the creation time from the HT3 file header as it will be
+    # more reliable than creation time from the file system
+    ctime_t = time.strptime(metadata['header']['FileTime'][0],
+                                    "%d/%m/%y %H:%M:%S")
+    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
+    provenance = {'creation_time': creation_time}
+
     dict_pq = dict(
         filename=filename,
         alex=True,
         lifetime=True,
         timestamps_unit=timestamps_unit,
         acquisition_time=acquisition_time,
+        provenance=provenance,
 
         num_spots=1,
         num_detectors=2,
