@@ -102,6 +102,16 @@ fields_descr = OrderedDict([
     ('full_filename', 'Original full file name, including the folder.'),
     ('creation_time', 'Original file creation time.'),
     ('modification_time', 'Original file time of last modification.'),
+
+    ## Identity group
+    ('identity', 'Information about the Photon-HDF5 data file.'),
+    ('identity_filename', 'Photon-HDF5 file name at creation time.'),
+    ('identity_full_filename', ('Photon-HDF5 full file name, including the '
+                                'folder.')),
+    ('identity_creation_time', 'Photon-HDF5 file creation time.'),
+    ('identity_software', 'Software used to save the Photon-HDF5 file.'),
+    ('identity_software_version', ('Software version used to save the '
+                                   'Photon-HDF5 file.')),
     ])
 
 mandatory_root_fields = ['timestamps_unit', 'num_spots', 'num_detectors',
@@ -119,28 +129,32 @@ provenance_fields = ['filename', 'full_filename', 'creation_time',
 
 
 class H5Writer(object):
-    """Helper class for writing fields from a dict to HDF5.
+    """Helper class for writing items with description into HDF5.
 
     It uses the global metadata dictionary to retrive the field description
     from the field/key name.
     """
-
     def __init__(self, h5file, data, comp_filter):
         self.h5file = h5file
         self.data = data
         self.comp_filter = comp_filter
 
-    def _add_data(self, where, name, func, obj=None, **kwargs):
+    def _add_data(self, where, name, func, obj=None, strip_prefix=False,
+                  **kwargs):
         if obj is None:
             obj = self.data[name]
-        func(where, name, obj=obj, title=fields_descr[name], **kwargs)
+        h5name = name
+        if strip_prefix:
+            h5name = '_'.join(h5name.split('_')[1:])
+        func(where, h5name, obj=obj, title=fields_descr[name], **kwargs)
 
     def add_carray(self, where, name, obj=None):
         self._add_data(where, name, self.h5file.create_carray, obj=obj,
                        filters=self.comp_filter)
 
-    def add_array(self, where, name, obj=None):
-        self._add_data(where, name, self.h5file.create_array, obj=obj)
+    def add_array(self, where, name, obj=None, strip_prefix=False):
+        self._add_data(where, name, self.h5file.create_array, obj=obj,
+                       strip_prefix=strip_prefix)
 
     def add_group(self, where, name):
         return self.h5file.create_group(where, name,
@@ -208,19 +222,6 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
             if field in d:
                 writer.add_array('/', field)
 
-    ## Add provenance metadata
-    orig_file_metadata = dict(filename=d['filename'])
-    if os.path.isfile(d['filename']):
-        orig_file_metadata = get_file_metadata(d['filename'])
-    else:
-        print("WARNING: Could locate original file '%s'\n" % d.fname)
-        print("         Provenance info not saved.\n")
-
-    prov_group = writer.add_group('/', 'provenance')
-    for field, value in orig_file_metadata.items():
-        assert field in provenance_fields
-        writer.add_array(prov_group, field, obj=value.encode('latin-1'))
-
     ## Add setup info, if present in d
     setup_group = writer.add_group('/', 'setup')
     for field in setup_fields:
@@ -257,6 +258,32 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
     if 'particles' in d:
         writer.add_carray(ph_group, 'particles')
 
+    ## Add provenance metadata
+    orig_file_metadata = dict(filename=d['filename'])
+    if os.path.isfile(d['filename']):
+        orig_file_metadata = get_file_metadata(d['filename'])
+    else:
+        print("WARNING: Could locate original file '%s'\n" % d.fname)
+        print("         Provenance info not saved.\n")
+
+    prov_group = writer.add_group('/', 'provenance')
+    for field, value in orig_file_metadata.items():
+        assert field in provenance_fields
+        writer.add_array(prov_group, field, obj=value.encode('latin-1'))
+
+    ## Add identity metadata
+    full_h5filename = os.path.abspath(h5_fname)
+    h5filename = os.path.basename(full_h5filename)
+    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    identity_metadata = dict(identity_filename=h5filename,
+                             identity_full_filename=full_h5filename,
+                             identity_creation_time=creation_time,
+                             identity_software='phconvert',
+                             identity_software_version='0.1')
+    identity_group = writer.add_group('/', 'identity')
+    for field, value in identity_metadata.items():
+        writer.add_array(identity_group, field, obj=value.encode('latin-1'),
+                         strip_prefix=True)
     data_file.flush()
 
 
