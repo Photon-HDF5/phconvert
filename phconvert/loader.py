@@ -129,6 +129,46 @@ def nsalex_bh(
               )
     return dict_spc, dict_set
 
+def nsalex_ht3(filename, donor=1, acceptor=2, laser_pulse_rate=None):
+    """Load a .ht3 file containing ns-ALEX data and return a dict.
+
+    This dictionary can be passed to the :func:`phconvert.hdf5.photon_hdf5`
+    function to save the data in Photon-HDF5 format.
+    """
+    timestamps, detectors, nanotimes, metadata = pqreader.load_ht3(filename)
+
+    tcspc_unit = metadata['nanotimes_unit']
+    tcspc_num_bins = 4096
+    tcspc_range = tcspc_num_bins*tcspc_unit
+
+    dict_pq = dict(
+        filename=filename,
+        alex=True,
+        lifetime=True,
+        timestamps_unit=metadata['timestamps_unit'],
+
+        num_spots=1,
+        num_detectors=2,
+        num_polariz_ch=1,
+        num_spectral_ch=2,
+        #laser_pulse_rate=laser_pulse_rate,
+        #alex_period_donor=alex_period_donor,
+        #alex_period_acceptor=alex_period_acceptor,
+
+        timestamps=timestamps,
+        detectors=detectors,
+        nanotimes=nanotimes,
+        donor=donor,
+        acceptor=acceptor,
+
+        tcspc_num_bins=tcspc_num_bins,
+        tcspc_range=tcspc_range,
+        tcspc_unit=tcspc_unit,
+
+        #excitation_wavelengths=excitation_wavelengths,
+    )
+    return dict_pq
+
 def nsalex_pt3(filename, donor=1, acceptor=2, laser_pulse_rate=None):
     """Load a .pt3 file containing ns-ALEX data and return a dict.
 
