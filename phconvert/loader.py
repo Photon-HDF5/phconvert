@@ -77,7 +77,8 @@ def nsalex_bh(
         .set file (it can be saved in a user group in Photon-HDF5).
     """
     # Load .SPC file
-    assert os.path.isfile(filename_spc), "File '%s' not found." % filename_spc
+    assert os.path.isfile(filename_spc), \
+           "File '%s' not found." % filename_spc
     print(" - Loading '%s' ... " % filename_spc)
     timestamps, detectors, nanotimes = bhreader.load_spc(filename_spc)
     print(" [DONE]\n")
@@ -85,17 +86,25 @@ def nsalex_bh(
     # Load .SET file
     filename_set = filename_spc[:-3] + 'set'
     if os.path.isfile(filename_set):
-        dict_set = bhreader.load_set(filename_set)
+        metadata = bhreader.load_set(filename_set)
     elif allow_missing_set:
-        dict_set = {}
+        metadata = {}
     else:
         raise IOError("File '%s' not found." % filename_set)
 
+    # Estract the creation time from the .SET file metadata as it will be
+    # more reliable than the creation time from the file system
+    provenance = {}
+    if 'identification' in metadata:
+        identification = metadata['identification']
+        creation_time = identification['Date']+' '+identification['Time']
+        provenance = {'creation_time': creation_time}
+
     tcspc_num_bins = 4096
-    if dict_set is not None:
+    if metadata is not None:
         print('Ignoring arguments `timestamps_units` and `tcspc_range`.')
         print('These values were retrived from .SET file.')
-        sys_params = dict_set['sys_params']
+        sys_params = metadata['sys_params']
         tcspc_unit = sys_params['SP_TAC_TC']
         #tcspc_range = sys_params['SP_TAC_R']
         tcspc_range = tcspc_num_bins*tcspc_unit
@@ -104,10 +113,11 @@ def nsalex_bh(
         print('Using timestamps_units and tcspc_range from function arguments.')
         tcspc_unit = tcspc_range/tcspc_num_bins
 
-    dict_spc = dict(filename=filename_spc,
+    dict_bh = dict(filename=filename_spc,
               alex=True,
               lifetime=True,
               timestamps_unit=timestamps_unit,
+              provenance=provenance,
 
               num_spots=1,
               num_detectors=2,
@@ -128,7 +138,7 @@ def nsalex_bh(
 
               excitation_wavelengths=excitation_wavelengths,
               )
-    return dict_spc, dict_set
+    return dict_bh, metadata
 
 def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
     """Load a .ht3 file containing ns-ALEX data and return a dict.
@@ -144,7 +154,7 @@ def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
     acquisition_time = metadata['header']['Tacq'][0]*1e-3
 
     # Estract the creation time from the HT3 file header as it will be
-    # more reliable than creation time from the file system
+    # more reliable than the creation time from the file system
     ctime_t = time.strptime(metadata['header']['FileTime'][0],
                                     "%d/%m/%y %H:%M:%S")
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
