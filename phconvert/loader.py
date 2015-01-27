@@ -129,7 +129,7 @@ def nsalex_bh(
               )
     return dict_spc, dict_set
 
-def nsalex_ht3(filename, donor=1, acceptor=2, laser_pulse_rate=None):
+def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
     """Load a .ht3 file containing ns-ALEX data and return a dict.
 
     This dictionary can be passed to the :func:`phconvert.hdf5.photon_hdf5`
