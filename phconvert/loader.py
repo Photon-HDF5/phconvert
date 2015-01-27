@@ -162,7 +162,7 @@ def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
         num_detectors=2,
         num_polariz_ch=1,
         num_spectral_ch=2,
-        laser_pulse_rate=timestamps_unit,
+        laser_pulse_rate=1/timestamps_unit,
         #alex_period_donor=alex_period_donor,
         #alex_period_acceptor=alex_period_acceptor,
 
