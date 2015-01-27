@@ -23,34 +23,28 @@ def load_ht3(filename):
     """
     assert os.path.isfile(filename), "File '%s' not found."
 
-    t3records, timestamps_unit, nanotimes_unit = ht3_reader(filename)
+    t3records, timestamps_unit, nanotimes_unit, meta = ht3_reader(filename)
     detectors, timestamps, nanotimes = process_t3records_ht3(
         t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True)
-    metadata = {'timestamps_unit': timestamps_unit,
-                'nanotimes_unit': nanotimes_unit}
+    meta.update({'timestamps_unit': timestamps_unit,
+                 'nanotimes_unit': nanotimes_unit})
 
-    return timestamps, detectors, nanotimes, metadata
+    return timestamps, detectors, nanotimes, meta
 
 def ht3_reader(filename):
     with open(filename, 'rb') as f:
-        Ident = f.read(16)
-        FormatVersion = f.read(6)
-
-        if FormatVersion[:3] != '1.0':
-            raise IOError(("Format '%s' not supported. "
-                           "Only valid format is '1.0'.") % FormatVersion)
-
-        CreatorName = f.read(18)
-        CreatorVersion = f.read(12)
-        FileTime = f.read(18)
-        CRLF = f.read(2)
-        Comment = f.read(256)
-
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Binary file header
         header_dtype = np.dtype([
+            ('Ident',             'S16'),
+            ('FormatVersion',     'S6'),
+            ('CreatorName',       'S18'),
+            ('CreatorVersion',    'S12'),
+            ('FileTime',          'S18'),
+            ('CRLF',              'S2'),
+            ('Comment',           'S256'),
             ('NumberOfCurves',    'int32'),
-            ('BitsPerRecord',     'int32'),   # bits per T3 record
+            ('BitsPerRecord',     'int32'),   # bits in each T3 record
             ('ActiveCurve',       'int32'),
             ('MeasurementMode',   'int32'),
             ('SubMode',           'int32'),
@@ -69,6 +63,11 @@ def ht3_reader(filename):
         ])
         header = np.fromfile(f, dtype=header_dtype, count=1)
 
+        if header['FormatVersion'][0] != '1.0':
+            raise IOError(("Format '%s' not supported. "
+                           "Only valid format is '1.0'.") % \
+                           header['FormatVersion'][0])
+
         dispcurve_dtype = np.dtype([
             ('DispCurveMapTo', 'int32'),
             ('DispCurveShow',  'int32')])
@@ -86,7 +85,7 @@ def ht3_reader(filename):
             ('RepatTime',       'int32'),
             ('RepeatWaitTime',  'int32'),
             ('ScriptName',      'S20')])
-        repgroup = np.fromfile(f, repeat_dtype, count=1)
+        repeatgroup = np.fromfile(f, repeat_dtype, count=1)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Hardware information header
@@ -120,14 +119,12 @@ def ht3_reader(filename):
             ('InputModuleIndex', 'int32'),
             ('InputCFDLevel', 'int32'),
             ('InputCFDZeroCross', 'int32'),
-            ('InputOffset', 'int32')])
-        input_ = np.fromfile(f, input_dtype,
+            ('InputOffset', 'int32'),
+            ('InputRate', 'int32')])
+        inputs = np.fromfile(f, input_dtype,
                              count=hardware3['InpChansPresent'])
 
         # Time tagging mode specific header
-        inputrate = np.fromfile(f, dtype='int32',
-                                count=hardware3['InpChansPresent'])
-
         ttmode_dtype = np.dtype([
             ('SyncRate', 'int32'),
             ('StopAfter', 'int32'),
@@ -146,7 +143,12 @@ def ht3_reader(filename):
 
         timestamps_unit = 1./ttmode['SyncRate']
         nanotimes_unit = 1e-12*header['Resolution']
-        return t3records, timestamps_unit, nanotimes_unit
+
+        metadata = dict(header=header, params=params, repeatgroup=repeatgroup,
+                        hardware=hardware, hardware2=hardware2,
+                        hardware3=hardware3, inputs=inputs, ttmode=ttmode,
+                        imghdr=ImgHdr)
+        return t3records, timestamps_unit, nanotimes_unit, metadata
 
 def process_t3records_ht3(t3records, time_bit=10, dtime_bit=15,
                           ch_bit=6, special_bit=True):

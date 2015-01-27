@@ -136,8 +136,8 @@ def nsalex_ht3(filename, donor=1, acceptor=2, laser_pulse_rate=None):
     function to save the data in Photon-HDF5 format.
     """
     timestamps, detectors, nanotimes, metadata = pqreader.load_ht3(filename)
-
-    tcspc_unit = metadata['nanotimes_unit']
+    timestamps_unit = metadata.pop('timestamps_unit')
+    tcspc_unit = metadata.pop('nanotimes_unit')
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins*tcspc_unit
 
@@ -145,13 +145,13 @@ def nsalex_ht3(filename, donor=1, acceptor=2, laser_pulse_rate=None):
         filename=filename,
         alex=True,
         lifetime=True,
-        timestamps_unit=metadata['timestamps_unit'],
+        timestamps_unit=timestamps_unit,
 
         num_spots=1,
         num_detectors=2,
         num_polariz_ch=1,
         num_spectral_ch=2,
-        #laser_pulse_rate=laser_pulse_rate,
+        laser_pulse_rate=timestamps_unit,
         #alex_period_donor=alex_period_donor,
         #alex_period_acceptor=alex_period_acceptor,
 
@@ -167,7 +167,7 @@ def nsalex_ht3(filename, donor=1, acceptor=2, laser_pulse_rate=None):
 
         #excitation_wavelengths=excitation_wavelengths,
     )
-    return dict_pq
+    return dict_pq, metadata
 
 def nsalex_pt3(filename, donor=1, acceptor=2, laser_pulse_rate=None):
     """Load a .pt3 file containing ns-ALEX data and return a dict.
