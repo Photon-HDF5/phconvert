@@ -162,8 +162,7 @@ class H5Writer(object):
 
 
 def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
-                h5_fname=None, title="Confocal smFRET data",
-                provenance=None):
+                h5_fname=None, title="Confocal smFRET data"):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -268,9 +267,8 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
         print("         Provenance info not saved.\n")
 
     # A user provided `provenance` dict overrides pre-computes values
-    if provenance is not None:
-        assert isinstance(provenance, dict)
-        orig_file_metadata.update(provenance)
+    if 'provenance' in d:
+        orig_file_metadata.update(d['provenance'])
 
     prov_group = writer.add_group('/', 'provenance')
     for field, value in orig_file_metadata.items():
