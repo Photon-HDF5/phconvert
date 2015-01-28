@@ -20,6 +20,7 @@ import os
 import time
 import tables
 from collections import OrderedDict
+from itertools import izip
 
 import phconvert    # To get the version
 
@@ -164,7 +165,8 @@ class H5Writer(object):
 
 
 def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
-                h5_fname=None, title="Confocal smFRET data"):
+                h5_fname=None, title="Confocal smFRET data",
+                iter_timestamps=None, iter_detectors=None):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -183,8 +185,6 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
     """
-    if d['num_spots'] != 1: raise NotImplementedError
-
     comp_filter = tables.Filters(**compression)
 
     if h5_fname is None:
@@ -214,51 +214,27 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
             writer.add_array('/', field)
 
     if d['alex']:
-        if d['lifetime']:
-            if 'laser_pulse_rate' in d:
-                writer.add_array('/', 'laser_pulse_rate')
-        else:
+        if not d['lifetime']:
             writer.add_array('/', 'alex_period')
 
         for field in ['alex_period_donor', 'alex_period_acceptor']:
             if field in d:
                 writer.add_array('/', field)
 
+    ## Save the photon-data
+    if d['num_spots'] == 1:
+         _save_photon_data(writer, d)
+    else:
+        for ich, (timest, det) in izip(iter_timestamps, iter_detectors):
+            ph_group = writer.add_group('/', 'photon_data_%d')
+            _save_photon_data(writer, d, ph_group,
+                              timestamps=timest, det=det)
+
     ## Add setup info, if present in d
     setup_group = writer.add_group('/', 'setup')
     for field in setup_fields:
         if field in d:
             writer.add_array(setup_group, field)
-
-    ## Save the photon-data
-    ph_group = writer.add_group('/', 'photon_data')
-
-    for field in ['timestamps', 'detectors']:
-        writer.add_carray(ph_group, field)
-
-    det_group = writer.add_group(ph_group, 'detectors_specs')
-    writer.add_array(det_group, 'donor')
-    writer.add_array(det_group, 'acceptor')
-
-    # If present save nanotime data
-    if d['lifetime']:
-        writer.add_carray(ph_group, 'nanotimes')
-        nt_group = writer.add_group(ph_group, 'nanotimes_specs')
-
-        # Mandatory specs
-        nanotimes_specs = ['tcspc_unit', 'tcspc_num_bins', 'tcspc_range']
-        for spec in nanotimes_specs:
-            writer.add_array(nt_group, spec)
-
-        # Optional specs
-        nanotimes_specs = ['tau_accept_only', 'tau_donor_only',
-                           'tau_fret_donor', 'inverse_fret_rate']
-        for spec in nanotimes_specs:
-            if spec in d:
-                writer.add_array(nt_group, spec)
-
-    if 'particles' in d:
-        writer.add_carray(ph_group, 'particles')
 
     ## Add provenance metadata
     orig_file_metadata = dict(filename=d['filename'])
@@ -291,6 +267,45 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
         writer.add_array(identity_group, field, obj=value.encode('latin-1'),
                          strip_prefix=True)
     data_file.flush()
+
+
+def _save_photon_data(writer, d, ph_group=None, timestamps=None,
+                      detectors=None):
+    if ph_group is None:
+        ph_group = writer.add_group('/', 'photon_data')
+    if timestamps is None:
+        timestamps = d['timestamps']
+    if detectors is None:
+        detectors = d['detectors']
+
+    writer.add_carray(ph_group, 'timestamps', obj=timestamps)
+    writer.add_carray(ph_group, 'detectors', obj=detectors)
+
+    det_group = writer.add_group(ph_group, 'detectors_specs')
+    writer.add_array(det_group, 'donor')
+    writer.add_array(det_group, 'acceptor')
+
+    if d['lifetime']:
+        if 'laser_pulse_rate' in d:
+            writer.add_array('/', 'laser_pulse_rate')
+
+        writer.add_carray(ph_group, 'nanotimes')
+        nt_group = writer.add_group(ph_group, 'nanotimes_specs')
+
+        # Mandatory specs
+        nanotimes_specs = ['tcspc_unit', 'tcspc_num_bins', 'tcspc_range']
+        for spec in nanotimes_specs:
+            writer.add_array(nt_group, spec)
+
+        # Optional specs
+        nanotimes_specs = ['tau_accept_only', 'tau_donor_only',
+                           'tau_fret_donor', 'inverse_fret_rate']
+        for spec in nanotimes_specs:
+            if spec in d:
+                writer.add_array(nt_group, spec)
+
+    if 'particles' in d:
+        writer.add_carray(ph_group, 'particles')
 
 
 def get_file_metadata(fname):
