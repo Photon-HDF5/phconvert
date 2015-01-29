@@ -189,6 +189,8 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
 
     if h5_fname is None:
         basename, extension = os.path.splitext(d['filename'])
+        if compression['complib'] == 'blosc':
+            basename += '_blosc'
         h5_fname = basename + '.hdf5'
 
     if os.path.isfile(h5_fname):
@@ -197,6 +199,7 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
 
     print('Saving: %s' % h5_fname)
     data_file = tables.open_file(h5_fname, mode="w", title=title)
+    # Saving a file reference is usefull in case of error
     d.update(data_file=data_file)
     writer = H5Writer(data_file, d, comp_filter)
 
@@ -226,7 +229,7 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
          _save_photon_data(writer, d)
     else:
         for ich, (timest, det) in izip(iter_timestamps, iter_detectors):
-            ph_group = writer.add_group('/', 'photon_data_%d')
+            ph_group = writer.add_group('/', 'photon_data_%d' % ich)
             _save_photon_data(writer, d, ph_group,
                               timestamps=timest, det=det)
 
@@ -279,11 +282,11 @@ def _save_photon_data(writer, d, ph_group=None, timestamps=None,
         detectors = d['detectors']
 
     writer.add_carray(ph_group, 'timestamps', obj=timestamps)
-    writer.add_carray(ph_group, 'detectors', obj=detectors)
-
-    det_group = writer.add_group(ph_group, 'detectors_specs')
-    writer.add_array(det_group, 'donor')
-    writer.add_array(det_group, 'acceptor')
+    if detectors is not None:
+        writer.add_carray(ph_group, 'detectors', obj=detectors)
+        det_group = writer.add_group(ph_group, 'detectors_specs')
+        writer.add_array(det_group, 'donor')
+        writer.add_array(det_group, 'acceptor')
 
     if d['lifetime']:
         if 'laser_pulse_rate' in d:
