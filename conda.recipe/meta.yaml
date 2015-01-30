@@ -1,0 +1,32 @@
+package:
+  name: phconvert
+  version: {{ environ['GIT_DESCRIBE_TAG'] }}
+
+source:
+    git_url: https://github.com/tritemio/phconvert.git
+
+build:
+    number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - numpy
+    - tables
+
+  run:
+    - python
+    - setuptools
+    - numpy
+    - tables
+    - pandas
+
+test:
+  imports:
+    - phconvert
+
+about:
+  home: http://github.com/tritemio/FRETBursts/
+  license: GPLv2
+  summary: 'Converter for the Photon-HDF5 file format.'
