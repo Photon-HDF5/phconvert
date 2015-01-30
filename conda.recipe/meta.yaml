@@ -4,6 +4,7 @@ package:
 
 source:
     git_url: https://github.com/tritemio/phconvert.git
+    #git_tag: dev
 
 build:
     number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
@@ -13,14 +14,15 @@ requirements:
     - python
     - setuptools
     - numpy
-    - tables
 
   run:
     - python
     - setuptools
     - numpy
-    - tables
+    - pytables
     - pandas
+    - numba
+    - matplotlib
 
 test:
   imports:
