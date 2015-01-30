@@ -6,4 +6,4 @@ from . import loader
 from . import plotter
 from . import hdf5
 
-__version__ = '0.2.2dev'
+__version__ = '0.2.2.dev1'

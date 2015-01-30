@@ -159,9 +159,11 @@ class H5Writer(object):
         self._add_data(where, name, self.h5file.create_array, obj=obj,
                        strip_prefix=strip_prefix)
 
-    def add_group(self, where, name):
+    def add_group(self, where, name, descr_name=None):
+        if descr_name is None:
+            descr_name = name
         return self.h5file.create_group(where, name,
-                                        title=fields_descr[name])
+                                        title=fields_descr[descr_name])
 
 
 def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
@@ -228,10 +230,12 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
     if d['num_spots'] == 1:
          _save_photon_data(writer, d)
     else:
-        for ich, (timest, det) in izip(iter_timestamps, iter_detectors):
-            ph_group = writer.add_group('/', 'photon_data_%d' % ich)
+        for ich, (timest, det) in enumerate(
+                izip(iter_timestamps, iter_detectors)):
+            ph_group = writer.add_group('/', 'photon_data_%d' % ich,
+                                        descr_name='photon_data')
             _save_photon_data(writer, d, ph_group,
-                              timestamps=timest, det=det)
+                              timestamps=timest, detectors=det)
 
     ## Add setup info, if present in d
     setup_group = writer.add_group('/', 'setup')
@@ -279,10 +283,10 @@ def _save_photon_data(writer, d, ph_group=None, timestamps=None,
     if timestamps is None:
         timestamps = d['timestamps']
     if detectors is None:
-        detectors = d['detectors']
+        detectors = d.get('detectors', 'unspecified')
 
     writer.add_carray(ph_group, 'timestamps', obj=timestamps)
-    if detectors is not None:
+    if detectors != 'unspecified':
         writer.add_carray(ph_group, 'detectors', obj=detectors)
         det_group = writer.add_group(ph_group, 'detectors_specs')
         writer.add_array(det_group, 'donor')
