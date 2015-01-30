@@ -10,7 +10,12 @@
 import os
 import numpy as np
 import struct
-import numba
+
+has_numba = True
+try:
+    import numba
+except ImportError:
+    has_numba = False
 
 
 def load_ht3(filename):
@@ -180,13 +185,18 @@ def process_t3records_ht3(t3records, time_bit=10, dtime_bit=15,
 
     return detectors, timestamps, nanotimes
 
-@numba.jit('void(i8[:], u1[:], u4, u8)')
-def _correct_overflow(timestamps, detectors, overflow_ch, overflow):
+def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
     overflow_correction = 0
     for i in xrange(detectors.size):
         if detectors[i] == overflow_ch:
             overflow_correction += overflow
         timestamps[i] += overflow_correction
+
+if has_numba:
+    _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
+        _correct_overflow1)
+else:
+    _correct_overflow = _correct_overflow1
 
 
 def load_pt3(filename):
