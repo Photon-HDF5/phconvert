@@ -23,6 +23,7 @@ requirements:
     - pandas
     - numba
     - matplotlib
+    - future
 
 test:
   imports:

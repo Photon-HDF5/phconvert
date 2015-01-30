@@ -15,7 +15,8 @@ function to save the data in Photon-HDF5 format.
 
 """
 
-from __future__ import print_function, absolute_import, division
+from __future__ import (print_function, absolute_import, division,
+                        unicode_literals)
 del print_function, absolute_import, division
 import os
 import time
@@ -97,7 +98,9 @@ def nsalex_bh(
     provenance = {}
     if 'identification' in metadata:
         identification = metadata['identification']
-        creation_time = identification['Date']+' '+identification['Time']
+        date_str = identification['Date'].decode()
+        time_str = identification['Time'].decode()
+        creation_time = date_str + ' ' + time_str
         provenance = {'creation_time': creation_time}
 
     tcspc_num_bins = 4096
@@ -158,8 +161,8 @@ def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
 
     # Estract the creation time from the HT3 file header as it will be
     # more reliable than the creation time from the file system
-    ctime_t = time.strptime(metadata['header']['FileTime'][0],
-                                    "%d/%m/%y %H:%M:%S")
+    ctime_t = time.strptime(metadata['header']['FileTime'][0].decode(),
+                            "%d/%m/%y %H:%M:%S")
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
     provenance = {'creation_time': creation_time}
 

@@ -16,11 +16,12 @@ Finally there are utility functions to easily print HDF5 nodes and attributes.
 """
 
 from __future__ import print_function, absolute_import
+from builtins import zip
+
 import os
 import time
 import tables
 from collections import OrderedDict
-from itertools import izip
 
 import phconvert    # To get the version
 
@@ -230,8 +231,8 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
     if d['num_spots'] == 1:
          _save_photon_data(writer, d)
     else:
-        for ich, (timest, det) in enumerate(
-                izip(iter_timestamps, iter_detectors)):
+        for ich, (timest, det) in enumerate(zip(iter_timestamps,
+                                                iter_detectors)):
             ph_group = writer.add_group('/', 'photon_data_%d' % ich,
                                         descr_name='photon_data')
             _save_photon_data(writer, d, ph_group,

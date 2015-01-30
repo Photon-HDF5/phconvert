@@ -68,6 +68,9 @@ def load_set(fname_set):
 
 def bh_set_identification(fname_set):
     """Return a dict containing the IDENTIFICATION section of .SET files.
+
+    The keys are strings (unicode) while the values are the unmodified
+    byte-string from the file.
     """
     with open(fname_set, 'rb') as f:
         line = f.readline()
@@ -75,18 +78,21 @@ def bh_set_identification(fname_set):
         identification = {}
         line = f.readline().strip()
         while not line.startswith(b'*END'):
-            item = [s.strip() for s in line.split(':')]
+            item = [s.strip() for s in line.split(b':')]
             if len(item) == 1:
-                value = ' '.join([identification[key], item[0]])
+                value = b' '.join([identification[key], item[0]])
             else:
-                key = item[0]
-                value = ':'.join(item[1:])
+                key = item[0].decode()
+                value = b':'.join(item[1:])
             identification[key] = value
             line = f.readline().strip()
     return identification
 
 def bh_set_sys_params(fname_set):
     """Return a dict containing the SYS_PARAMS section of .SET files.
+
+    The keys are strings (unicode) while the values are the unmodified
+    byte-string from the file.
     """
     with open(fname_set, 'rb') as f:
         ## Make a dictionary of system parameters
@@ -94,26 +100,26 @@ def bh_set_sys_params(fname_set):
         sys_params  = {}
         for line in f.readlines():
             line = line.strip()
-            if line == 'SYS_PARA_BEGIN:':
+            if line == b'SYS_PARA_BEGIN:':
                 start = True
                 continue
-            if line == 'SYS_PARA_END:':
+            if line == b'SYS_PARA_END:':
                 break
-            if start and line.startswith('#'):
-                fields = line[5:-1].split(',')
+            if start and line.startswith(b'#'):
+                fields = line[5:-1].split(b',')
 
-                if fields[1] == 'B':
+                if fields[1] == b'B':
                     value = bool(fields[2])
-                elif fields[1] in ['I', 'U', 'L']:
+                elif fields[1] in [b'I', b'U', b'L']:
                     value = int(fields[2])
-                elif fields[1] == 'F':
+                elif fields[1] == b'F':
                     value = float(fields[2])
-                elif fields[1] == 'S':
+                elif fields[1] == b'S':
                     value = fields[2]
                 else:
                     value = fields[1:]
 
-                sys_params[fields[0]] = value
+                sys_params[fields[0].decode()] = value
     return sys_params
 
 def bh_decode(s):
@@ -135,11 +141,11 @@ def bh_decode(s):
 def bh_print_sys_params(sys_params):
     """Print a summary of the Becker & Hickl system parameters (.SET file)."""
     for k, v in sys_params.iteritems():
-        if 'TAC' in k: print '%s\t %f' % (bh_decode(k), v)
+        if 'TAC' in k: print('%s\t %f' % (bh_decode(k), v))
     print
     for k, v in sys_params.iteritems():
-        if 'CFD' in k: print '%s\t %f' % (bh_decode(k), v)
+        if 'CFD' in k: print('%s\t %f' % (bh_decode(k), v))
     print
     for k, v in sys_params.iteritems():
-        if 'SYN' in k: print '%s\t %f' % (bh_decode(k), v)
+        if 'SYN' in k: print('%s\t %f' % (bh_decode(k), v))
 

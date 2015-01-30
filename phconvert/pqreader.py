@@ -7,6 +7,9 @@
 # (https://github.com/dwaithe/FCS_point_correlator) and released under GPLv2.
 #
 
+from past.builtins import xrange
+from builtins import zip
+
 import os
 import numpy as np
 import struct
@@ -18,7 +21,7 @@ except ImportError:
     has_numba = False
 
 
-def load_ht3(filename):
+def load_ht3(filename, ovcfunc=None):
     """Load data from a PicoQuant .ht3 file.
 
     Returns:
@@ -30,7 +33,8 @@ def load_ht3(filename):
 
     t3records, timestamps_unit, nanotimes_unit, meta = ht3_reader(filename)
     detectors, timestamps, nanotimes = process_t3records_ht3(
-        t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True)
+        t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
+        ovcfunc=ovcfunc)
     meta.update({'timestamps_unit': timestamps_unit,
                  'nanotimes_unit': nanotimes_unit})
 
@@ -41,34 +45,34 @@ def ht3_reader(filename):
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Binary file header
         header_dtype = np.dtype([
-            ('Ident',             'S16'),
-            ('FormatVersion',     'S6'),
-            ('CreatorName',       'S18'),
-            ('CreatorVersion',    'S12'),
-            ('FileTime',          'S18'),
-            ('CRLF',              'S2'),
-            ('Comment',           'S256'),
-            ('NumberOfCurves',    'int32'),
-            ('BitsPerRecord',     'int32'),   # bits in each T3 record
-            ('ActiveCurve',       'int32'),
-            ('MeasurementMode',   'int32'),
-            ('SubMode',           'int32'),
-            ('Binning',           'int32'),
+            ('Ident',             'S16'   ),
+            ('FormatVersion',     'S6'    ),
+            ('CreatorName',       'S18'   ),
+            ('CreatorVersion',    'S12'   ),
+            ('FileTime',          'S18'   ),
+            ('CRLF',              'S2'    ),
+            ('Comment',           'S256'  ),
+            ('NumberOfCurves',    'int32' ),
+            ('BitsPerRecord',     'int32' ),   # bits in each T3 record
+            ('ActiveCurve',       'int32' ),
+            ('MeasurementMode',   'int32' ),
+            ('SubMode',           'int32' ),
+            ('Binning',           'int32' ),
             ('Resolution',        'double'),  # in ps
-            ('Offset',            'int32'),
-            ('Tacq',              'int32'),   # in ms
+            ('Offset',            'int32' ),
+            ('Tacq',              'int32' ),   # in ms
             ('StopAt',            'uint32'),
-            ('StopOnOvfl',        'int32'),
-            ('Restart',           'int32'),
-            ('DispLinLog',        'int32'),
-            ('DispTimeAxisFrom',  'int32'),
-            ('DispTimeAxisTo',    'int32'),
-            ('DispCountAxisFrom', 'int32'),
-            ('DispCountAxisTo',   'int32'),
+            ('StopOnOvfl',        'int32' ),
+            ('Restart',           'int32' ),
+            ('DispLinLog',        'int32' ),
+            ('DispTimeAxisFrom',  'int32' ),
+            ('DispTimeAxisTo',    'int32' ),
+            ('DispCountAxisFrom', 'int32' ),
+            ('DispCountAxisTo',   'int32' ),
         ])
         header = np.fromfile(f, dtype=header_dtype, count=1)
 
-        if header['FormatVersion'][0] != '1.0':
+        if header['FormatVersion'][0] != b'1.0':
             raise IOError(("Format '%s' not supported. "
                            "Only valid format is '1.0'.") % \
                            header['FormatVersion'][0])
@@ -89,15 +93,15 @@ def ht3_reader(filename):
             ('RepeatsPerCurve', 'int32'),
             ('RepatTime',       'int32'),
             ('RepeatWaitTime',  'int32'),
-            ('ScriptName',      'S20')])
+            ('ScriptName',      'S20'  )])
         repeatgroup = np.fromfile(f, repeat_dtype, count=1)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Hardware information header
         hw_dtype = np.dtype([
-            ('HardwareIdent', 'S16'),
-            ('HardwarePartNo', 'S8'),
-            ('HardwareSerial', 'int32'),
+            ('HardwareIdent',   'S16'  ),
+            ('HardwarePartNo',  'S8'   ),
+            ('HardwareSerial',  'int32'),
             ('nModulesPresent', 'int32')])   # 10
         hardware = np.fromfile(f, hw_dtype, count=1)
 
@@ -107,35 +111,35 @@ def ht3_reader(filename):
         hardware2 = np.fromfile(f, hw2_dtype, count=10)
 
         hw3_dtype = np.dtype([
-            ('BaseResolution', 'double'),
-            ('InputsEnabled', 'uint64'),
-            ('InpChansPresent', 'int32'),
-            ('RefClockSource', 'int32'),
-            ('ExtDevices', 'int32'),
-            ('MarkerSettings', 'int32'),
-            ('SyncDivider', 'int32'),
-            ('SyncCFDLevel', 'int32'),
-            ('SyncCFDZeroCross', 'int32'),
+            ('BaseResolution',   'double'),
+            ('InputsEnabled',    'uint64'),
+            ('InpChansPresent',  'int32' ),
+            ('RefClockSource',   'int32' ),
+            ('ExtDevices',       'int32' ),
+            ('MarkerSettings',   'int32' ),
+            ('SyncDivider',      'int32' ),
+            ('SyncCFDLevel',     'int32' ),
+            ('SyncCFDZeroCross', 'int32' ),
             ('SyncOffset', 'int32')])
         hardware3 = np.fromfile(f, hw3_dtype, count=1)
 
         # Channels' information header
         input_dtype = np.dtype([
-            ('InputModuleIndex', 'int32'),
-            ('InputCFDLevel', 'int32'),
+            ('InputModuleIndex',  'int32'),
+            ('InputCFDLevel',     'int32'),
             ('InputCFDZeroCross', 'int32'),
-            ('InputOffset', 'int32'),
-            ('InputRate', 'int32')])
+            ('InputOffset',       'int32'),
+            ('InputRate',         'int32')])
         inputs = np.fromfile(f, input_dtype,
                              count=hardware3['InpChansPresent'])
 
         # Time tagging mode specific header
         ttmode_dtype = np.dtype([
-            ('SyncRate', 'int32'),
-            ('StopAfter', 'int32'),
-            ('StopReason', 'int32'),
-            ('ImgHdrSize', 'int32'),
-            ('nRecords', 'uint64')])
+            ('SyncRate',   'int32' ),
+            ('StopAfter',  'int32' ),
+            ('StopReason', 'int32' ),
+            ('ImgHdrSize', 'int32' ),
+            ('nRecords',   'uint64')])
         ttmode = np.fromfile(f, ttmode_dtype, count=1)
 
         # Special header for imaging. How many of the following ImgHdr
@@ -156,7 +160,7 @@ def ht3_reader(filename):
         return t3records, timestamps_unit, nanotimes_unit, metadata
 
 def process_t3records_ht3(t3records, time_bit=10, dtime_bit=15,
-                          ch_bit=6, special_bit=True):
+                          ch_bit=6, special_bit=True, ovcfunc=None):
     """Extract the different fields from the raw t3records array (.ht3).
 
     Returns:
@@ -181,8 +185,9 @@ def process_t3records_ht3(t3records, time_bit=10, dtime_bit=15,
 
     overflow_ch = 2**ch_bit - 1
     overflow = 2**time_bit
-    _correct_overflow(timestamps, detectors, overflow_ch, overflow)
-
+    if ovcfunc is None:
+        ovcfunc = _correct_overflow
+    ovcfunc(timestamps, detectors, overflow_ch, overflow)
     return detectors, timestamps, nanotimes
 
 def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
@@ -192,11 +197,18 @@ def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
             overflow_correction += overflow
         timestamps[i] += overflow_correction
 
+def _correct_overflow2(timestamps, detectors, overflow_ch, overflow):
+    index_overflows = np.where((detectors == overflow_ch))[0]
+    for n, (idx1, idx2) in enumerate(zip(index_overflows[:-1],
+                                         index_overflows[1:])):
+        timestamps[idx1:idx2] += (n + 1)*overflow
+    timestamps[idx2:] += (n + 2)*overflow
+
 if has_numba:
     _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
         _correct_overflow1)
 else:
-    _correct_overflow = _correct_overflow1
+    _correct_overflow = _correct_overflow2
 
 
 def load_pt3(filename):
