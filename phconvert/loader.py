@@ -113,10 +113,13 @@ def nsalex_bh(
         print('Using timestamps_units and tcspc_range from function arguments.')
         tcspc_unit = tcspc_range/tcspc_num_bins
 
+    acquisition_time = (timestamps.max() - timestamps.min())*timestamps_unit
+
     dict_bh = dict(filename=filename_spc,
               alex=True,
               lifetime=True,
               timestamps_unit=timestamps_unit,
+              acquisition_time=acquisition_time,
               provenance=provenance,
 
               num_spots=1,
