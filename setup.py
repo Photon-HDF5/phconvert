@@ -1,4 +1,15 @@
 from setuptools import setup
+import versioneer
+
+project_name = 'phconvert'
+
+## Configure versioneer
+versioneer.VCS = 'git'
+versioneer.versionfile_source = project_name + '/_version.py'
+versioneer.versionfile_build = project_name + '/_version.py'
+versioneer.tag_prefix = '' # tags are like 1.2.0
+versioneer.parentdir_prefix = project_name + '-'
+
 
 ## Metadata
 long_description = """
@@ -9,18 +20,9 @@ Converter for `Photon-HDF5 <http://photon-hdf5.readthedocs.org/>`_ file format.
 
 """
 
-def get_version():
-    with open('phconvert/__init__.py') as f:
-        for line in f.readlines():
-            if line.startswith('__version__'):
-                linep = line.strip().replace(' ', '')
-                version = linep[len('__version__='):][1:-1]
-                return version
-        raise ValueError('No version found in phconvert/__init__.py')
-
-
-setup(name = 'phconvert',
-      version = get_version(),
+setup(name = project_name,
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       author = 'Antonino Ingargiola',
       author_email = 'tritemio@gmail.com',
       url          = 'http://github.com/tritemio/phconvert/',
