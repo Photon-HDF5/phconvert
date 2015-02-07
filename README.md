@@ -1,15 +1,15 @@
 # phconvert
 
-**phconvert** is a python library to read from several file formats and to save in [Photon-HDF5 format](http://photon-hdf5.readthedocs.org/).
+*phconvert* is a python library to read from several file formats and to save in [Photon-HDF5 format](http://photon-hdf5.readthedocs.org/).
 
-**phconvert** contains the reference implementation for creating Photon-HDF5 files.
+*phconvert* contains the reference implementation for creating Photon-HDF5 files.
 
 Current formats that can be read are: PicoQuant .pt3, Becker & Hickl .spc/.set and usALEX .SM files.
 Example notebooks show how to convert these formats.
 
 ## Installation
 
-You can install `phconvert` using conda:
+You can install *phconvert* using conda:
 
     conda install -c tritemio phconvert
     
@@ -19,8 +19,8 @@ or PIP:
 
 or downloading the souces and doing the usual:
 
-   python setup.py build
-   python setup.py install
+    python setup.py build
+    python setup.py install
     
 ## Dependencies
 
@@ -32,5 +32,5 @@ or downloading the souces and doing the usual:
     
 ## License
 
-phconvert is released under the license GNU GPL Version 2.
+*phconvert* is released under the license GNU GPL Version 2.
 
