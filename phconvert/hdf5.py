@@ -44,7 +44,7 @@ fields_descr = OrderedDict([
                          'channels (i.e. 2 for 2-colors smFRET).')),
     ('num_polariz_ch', ('Number of different polarization in the detection '
                         'channels. The value is 1 if no polarization selection '
-                        'is performed and 2 if two orthogonal polarizations '
+                        'is performed and 2 if two independent polarizations '
                         'are recorded.')),
     ('num_detectors', ('Total number of detector pixels used in the '
                        'measurement.')),
