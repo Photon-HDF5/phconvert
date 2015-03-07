@@ -36,6 +36,89 @@ _root_attributes = OrderedDict([
     ('format_url', 'http://photon-hdf5.readthedocs.org/'),
 ])
 
+root_fields_descr = OrderedDict([
+    ('acquisition_time', 'Measurement duration in seconds.'),
+    ('comment', 'A user defined comment for the data file.'),
+
+    ('identity', 'Information about the Photon-HDF5 data file.'),
+    ('provenance', 'Information about the original data file.'),
+    ('setup', 'Information about the experimental setup.'),
+    ('sample', 'Information about the measured sample.'),
+
+    ('photon_data',
+         'Group containing arrays of photon-data (one element per photon)'),
+    ('photon_data/timestamps', 'Array of photon timestamps.'),
+    ('photon_data/detectors', 'Array of detector IDs for each timestamp.'),
+    ('photon_data/nanotimes', 'TCSPC photon arrival time (nanotimes).'),
+    ('photon_data/particles', 'Particle IDs (integer) for each timestamp.'),
+
+    ('photon_data/timestamps_specs', 'Specifications for timestamps.'),
+    ('photon_data/timestamps_specs/timestamps_unit',
+         ('Time in seconds of 1-unit increment in timestamps.')),
+
+    ('photon_data/nanotimes_specs', 'Group for nanotime-specific data.'),
+    ('photon_data/nanotimes_specs/tcspc_unit',
+         'TCSPC time bin duration in seconds (nanotimes unit).'),
+    ('photon_data/nanotimes_specs/tcspc_num_bins',
+         'Number of TCSPC bins.'),
+    ('photon_data/nanotimes_specs/tcspc_range',
+         'TCSPC full-scale range in seconds.'),
+    ('photon_data/nanotimes_specs/irf_donor_hist',
+         ('Instrument Response Function (IRF) histogram for the donor '
+          'detection channel.')),
+    ('photon_data/nanotimes_specs/irf_acceptor_hist',
+         ('Instrument Response Function (IRF) histogram for the acceptor '
+          'detection channel.')),
+    ('photon_data/nanotimes_specs/calibration_hist',
+         ('Histogram of uncorrelated counts used to correct the TCSPC '
+          'non-linearities.')),
+
+    ('/photon_data/measurement_specs',
+         ('Metadata necessary for interpretation of the particular type of '
+          'measurement.')),
+    ('/photon_data/measurement_specs/measurement_type',
+         'Name of the measurement the data represents.'),
+    ('/photon_data/measurement_specs/alex_period',
+         ('Period of laser alternation in us-ALEX measurements in timestamps '
+          'units.')),
+    ('/photon_data/measurement_specs/laser_pulse_rate',
+         'Repetition rate of the pulsed excitation laser.'),
+    ('/photon_data/measurement_specs/alex_period_spectral_ch1',
+         ('Value pair identifing the range of spectral_ch1 photons in one '
+          'period of laser alternation or interleaved pulses.')),
+    ('/photon_data/measurement_specs/alex_period_spectral_ch2',
+         ('Value pair identifing the range of spectral_ch2 photons in one '
+          'period of laser alternation or interleaved pulses.')),
+
+    ('/photon_data/measurement_specs/detectors_specs',
+         'Mapping between the detector IDs and the detection channels.'),
+
+    ('/photon_data/measurement_specs/detectors_specs/spectral_ch1',
+         ('Pixel IDs for the first spectral channel (i.e. donor in a '
+          '2-color smFRET measurement).')),
+    ('/photon_data/measurement_specs/detectors_specs/spectral_ch2',
+         ('Pixel IDs for the first spectral channel (i.e. acceptor in a '
+          '2-color smFRET measurement).')),
+
+    ('/photon_data/measurement_specs/detectors_specs/polarization_ch1',
+         'Pixel IDs for the first polarization channel.'),
+    ('/photon_data/measurement_specs/detectors_specs/polarization_ch2',
+         'Pixel IDs for the second polarization channel.'),
+
+    ('/photon_data/measurement_specs/detectors_specs/split_ch1',
+         ('Pixel IDs for the first channel splitted through a '
+          'non-polarizing beam splitter.')),
+    ('/photon_data/measurement_specs/detectors_specs/split_ch2',
+         ('Pixel IDs for the second channel splitted through a '
+          'non-polarizing beam splitter.')),
+
+    ('/photon_data/measurement_specs/detectors_specs/labels',
+         ('User defined labels for each pixel IDs. In smFRET it is strongly '
+          'suggested to use "donor" and "acceptor" for the respective '
+          'pixel IDs.')),
+
+])
+
 # Metadata for different fields (arrays) in the HDF5 format
 fields_descr = OrderedDict([
     # Root parameters
@@ -48,7 +131,6 @@ fields_descr = OrderedDict([
                         'are recorded.')),
     ('num_detectors', ('Total number of detector pixels used in the '
                        'measurement.')),
-    ('acquisition_time', 'Measurement duration in seconds.'),
     ('lifetime', ('If True (or 1) the data contains nanotimes from TCSPC '
                   'hardware')),
     ('alex', 'If True (or 1) the file contains ALternated EXcitation data.'),
