@@ -20,6 +20,7 @@ from builtins import zip
 
 import os
 import time
+import re
 import tables
 from collections import OrderedDict
 
@@ -36,7 +37,7 @@ _root_attributes = OrderedDict([
     ('format_url', 'http://photon-hdf5.readthedocs.org/'),
 ])
 
-root_fields_descr = OrderedDict([
+fields_descr = OrderedDict([
     ('acquisition_time', 'Measurement duration in seconds.'),
     ('comment', 'A user defined comment for the data file.'),
 
@@ -116,11 +117,10 @@ root_fields_descr = OrderedDict([
          ('User defined labels for each pixel IDs. In smFRET it is strongly '
           'suggested to use "donor" and "acceptor" for the respective '
           'pixel IDs.')),
-
 ])
 
 # Metadata for different fields (arrays) in the HDF5 format
-fields_descr = OrderedDict([
+old_fields_descr = OrderedDict([
     # Root parameters
     ('num_spots', 'Number of excitation or detection spots.'),
     ('num_spectral_ch', ('Number of different spectral bands in the detection '
@@ -217,41 +217,86 @@ provenance_fields = ['filename', 'full_filename', 'creation_time',
 
 
 class H5Writer(object):
-    """Helper class for writing items with description into HDF5.
-
-    It uses the global metadata dictionary to retrive the field description
-    from the field/key name.
+    """Helper class for writing items with associated descriptions into HDF5.
     """
-    def __init__(self, h5file, data, comp_filter):
+    def __init__(self, h5file, comp_filter, fields_descr):
         self.h5file = h5file
-        self.data = data
         self.comp_filter = comp_filter
+        self.fields_descr = fields_descr
 
-    def _add_data(self, where, name, func, obj=None, strip_prefix=False,
-                  **kwargs):
-        if obj is None:
-            obj = self.data[name]
-        h5name = name
-        if strip_prefix:
-            h5name = '_'.join(h5name.split('_')[1:])
-        func(where, h5name, obj=obj, title=fields_descr[name], **kwargs)
+    def write_group(self, where, name, descr=None):
+        return self.h5file.create_group(where, name, title=descr)
 
-    def add_carray(self, where, name, obj=None):
-        self._add_data(where, name, self.h5file.create_carray, obj=obj,
-                       filters=self.comp_filter)
+    def _write_data(self, where, name, obj, func, descr=None,
+                    **kwargs):
+        func(where, name, obj=obj, title=descr, **kwargs)
 
-    def add_array(self, where, name, obj=None, strip_prefix=False):
-        self._add_data(where, name, self.h5file.create_array, obj=obj,
-                       strip_prefix=strip_prefix)
+    def write_array(self, where, name, obj, descr=None, chunked=False):
+        if not chunked:
+            method = self.h5file.create_array
+        else:
+            method = self.h5file.create_carray
+        self._write_data(where, name, obj=obj, func=method, descr=descr,
+                         filters=self.comp_filter)
 
-    def add_group(self, where, name, descr_name=None):
-        if descr_name is None:
-            descr_name = name
-        return self.h5file.create_group(where, name,
-                                        title=fields_descr[descr_name])
+def _analyze_path(key, prefix_list):
+    """
+    Return where and name such as where + name is a valid HDF5 path.
+    """
+    assert key[0] != '/' and key[-1] != '/'
+    path = '/' + key
+    if prefix_list is not None and len(prefix_list) > 0:
+        prefix = '/'.join(prefix_list)
+        assert prefix[0] != '/' and prefix[-1] != '/'
+        path = '/' + prefix + path
+    chunks = path.split('/')
+    assert len(chunks) >= 2
+
+    where = '/'.join(chunks[:-1]) + '/'
+    name = chunks[-1]
+    user = 'user' in chunks
+
+    meta_path = path
+    phdata = False
+    if path.startswith('/photon_data'):
+        if len(chunks) == 3 and not name.endswith('_specs'):
+            phdata = True
+        # Remove eventual digits after /photon_data
+        pattern = '/photon_data[0-9]*(.*)'
+        meta_path = '/photon_data' + \
+                    re.match(pattern, path).group(1)
+
+    return where, name, meta_path, phdata, user
+
+def _save_photon_data_dict(writer, data_dict, descr_dict, prefix_list=None):
+    """
+    Assumptions:
+        descr_dict merges official and user-defined field descriptions
+        where the key is always the full path.
+    """
+    for key, value in data_dict.items():
+        where, name, descr_key, is_phdata, is_user = _analyze_path(
+            key, prefix_list)
+        # Allow missing description in user fields
+        if not is_user:
+            assert descr_key in descr_dict, \
+                   'Name "%s" is not valid.' % descr_key
+        description = descr_dict.get(descr_key, None)
+
+        if isinstance(value, dict):
+            # Current key is a group, create it and walk through its content
+            writer.write_group(where, name, descr=description)
+
+            if prefix_list is None:
+                prefix_list = []
+            prefix_list.append(key)
+            _save_photon_data_dict(writer, value, descr_dict, prefix_list)
+        else:
+            writer.write_array(where, name, obj=value, descr=description,
+                               chunked=is_phdata)
 
 
-def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
+def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
                 h5_fname=None, title="Confocal smFRET data",
                 iter_timestamps=None, iter_detectors=None):
     """
@@ -261,7 +306,9 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
     contains a reference to the pytables file.
 
     Arguments:
-        d (dict): the dictionary containing the smFRET measurement.
+        data_dict (dict): the dictionary containing the photon data.
+            The keys must strings matching valid Photon-HDF5 paths.
+            The values must be scalars, arrays or strings.
         compression (dict): a dictionary containing the compression type
             and level. Passed to pytables `tables.Filters()`.
         h5_fname (string or None): if not None, contains the file name
@@ -275,7 +322,7 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
     comp_filter = tables.Filters(**compression)
 
     if h5_fname is None:
-        basename, extension = os.path.splitext(d['filename'])
+        basename, extension = os.path.splitext(data_dict['filename'])
         if compression['complib'] == 'blosc':
             basename += '_blosc'
         h5_fname = basename + '.hdf5'
@@ -287,78 +334,81 @@ def photon_hdf5(d, compression=dict(complevel=6, complib='zlib'),
     print('Saving: %s' % h5_fname)
     data_file = tables.open_file(h5_fname, mode="w", title=title)
     # Saving a file reference is usefull in case of error
-    d.update(data_file=data_file)
-    writer = H5Writer(data_file, d, comp_filter)
+    data_dict.update(data_file=data_file)
+    writer = H5Writer(data_file, data_dict, comp_filter)
 
-    ## Save the root-node metadata
-    for name, value in _root_attributes.items():
-        data_file.root._f_setattr(name, value)
-
-    ## Save the mandatory parameters
-    for field in mandatory_root_fields:
-        writer.add_array('/', field)
-
-    ## Save optional parameters
-    for field in optional_root_fields:
-        if field in d:
-            writer.add_array('/', field)
-
-    if d['alex']:
-        if not d['lifetime']:
-            writer.add_array('/', 'alex_period')
-
-        for field in ['alex_period_donor', 'alex_period_acceptor']:
-            if field in d:
-                writer.add_array('/', field)
-
-    ## Save the photon-data
-    if d['num_spots'] == 1:
-         _save_photon_data(writer, d)
-    else:
-        for ich, (timest, det) in enumerate(zip(iter_timestamps,
-                                                iter_detectors)):
-            ph_group = writer.add_group('/', 'photon_data_%d' % ich,
-                                        descr_name='photon_data')
-            _save_photon_data(writer, d, ph_group,
-                              timestamps=timest, detectors=det)
-
-    ## Add setup info, if present in d
-    setup_group = writer.add_group('/', 'setup')
-    for field in setup_fields:
-        if field in d:
-            writer.add_array(setup_group, field)
-
-    ## Add provenance metadata
-    orig_file_metadata = dict(filename=d['filename'])
-    if os.path.isfile(d['filename']):
-        orig_file_metadata = get_file_metadata(d['filename'])
-    else:
-        print("WARNING: Could locate original file '%s'\n" % d.fname)
-        print("         Provenance info not saved.\n")
-
-    # A user provided `provenance` dict overrides pre-computes values
-    if 'provenance' in d:
-        orig_file_metadata.update(d['provenance'])
-
-    prov_group = writer.add_group('/', 'provenance')
-    for field, value in orig_file_metadata.items():
-        assert field in provenance_fields
-        writer.add_array(prov_group, field, obj=value.encode('latin-1'))
-
-    ## Add identity metadata
-    full_h5filename = os.path.abspath(h5_fname)
-    h5filename = os.path.basename(full_h5filename)
-    creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
-    identity_metadata = dict(identity_filename=h5filename,
-                             identity_full_filename=full_h5filename,
-                             identity_creation_time=creation_time,
-                             identity_software='phconvert',
-                             identity_software_version=__version__)
-    identity_group = writer.add_group('/', 'identity')
-    for field, value in identity_metadata.items():
-        writer.add_array(identity_group, field, obj=value.encode('latin-1'),
-                         strip_prefix=True)
+    _save_photon_data_dict(writer, data_dict)
     data_file.flush()
+
+#    ## Save the root-node metadata
+#    for name, value in _root_attributes.items():
+#        data_file.root._f_setattr(name, value)
+#
+#    ## Save the mandatory parameters
+#    for field in mandatory_root_fields:
+#        writer.add_array('/', field)
+#
+#    ## Save optional parameters
+#    for field in optional_root_fields:
+#        if field in d:
+#            writer.add_array('/', field)
+#
+#    if d['alex']:
+#        if not d['lifetime']:
+#            writer.add_array('/', 'alex_period')
+#
+#        for field in ['alex_period_donor', 'alex_period_acceptor']:
+#            if field in d:
+#                writer.add_array('/', field)
+#
+#    ## Save the photon-data
+#    if d['num_spots'] == 1:
+#         _save_photon_data(writer, d)
+#    else:
+#        for ich, (timest, det) in enumerate(zip(iter_timestamps,
+#                                                iter_detectors)):
+#            ph_group = writer.add_group('/', 'photon_data_%d' % ich,
+#                                        descr_name='photon_data')
+#            _save_photon_data(writer, d, ph_group,
+#                              timestamps=timest, detectors=det)
+#
+#    ## Add setup info, if present in d
+#    setup_group = writer.add_group('/', 'setup')
+#    for field in setup_fields:
+#        if field in d:
+#            writer.add_array(setup_group, field)
+#
+#    ## Add provenance metadata
+#    orig_file_metadata = dict(filename=d['filename'])
+#    if os.path.isfile(d['filename']):
+#        orig_file_metadata = get_file_metadata(d['filename'])
+#    else:
+#        print("WARNING: Could locate original file '%s'\n" % d.fname)
+#        print("         Provenance info not saved.\n")
+#
+#    # A user provided `provenance` dict overrides pre-computes values
+#    if 'provenance' in d:
+#        orig_file_metadata.update(d['provenance'])
+#
+#    prov_group = writer.add_group('/', 'provenance')
+#    for field, value in orig_file_metadata.items():
+#        assert field in provenance_fields
+#        writer.add_array(prov_group, field, obj=value.encode())
+#
+#    ## Add identity metadata
+#    full_h5filename = os.path.abspath(h5_fname)
+#    h5filename = os.path.basename(full_h5filename)
+#    creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
+#    identity_metadata = dict(identity_filename=h5filename,
+#                             identity_full_filename=full_h5filename,
+#                             identity_creation_time=creation_time,
+#                             identity_software='phconvert',
+#                             identity_software_version=__version__)
+#    identity_group = writer.add_group('/', 'identity')
+#    for field, value in identity_metadata.items():
+#        writer.add_array(identity_group, field, obj=value.encode(),
+#                         strip_prefix=True)
+#    data_file.flush()
 
 
 def _save_photon_data(writer, d, ph_group=None, timestamps=None,
