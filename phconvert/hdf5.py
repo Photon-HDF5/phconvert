@@ -15,8 +15,8 @@ It also provides functions to save free-form dict to HDF5
 Finally there are utility functions to easily print HDF5 nodes and attributes.
 """
 
-from __future__ import print_function, absolute_import
-from builtins import zip
+from __future__ import print_function, absolute_import, division
+from builtins import range, zip
 
 import os
 import time
@@ -29,23 +29,13 @@ from ._version import get_versions
 
 __version__ = get_versions()['version']
 
-# Metadata for the HDF5 root node
-_root_attributes = OrderedDict([
-    ('format_name', 'Photon-HDF5'),
-    ('format_title', 'HDF5-based format for time-series of photon data.'),
-    ('format_version', '0.2'),
-    ('format_url', 'http://photon-hdf5.readthedocs.org/'),
-])
 
-fields_descr = OrderedDict([
+official_fields_descr = OrderedDict([
+    ## Root fields
     ('acquisition_time', 'Measurement duration in seconds.'),
     ('comment', 'A user defined comment for the data file.'),
 
-    ('identity', 'Information about the Photon-HDF5 data file.'),
-    ('provenance', 'Information about the original data file.'),
-    ('setup', 'Information about the experimental setup.'),
-    ('sample', 'Information about the measured sample.'),
-
+    ## Photon data group
     ('photon_data',
          'Group containing arrays of photon-data (one element per photon)'),
     ('photon_data/timestamps', 'Array of photon timestamps.'),
@@ -117,112 +107,23 @@ fields_descr = OrderedDict([
          ('User defined labels for each pixel IDs. In smFRET it is strongly '
           'suggested to use "donor" and "acceptor" for the respective '
           'pixel IDs.')),
-])
 
-# Metadata for different fields (arrays) in the HDF5 format
-old_fields_descr = OrderedDict([
-    # Root parameters
-    ('num_spots', 'Number of excitation or detection spots.'),
-    ('num_spectral_ch', ('Number of different spectral bands in the detection '
-                         'channels (i.e. 2 for 2-colors smFRET).')),
-    ('num_polariz_ch', ('Number of different polarization in the detection '
-                        'channels. The value is 1 if no polarization selection '
-                        'is performed and 2 if two independent polarizations '
-                        'are recorded.')),
-    ('num_detectors', ('Total number of detector pixels used in the '
-                       'measurement.')),
-    ('lifetime', ('If True (or 1) the data contains nanotimes from TCSPC '
-                  'hardware')),
-    ('alex', 'If True (or 1) the file contains ALternated EXcitation data.'),
-    ('alex_period', ('The duration of the us-ALEX excitation alternation '
-                     'in the same units as the timestamps.')),
-    ('laser_pulse_rate', 'The laser(s) pulse rate in Hertz.'),
-    ('alex_period_donor', ('Start and stop values identifying the donor '
-                           'emission period.')),
-    ('alex_period_acceptor', ('Start and stop values identifying the acceptor '
-                              'emission period.')),
-    ('timestamps_unit', 'Time in seconds of 1-unit increment in timestamps.'),
-
-    # Photon-data
-    ('photon_data', ('Group containing arrays of photon-data (one element per '
-                     'photon)')),
-    ('timestamps', 'Array of photon timestamps'),
-
-    ('detectors', 'Array of detector numbers for each timestamp'),
-    ('detectors_specs', 'Group for detector-specific data.'),
-    ('donor', 'Detectors for the donor spectral range'),
-    ('acceptor', 'Detectors for the acceptor spectral range'),
-    ('polarization1', ('Detectors ID for the "polarization1". By default is '
-                       'the polarization parallel to the excitation, '
-                       'unless specified differently in the "/setup_specs".')),
-    ('polarization2', ('Detectors ID for the "polarization2". By default is '
-                       'the polarization perpendicular to the excitation, '
-                       'unless specified differently in the "/setup_specs".')),
-
-    ('nanotimes', 'TCSPC photon arrival time (nanotimes)'),
-    ('nanotimes_specs', 'Group for nanotime-specific data.'),
-    ('tcspc_unit', 'TCSPC time bin duration in seconds (nanotimes unit).'),
-    ('tcspc_num_bins', 'Number of TCSPC bins.'),
-    ('tcspc_range', 'TCSPC full-scale range in seconds.'),
-    ('tau_accept_only', 'Intrinsic Acceptor lifetime (seconds).'),
-    ('tau_donor_only', 'Intrinsic Donor lifetime (seconds).'),
-    ('tau_fret_donor', 'Donor lifetime in presence of Acceptor (seconds).'),
-    ('inverse_fret_rate', ('FRET energy transfer lifetime (seconds). Inverse '
-                           'of the rate of D*A -> DA*.')),
-
-    ('particles', 'Particle label (integer) for each timestamp.'),
-
-    ## Setup group
-    ('setup', 'Information about the experimental setup.'),
-    ('excitation_wavelengths', 'Array of excitation wavelengths (meters).'),
-    ('excitation_powers', ('Array of excitation powers (in the same order as '
-                           'excitation_wavelengths). Units: Watts.')),
-    ('excitation_polarizations', ('Polarization angle (in degrees), one for '
-                                  'each laser.')),
-    ('detection_polarization1', ('Polarization angle (in degrees) for '
-                                 '"polarization1".')),
-    ('detection_polarization2', ('Polarization angle (in degrees) for '
-                                 '"polarization2".')),
-
-    ## Provenance group
-    ('provenance', 'Information about the original data file.'),
-    ('filename', 'Original file name.'),
-    ('full_filename', 'Original full file name, including the folder.'),
-    ('creation_time', 'Original file creation time.'),
-    ('modification_time', 'Original file time of last modification.'),
-
-    ## Identity group
+    ## Other root groups
     ('identity', 'Information about the Photon-HDF5 data file.'),
-    ('identity_filename', 'Photon-HDF5 file name at creation time.'),
-    ('identity_full_filename', ('Photon-HDF5 full file name, including the '
-                                'folder.')),
-    ('identity_creation_time', 'Photon-HDF5 file creation time.'),
-    ('identity_software', 'Software used to save the Photon-HDF5 file.'),
-    ('identity_software_version', ('Software version used to save the '
-                                   'Photon-HDF5 file.')),
-    ])
+    ('provenance', 'Information about the original data file.'),
+    ('setup', 'Information about the experimental setup.'),
+    ('sample', 'Information about the measured sample.'),
 
-mandatory_root_fields = ['timestamps_unit', 'num_spots', 'num_detectors',
-                         'num_spectral_ch', 'num_polariz_ch',
-                         'alex', 'lifetime',]
 
-optional_root_fields = ['acquisition_time']
-
-setup_fields = ['excitation_wavelengths', 'excitation_powers',
-                'excitation_polarizations', 'detection_polarization1',
-                'detection_polarization2']
-
-provenance_fields = ['filename', 'full_filename', 'creation_time',
-                     'modification_time']
+])
 
 
 class H5Writer(object):
     """Helper class for writing items with associated descriptions into HDF5.
     """
-    def __init__(self, h5file, comp_filter, fields_descr):
+    def __init__(self, h5file, comp_filter):
         self.h5file = h5file
         self.comp_filter = comp_filter
-        self.fields_descr = fields_descr
 
     def write_group(self, where, name, descr=None):
         return self.h5file.create_group(where, name, title=descr)
@@ -239,66 +140,90 @@ class H5Writer(object):
         self._write_data(where, name, obj=obj, func=method, descr=descr,
                          filters=self.comp_filter)
 
-def _analyze_path(key, prefix_list):
+def _analyze_path(name, prefix_list):
     """
-    Return where and name such as where + name is a valid HDF5 path.
+    From a name (string) and a prefix_list (list of strings)
+
+    Returns:
+        - the meta_path, that is a string with the full HDF5 path
+          with possible trailing digits removed from "/photon_dataNN"
+        - whether `name` is a user-defined field
+        - whether `name` is a photon_data array, i.e. a direct child of
+          photon_data and not a specs group.
+
     """
-    assert key[0] != '/' and key[-1] != '/'
-    path = '/' + key
+    assert name[0] != '/' and name[-1] != '/'
+    full_path = '/' + name
     if prefix_list is not None and len(prefix_list) > 0:
         prefix = '/'.join(prefix_list)
         assert prefix[0] != '/' and prefix[-1] != '/'
-        path = '/' + prefix + path
-    chunks = path.split('/')
+        full_path = '/' + prefix + full_path
+    chunks = full_path.split('/')
     assert len(chunks) >= 2
+    assert name == chunks[-1]
 
-    where = '/'.join(chunks[:-1]) + '/'
-    name = chunks[-1]
-    user = 'user' in chunks
+    #group_path = '/'.join(chunks[:-1]) + '/'
+    is_user = 'user' in chunks
 
-    meta_path = path
-    phdata = False
-    if path.startswith('/photon_data'):
+    meta_path = full_path
+    is_phdata = False
+    if full_path.startswith('/photon_data'):
         if len(chunks) == 3 and not name.endswith('_specs'):
-            phdata = True
+            is_phdata = True
         # Remove eventual digits after /photon_data
         pattern = '/photon_data[0-9]*(.*)'
         meta_path = '/photon_data' + \
-                    re.match(pattern, path).group(1)
+                    re.match(pattern, full_path).group(1)
 
-    return where, name, meta_path, phdata, user
+    return meta_path, is_phdata, is_user
 
-def _save_photon_data_dict(writer, data_dict, descr_dict, prefix_list=None):
+def _h5_write_array(group, name, obj, descr=None, chunked=False):
+    h5file = group._v_file
+    if chunked:
+        method = h5file.create_array
+    else:
+        method = h5file.create_array
+    method(group, name, obj=obj, title=descr)
+
+def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
     """
     Assumptions:
-        descr_dict merges official and user-defined field descriptions
-        where the key is always the full path.
+        data_dict is a hierarchical dict whose values are either arrays or
+        sub-dictionaries representing a sub-group.
+
+        fields_descr merges official and user-defined field descriptions
+        where the key is always the normalized full path (meta path).
+        The meta path is the full path where the string "/photon_dataNN"
+        is replaced by "/photon_data".
     """
-    for key, value in data_dict.items():
-        where, name, descr_key, is_phdata, is_user = _analyze_path(
-            key, prefix_list)
+    h5file = group._v_file
+    for name, value in data_dict.items():
+        descr_key, is_phdata, is_user = _analyze_path(name, prefix_list)
         # Allow missing description in user fields
         if not is_user:
-            assert descr_key in descr_dict, \
+            assert descr_key in fields_descr, \
                    'Name "%s" is not valid.' % descr_key
-        description = descr_dict.get(descr_key, None)
+        description = fields_descr.get(descr_key, None)
 
         if isinstance(value, dict):
             # Current key is a group, create it and walk through its content
-            writer.write_group(where, name, descr=description)
+            subgroup = h5file.create_group(group, name, title=description)
 
             if prefix_list is None:
                 prefix_list = []
-            prefix_list.append(key)
-            _save_photon_data_dict(writer, value, descr_dict, prefix_list)
+            prefix_list.append(name)
+            _save_photon_hdf5_dict(subgroup, value, fields_descr, prefix_list)
         else:
-            writer.write_array(where, name, obj=value, descr=description,
-                               chunked=is_phdata)
+            _h5_write_array(group, name, obj=value, descr=description,
+                            chunked=is_phdata)
 
 
 def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
-                h5_fname=None, title="Confocal smFRET data",
-                iter_timestamps=None, iter_detectors=None):
+                h5_fname=None,
+                title="Photon-HDF5: A container for photon data.",
+                user_descr=None
+                #iter_timestamps=None, iter_detectors=None
+                ):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -315,6 +240,9 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
             to be used for the HDF5 file. If None, the file name is
             generated from d['fname'], by replacing the original extension
             with '.hdf5'.
+        user_descr (dict or None): dictionary of field descriptions for
+            user-defined fields. The keys must be strings representing
+            the full HDF5 path of each field.
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
@@ -332,122 +260,18 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
         h5_fname = basename + '_new_copy.hdf5'
 
     print('Saving: %s' % h5_fname)
-    data_file = tables.open_file(h5_fname, mode="w", title=title)
+    data_file = tables.open_file(h5_fname, mode="w", title=title,
+                                 filters=comp_filter)
     # Saving a file reference is usefull in case of error
     data_dict.update(data_file=data_file)
-    writer = H5Writer(data_file, data_dict, comp_filter)
 
-    _save_photon_data_dict(writer, data_dict)
+
+    fields_descr = {}
+    fields_descr.update(official_fields_descr)
+    fields_descr.update(user_descr)
+    _save_photon_hdf5_dict(data_file.root, data_dict,
+                           fields_descr=fields_descr)
     data_file.flush()
-
-#    ## Save the root-node metadata
-#    for name, value in _root_attributes.items():
-#        data_file.root._f_setattr(name, value)
-#
-#    ## Save the mandatory parameters
-#    for field in mandatory_root_fields:
-#        writer.add_array('/', field)
-#
-#    ## Save optional parameters
-#    for field in optional_root_fields:
-#        if field in d:
-#            writer.add_array('/', field)
-#
-#    if d['alex']:
-#        if not d['lifetime']:
-#            writer.add_array('/', 'alex_period')
-#
-#        for field in ['alex_period_donor', 'alex_period_acceptor']:
-#            if field in d:
-#                writer.add_array('/', field)
-#
-#    ## Save the photon-data
-#    if d['num_spots'] == 1:
-#         _save_photon_data(writer, d)
-#    else:
-#        for ich, (timest, det) in enumerate(zip(iter_timestamps,
-#                                                iter_detectors)):
-#            ph_group = writer.add_group('/', 'photon_data_%d' % ich,
-#                                        descr_name='photon_data')
-#            _save_photon_data(writer, d, ph_group,
-#                              timestamps=timest, detectors=det)
-#
-#    ## Add setup info, if present in d
-#    setup_group = writer.add_group('/', 'setup')
-#    for field in setup_fields:
-#        if field in d:
-#            writer.add_array(setup_group, field)
-#
-#    ## Add provenance metadata
-#    orig_file_metadata = dict(filename=d['filename'])
-#    if os.path.isfile(d['filename']):
-#        orig_file_metadata = get_file_metadata(d['filename'])
-#    else:
-#        print("WARNING: Could locate original file '%s'\n" % d.fname)
-#        print("         Provenance info not saved.\n")
-#
-#    # A user provided `provenance` dict overrides pre-computes values
-#    if 'provenance' in d:
-#        orig_file_metadata.update(d['provenance'])
-#
-#    prov_group = writer.add_group('/', 'provenance')
-#    for field, value in orig_file_metadata.items():
-#        assert field in provenance_fields
-#        writer.add_array(prov_group, field, obj=value.encode())
-#
-#    ## Add identity metadata
-#    full_h5filename = os.path.abspath(h5_fname)
-#    h5filename = os.path.basename(full_h5filename)
-#    creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
-#    identity_metadata = dict(identity_filename=h5filename,
-#                             identity_full_filename=full_h5filename,
-#                             identity_creation_time=creation_time,
-#                             identity_software='phconvert',
-#                             identity_software_version=__version__)
-#    identity_group = writer.add_group('/', 'identity')
-#    for field, value in identity_metadata.items():
-#        writer.add_array(identity_group, field, obj=value.encode(),
-#                         strip_prefix=True)
-#    data_file.flush()
-
-
-def _save_photon_data(writer, d, ph_group=None, timestamps=None,
-                      detectors=None):
-    if ph_group is None:
-        ph_group = writer.add_group('/', 'photon_data')
-    if timestamps is None:
-        timestamps = d['timestamps']
-    if detectors is None:
-        detectors = d.get('detectors', 'unspecified')
-
-    writer.add_carray(ph_group, 'timestamps', obj=timestamps)
-    if detectors != 'unspecified':
-        writer.add_carray(ph_group, 'detectors', obj=detectors)
-        det_group = writer.add_group(ph_group, 'detectors_specs')
-        writer.add_array(det_group, 'donor')
-        writer.add_array(det_group, 'acceptor')
-
-    if d['lifetime']:
-        if 'laser_pulse_rate' in d:
-            writer.add_array('/', 'laser_pulse_rate')
-
-        writer.add_carray(ph_group, 'nanotimes')
-        nt_group = writer.add_group(ph_group, 'nanotimes_specs')
-
-        # Mandatory specs
-        nanotimes_specs = ['tcspc_unit', 'tcspc_num_bins', 'tcspc_range']
-        for spec in nanotimes_specs:
-            writer.add_array(nt_group, spec)
-
-        # Optional specs
-        nanotimes_specs = ['tau_accept_only', 'tau_donor_only',
-                           'tau_fret_donor', 'inverse_fret_rate']
-        for spec in nanotimes_specs:
-            if spec in d:
-                writer.add_array(nt_group, spec)
-
-    if 'particles' in d:
-        writer.add_carray(ph_group, 'particles')
 
 
 def get_file_metadata(fname):
