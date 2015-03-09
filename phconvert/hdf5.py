@@ -16,7 +16,6 @@ Finally there are utility functions to easily print HDF5 nodes and attributes.
 """
 
 from __future__ import print_function, absolute_import, division
-from builtins import range, zip
 
 import os
 import time
@@ -200,10 +199,12 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
     for name, value in data_dict.items():
         descr_key, is_phdata, is_user = _analyze_path(name, prefix_list)
         # Allow missing description in user fields
-        if not is_user:
-            assert descr_key in fields_descr, \
-                   'Name "%s" is not valid.' % descr_key
         description = fields_descr.get(descr_key, None)
+        if not is_user:
+            #assert description is not None,
+            #       'Name "%s" is not valid.' % descr_key
+            if description is None:
+                print('WARNING: missing description for "%s"' % descr_key)
 
         if isinstance(value, dict):
             # Current key is a group, create it and walk through its content
@@ -216,7 +217,6 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
         else:
             _h5_write_array(group, name, obj=value, descr=description,
                             chunked=is_phdata)
-
 
 def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
                 h5_fname=None,
@@ -265,7 +265,34 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
     # Saving a file reference is usefull in case of error
     data_dict.update(data_file=data_file)
 
+    ## Add provenance metadata
+    provenance = data_dict.get('provenance', {})
+    orig_fname = None
+    if os.path.isfile(provenance['filename']):
+        orig_fname = provenance['filename']
+    elif os.path.isfile(provenance['full_filename']):
+        orig_fname = provenance['full_filename']
+    else:
+        print("WARNING: Could not locate original file '%s'" % \
+              provenance['filename'])
+    if orig_fname is not None:
+        provenance.update(get_file_metadata(orig_fname))
 
+    ## Add identity metadata
+    full_h5filename = os.path.abspath(h5_fname)
+    h5filename = os.path.basename(full_h5filename)
+    creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
+    identity = dict(filename=h5filename,
+                    full_filename=full_h5filename,
+                    creation_time=creation_time,
+                    software='phconvert',
+                    software_version=__version__,
+                    format_name='Photon-HDF5',
+                    format_version='0.3',
+                    format_url='http://photon-hdf5.readthedocs.org/')
+    data_dict['identity'] = identity
+
+    ## Save everything to disk
     fields_descr = {}
     fields_descr.update(official_fields_descr)
     fields_descr.update(user_descr)
