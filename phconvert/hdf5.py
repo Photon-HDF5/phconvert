@@ -179,7 +179,7 @@ def _analyze_path(name, prefix_list):
 def _h5_write_array(group, name, obj, descr=None, chunked=False):
     h5file = group._v_file
     if chunked:
-        method = h5file.create_array
+        method = h5file.create_carray
     else:
         method = h5file.create_array
     method(group, name, obj=obj, title=descr)
@@ -262,7 +262,7 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
     print('Saving: %s' % h5_fname)
     data_file = tables.open_file(h5_fname, mode="w", title=title,
                                  filters=comp_filter)
-    # Saving a file reference is usefull in case of error
+    # Saving a file reference is useful in case of error
     data_dict.update(data_file=data_file)
 
     ## Add provenance metadata
@@ -293,8 +293,7 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
     data_dict['identity'] = identity
 
     ## Save everything to disk
-    fields_descr = {}
-    fields_descr.update(official_fields_descr)
+    fields_descr = official_fields_descr.copy()
     fields_descr.update(user_descr)
     _save_photon_hdf5_dict(data_file.root, data_dict,
                            fields_descr=fields_descr)
