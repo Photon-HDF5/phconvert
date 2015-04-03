@@ -176,16 +176,17 @@ official_fields_descr = OrderedDict([
       '(i.e. file name at creation time).')),
 
     ('/identity/filename_full',
-     'Photon-HDF5 file name (including the full path) at creation time.'),
+     ('Original file name (with full path) of the current Photon-HDF5 file '
+      '(i.e. full file name at creation time).')),
 
     ('/identity/creation_time',
      'The creation time of the current Photon-HDF5 file.'),
 
     ('/identity/software',
-     'name of the software used to create the current Photon-HDF5 file.'),
+     'Name of the software used to create the current Photon-HDF5 file.'),
 
     ('/identity/software_version',
-     'version of the software used to create current the Photon-HDF5 file.'),
+     'Version of the software used to create current the Photon-HDF5 file.'),
 
     ('/identity/format_name',
      'Name of the file format.'),
@@ -197,10 +198,42 @@ official_fields_descr = OrderedDict([
      'Official URL for the Photon-HDF5 format.'),
 
     ## Provenance group
-    ('/provenance', 'Information about the original data file.'),
+    ('/provenance',
+     'Information about the original data file.'),
 
+    ('/provenance/filename',
+     'File name of the original data file before conversion to Photon-HDF5.'),
+
+    ('/provenance/filename_full',
+     ('File name (with full path) of the original data file before conversion '
+      'to Photon-HDF5.')),
+
+    ('/provenance/creation_time',
+     'The creation time of the original data file.'),
+
+    ('/provenance/modification_time',
+     'Time of last modification of the original data file.'),
+
+    ('/provenance/software',
+     'Software used to save the original data file.'),
+
+    ('/provenance/software_version',
+     'Version of the software used to save the original data file.'),
 
     ## Sample group
-    ('/sample', 'Information about the measured sample.'),
+    ('/sample',
+     'Information about the measured sample.'),
+
+    ('/sample/num_dyes',
+     'Number of different dyes present in the samples.'),
+
+    ('/sample/dye_names',
+     'List of dye names present in the sample.'),
+
+    ('/sample/buffer_name',
+     'A descriptive name for the buffer.'),
+
+    ('/sample/sample_name',
+     'A descriptive name for the sample.'),
 
 ])
