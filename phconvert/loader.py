@@ -15,8 +15,8 @@ function to save the data in Photon-HDF5 format.
 
 """
 
-from __future__ import (print_function, absolute_import, division,
-                        unicode_literals)
+from __future__ import print_function, absolute_import, division
+
 del print_function, absolute_import, division
 import os
 import time
