@@ -36,15 +36,10 @@ official_fields_descr = OrderedDict([
          'Number of TCSPC bins.'),
     ('/photon_data/nanotimes_specs/tcspc_range',
          'TCSPC full-scale range in seconds.'),
-    ('/photon_data/nanotimes_specs/irf_donor_hist',
-         ('Instrument Response Function (IRF) histogram for the donor '
-          'detection channel.')),
-    ('/photon_data/nanotimes_specs/irf_acceptor_hist',
-         ('Instrument Response Function (IRF) histogram for the acceptor '
-          'detection channel.')),
-    ('/photon_data/nanotimes_specs/calibration_hist',
-         ('Histogram of uncorrelated counts used to correct the TCSPC '
-          'non-linearities.')),
+    ('/photon_data/nanotimes_specs/time_reversed',
+     ('True (i.e. 1) if nanotimes contains the time elapsed between a photon '
+      'and the next laser pulse. False (i.e. 0) if it contains the time '
+      'elapsed between a laser pulse and a photon.')),
 
     ('/photon_data/measurement_specs',
          ('Metadata necessary for interpretation of the particular type of '
