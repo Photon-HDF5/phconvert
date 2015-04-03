@@ -125,7 +125,7 @@ official_fields_descr = OrderedDict([
 
     ('/setup/excitation_cw',
      ('For each excitation source, this field indicates whether excitation '
-      'is continuous wave (CW), True, or pulsed, False.')),
+      'is continuous wave (CW), True (i.e. 1), or pulsed, False (i.e. 0).')),
 
     ('/setup/excitation_polarizations',
      'List of polarization angles (in degrees) for each excitation source.'),
@@ -160,7 +160,7 @@ official_fields_descr = OrderedDict([
      'Company or institution the author is affiliated with.'),
 
     ('/identity/creator',
-     'The creator of the current Photon-HDF5 file.'),
+     'Creator of the current Photon-HDF5 file.'),
 
     ('/identity/creator_affiliation',
      'Company or institution the creator is affiliated with.'),
@@ -180,7 +180,7 @@ official_fields_descr = OrderedDict([
       '(i.e. full file name at creation time).')),
 
     ('/identity/creation_time',
-     'The creation time of the current Photon-HDF5 file.'),
+     'Creation time of the current Photon-HDF5 file.'),
 
     ('/identity/software',
      'Name of the software used to create the current Photon-HDF5 file.'),
