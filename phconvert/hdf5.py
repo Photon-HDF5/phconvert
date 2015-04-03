@@ -210,10 +210,9 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
             # Current key is a group, create it and walk through its content
             subgroup = h5file.create_group(group, name, title=description)
 
-            if prefix_list is None:
-                prefix_list = []
-            prefix_list.append(name)
-            _save_photon_hdf5_dict(subgroup, value, fields_descr, prefix_list)
+            new_prefix_list = [] if prefix_list is None else list(prefix_list)
+            new_prefix_list.append(name)
+            _save_photon_hdf5_dict(subgroup, value, fields_descr, new_prefix_list)
         else:
             _h5_write_array(group, name, obj=value, descr=description,
                             chunked=is_phdata)
