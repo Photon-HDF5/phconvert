@@ -199,8 +199,7 @@ def nsalex_ht3(filename,
                alex_period_acceptor = (1540, 3050),
                excitation_wavelengths = (523e-9, 628e-9),
                detection_wavelengths = (580e-9, 680e-9),
-               time_reversed = False,
-               laser_pulse_rate = None):
+               time_reversed = False):
     """Load a .ht3 file containing ns-ALEX data and return a dict.
 
     This dictionary can be passed to the :func:`phconvert.hdf5.photon_hdf5`
@@ -211,7 +210,10 @@ def nsalex_ht3(filename,
     tcspc_unit = metadata.pop('nanotimes_unit')
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins*tcspc_unit
+    laser_pulse_rate = metadata['ttmode']['SyncRate']
     acquisition_time = metadata['header']['Tacq'][0]*1e-3
+    software = metadata['header']['CreatorName']
+    software_version = metadata['header']['CreatorVersion']
 
     # Estract the creation time from the HT3 file header as it will be
     # more reliable than the creation time from the file system
@@ -222,7 +224,8 @@ def nsalex_ht3(filename,
     provenance = dict(
         filename=filename,
         creation_time=creation_time,
-        #software=software,
+        software=software,
+        software_version=software_version,
         )
 
     photon_data = dict(
