@@ -199,7 +199,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
     for name, value in data_dict.items():
         descr_key, is_phdata, is_user = _analyze_path(name, prefix_list)
         # Allow missing description in user fields
-        description = fields_descr.get(descr_key, None)
+        description = fields_descr.get(descr_key, '')
         if not is_user:
             #assert description is not None,
             #       'Name "%s" is not valid.' % descr_key
