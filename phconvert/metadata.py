@@ -99,14 +99,15 @@ official_fields_descr = OrderedDict([
      'Number of excitation (or detection) "spots" in the sample.'),
 
     ('/setup/num_spectral_ch',
-     'Number of distinct detection spectral channels.'),
+     'Number of distinct spectral bands that are acquired.'),
 
     ('/setup/num_polarization_ch',
-     'Number of distinct detection polarization channels.'),
+     'Number of distinct polarization states that are acquired.'),
 
     ('/setup/num_split_ch',
      ('Number of distinct detection channels detecting the same '
-      'spectral band and polarization.')),
+      'spectral band and polarization. These are channels are > 1 when '
+      'using a non-polarizing beam splitter.')),
 
     ('/setup/modulated_excitation',
      ('True (or 1) if there is any form of excitation modulation either in '
@@ -140,13 +141,13 @@ official_fields_descr = OrderedDict([
       'PSF intensity.')),
 
     ('/setup/detection_wavelengths',
-     'Reference wavelengths (in meters) for each detection spectral band.'),
+     'Reference wavelengths (m) for each detected spectral band.'),
 
     ('/setup/detection_polarizations',
-     'Polarization angles for each detection polarization band.'),
+     'Polarization angles for each detected polarization.'),
 
     ('/setup/detection_split_ch_ratios',
-     ('power fraction detected by each "beam-split" channel (i.e. '
+     ('Power fraction detected by each "beam-split" channel (i.e. '
       'independent detection channels obtained through a non-polarizing '
       'beam splitter).')),
 
