@@ -29,7 +29,9 @@ from . import pqreader
 def usalex_sm(
         filename, donor=0, acceptor=1, alex_period=4000,
         alex_period_donor=(2850, 580), alex_period_acceptor=(930, 2580),
-        excitation_wavelengths=(532e-9, 635e-9)):
+        excitation_wavelengths=(532e-9, 635e-9),
+        detection_wavelengths = (580e-9, 680e-9),
+        software = 'LabVIEW Data Acquisition usALEX'):
     """Load a .sm us-ALEX file and returns a dictionary.
 
     This dictionary can be passed to the :func:`phconvert.hdf5.photon_hdf5`
@@ -40,26 +42,45 @@ def usalex_sm(
                                                      return_labels=True)
     print(" [DONE]\n")
 
-    dx = dict(filename=filename,
-              alex=True,
-              lifetime=False,
-              timestamps_unit=12.5e-9,
-              num_spots=1,
-              num_detectors=2,
-              num_polariz_ch=1,
-              num_spectral_ch=2,
-              alex_period=alex_period,
-              alex_period_donor=alex_period_donor,
-              alex_period_acceptor=alex_period_acceptor,
+    photon_data = dict(
+        timestamps = timestamps,
+        timestamps_specs = dict(timestamps_unit=12.5e-9),
+        detectors = detectors,
 
-              timestamps=timestamps,
-              detectors=detectors,
-              donor=donor,
-              acceptor=acceptor,
+        measurement_specs = dict(
+            measurement_type = 'smFRET-usALEX',
+            alex_period = alex_period,
+            alex_period_spectral_ch1 = alex_period_donor,
+            alex_period_spectral_ch2 = alex_period_acceptor,
+            detectors_specs = dict(spectral_ch1 = donor,
+                                   spectral_ch2 = acceptor)
+            )
+    )
 
-              excitation_wavelengths=excitation_wavelengths,
-              )
-    return dx
+    setup = dict(
+        num_pixels = 2,
+        num_spots = 1,
+        num_spectral_ch = 2,
+        num_polarization_ch = 1,
+        num_split_ch = 1,
+        modulated_excitation = True,
+        lifetime = False,
+        excitation_wavelengths = excitation_wavelengths,
+        excitation_cw = [True, True],
+        detection_wavelengths = detection_wavelengths)
+
+    provenance = dict(filename=filename, software=software)
+    acquisition_time = round((timestamps[-1] - timestamps[0])*12.5e-9)
+    data = dict(
+        filename = filename,
+        acquisition_time = acquisition_time,
+        #comment = comment,
+        photon_data = photon_data,
+        setup=setup,
+        provenance=provenance)
+
+    return data
+
 
 def nsalex_bh(
         filename_spc, donor=4, acceptor=6, laser_pulse_rate=40e6,
