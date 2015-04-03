@@ -336,8 +336,8 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
         orig_fname = None
         if os.path.isfile(provenance['filename']):
             orig_fname = provenance['filename']
-        elif os.path.isfile(provenance['full_filename']):
-            orig_fname = provenance['full_filename']
+        elif os.path.isfile(provenance['filename_full']):
+            orig_fname = provenance['filename_full']
         else:
             print("WARNING: Could not locate original file '%s'" % \
                   provenance['filename'])
@@ -349,7 +349,7 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
     h5filename = os.path.basename(full_h5filename)
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
     identity = dict(filename=h5filename,
-                    full_filename=full_h5filename,
+                    filename_full=full_h5filename,
                     creation_time=creation_time,
                     software='phconvert',
                     software_version=__version__,
