@@ -102,7 +102,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
         if not is_user:
             #assert description is not None,
             #       'Name "%s" is not valid.' % descr_key
-            if description is None:
+            if description is '':
                 print('WARNING: missing description for "%s"' % descr_key)
 
         if isinstance(value, dict):
