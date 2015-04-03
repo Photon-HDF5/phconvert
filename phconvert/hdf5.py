@@ -107,10 +107,70 @@ official_fields_descr = OrderedDict([
           'suggested to use "donor" and "acceptor" for the respective '
           'pixel IDs.')),
 
+    ## Setup group
+    ('/setup', 'Information about the experimental setup.'),
+    ('/setup/num_pixels',
+     'Total number of detector pixels.'),
+
+    ('/setup/num_spots',
+     'Number of excitation (or detection) "spots" in the sample.'),
+
+    ('/setup/num_spectral_ch',
+     'Number of distinct detection spectral channels.'),
+
+    ('/setup/num_polarization_ch',
+     'Number of distinct detection polarization channels.'),
+
+    ('/setup/num_split_ch',
+     ('Number of distinct detection channels detecting the same '
+      'spectral band and polarization.')),
+
+    ('/setup/modulated_excitation',
+     ('True (or 1) if there is any form of excitation modulation either in '
+      'the wavelength space (as in us-ALEX or PAX) or in the polarization '
+      'space. This field is also True for pulse-interleaved excitation (PIE) '
+      'or ns-ALEX measurements.')),
+
+    ('/setup/lifetime',
+     ('True (or 1) if the measurements includes a nanotimes array of '
+      '(usually sub-ns resolution) photon arrival times with respect to a '
+      'laser pulse (as in TCSPC measurements).')),
+
+    ('/setup/excitation_wavelengths',
+     ('List of excitation wavelengths (center wavelength if broad-band) in '
+      'increasing order (unit: meter).')),
+
+    ('/setup/excitation_cw',
+     ('For each excitation source, this field indicates whether excitation '
+      'is continuous wave (CW), True, or pulsed, False.')),
+
+    ('/setup/excitation_polarizations',
+     'List of polarization angles (in degrees) for each excitation source.'),
+
+    ('/setup/excitation_input_powers',
+     ('Excitation power in Watts for each excitation source. This is the '
+      'excitation power entering the optical system.')),
+
+    ('/setup/excitation_intensity',
+     ('Excitation intensity in the sample for each excitation source (units: '
+      'Watts/meters^2). In the case of confocal excitation this is the peak '
+      'PSF intensity.')),
+
+    ('/setup/detection_wavelengths',
+     'Reference wavelengths (in meters) for each detection spectral band.'),
+
+    ('/setup/detection_polarizations',
+     'Polarization angles for each detection polarization band.'),
+
+    ('/setup/detection_split_ch_ratios',
+     ('power fraction detected by each "beam-split" channel (i.e. '
+      'independent detection channels obtained through a non-polarizing '
+      'beam splitter).')),
+
+
     ## Other root groups
     ('/identity', 'Information about the Photon-HDF5 data file.'),
     ('/provenance', 'Information about the original data file.'),
-    ('/setup', 'Information about the experimental setup.'),
     ('/sample', 'Information about the measured sample.'),
 
 
@@ -195,9 +255,11 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
         The meta path is the full path where the string "/photon_dataNN"
         is replaced by "/photon_data".
     """
+    print('Call: group %s, prefix_list %s ' % (group._v_name, prefix_list))
     h5file = group._v_file
     for name, value in data_dict.items():
         descr_key, is_phdata, is_user = _analyze_path(name, prefix_list)
+        print('Item: %s    Descr key: %s' % (name, descr_key))
         # Allow missing description in user fields
         description = fields_descr.get(descr_key, '')
         if not is_user:
@@ -214,8 +276,10 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
             new_prefix_list.append(name)
             _save_photon_hdf5_dict(subgroup, value, fields_descr, new_prefix_list)
         else:
+            print(' - Saving %s, value %s' % (name, value))
             _h5_write_array(group, name, obj=value, descr=description,
                             chunked=is_phdata)
+    print('End Call: group %s, prefix_list %s ' % (group._v_name, prefix_list))
 
 def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
                 h5_fname=None,
