@@ -53,8 +53,7 @@ def usalex_sm(
             alex_period_spectral_ch1 = alex_period_donor,
             alex_period_spectral_ch2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = donor,
-                                   spectral_ch2 = acceptor)
-            )
+                                   spectral_ch2 = acceptor))
     )
 
     setup = dict(
@@ -82,11 +81,18 @@ def usalex_sm(
     return data
 
 
-def nsalex_bh(
-        filename_spc, donor=4, acceptor=6, laser_pulse_rate=40e6,
-        tcspc_range=60e-9, timestamps_unit=60e-9,
-        alex_period_donor=(10, 1500), alex_period_acceptor=(2000, 3500),
-        excitation_wavelengths=(532e-9, 635e-9), allow_missing_set=False):
+def nsalex_bh(filename_spc,
+              donor = 4,
+              acceptor = 6,
+              laser_pulse_rate = 40e6,
+              tcspc_range = 60e-9,
+              timestamps_unit = 60e-9,
+              alex_period_donor = (10, 1500),
+              alex_period_acceptor = (2000, 3500),
+              excitation_wavelengths = (532e-9, 635e-9),
+              detection_wavelengths = (580e-9, 680e-9),
+              time_reversed = False,
+              allow_missing_set = False):
     """Load a .spc and (optionally) .set files for ns-ALEX and return 2 dict.
 
     The first dictionary can be passed to the
@@ -137,35 +143,54 @@ def nsalex_bh(
         print('Using timestamps_units and tcspc_range from function arguments.')
         tcspc_unit = tcspc_range/tcspc_num_bins
 
+    photon_data = dict(
+        timestamps = timestamps,
+        timestamps_specs = dict(timestamps_unit=timestamps_unit),
+        detectors = detectors,
+        nanotimes = nanotimes,
+
+        nanotimes_specs = dict(
+            tcspc_unit = tcspc_unit,
+            tcspc_range = tcspc_range,
+            tcspc_num_bins = tcspc_num_bins,
+            time_reversed = time_reversed),
+
+        measurement_specs = dict(
+            measurement_type = 'smFRET-nsALEX',
+            laser_pulse_rate = laser_pulse_rate,
+            alex_period_spectral_ch1 = alex_period_donor,
+            alex_period_spectral_ch2 = alex_period_acceptor,
+            detectors_specs = dict(spectral_ch1 = donor,
+                                   spectral_ch2 = acceptor)),
+    )
+
+    setup = dict(
+        num_pixels = 2,
+        num_spots = 1,
+        num_spectral_ch = 2,
+        num_polarization_ch = 1,
+        num_split_ch = 1,
+        modulated_excitation = True,
+        lifetime = True,
+        excitation_wavelengths = excitation_wavelengths,
+        excitation_cw = [False, False],
+        detection_wavelengths = detection_wavelengths)
+
+    provenance = dict(filename=filename_spc)#,
+                      #software=software)
+
     acquisition_time = (timestamps.max() - timestamps.min())*timestamps_unit
 
-    dict_bh = dict(filename=filename_spc,
-              alex=True,
-              lifetime=True,
-              timestamps_unit=timestamps_unit,
-              acquisition_time=acquisition_time,
-              provenance=provenance,
+    data = dict(
+        filename=filename_spc,
+        acquisition_time = acquisition_time,
 
-              num_spots=1,
-              num_detectors=2,
-              num_polariz_ch=1,
-              num_spectral_ch=2,
-              laser_pulse_rate=laser_pulse_rate,
-              alex_period_donor=alex_period_donor,
-              alex_period_acceptor=alex_period_acceptor,
+        photon_data = photon_data,
+        setup=setup,
+        provenance=provenance)
 
-              timestamps=timestamps,
-              detectors=detectors,
-              nanotimes=nanotimes,
-              donor=donor,
-              acceptor=acceptor,
-              tcspc_num_bins=tcspc_num_bins,
-              tcspc_range=tcspc_range,
-              tcspc_unit=tcspc_unit,
+    return data, metadata
 
-              excitation_wavelengths=excitation_wavelengths,
-              )
-    return dict_bh, metadata
 
 def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
     """Load a .ht3 file containing ns-ALEX data and return a dict.
