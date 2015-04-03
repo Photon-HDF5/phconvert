@@ -66,6 +66,7 @@ def _analyze_path(name, prefix_list):
 
     return meta_path, is_phdata, is_user
 
+
 def _h5_write_array(group, name, obj, descr=None, chunked=False):
     h5file = group._v_file
     if chunked:
@@ -76,7 +77,9 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False):
         obj = obj.encode()
     save(group, name, obj=obj, title=descr)
 
-def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
+
+def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
+                           debug=False):
     """
     Assumptions:
         data_dict is a hierarchical dict whose values are either arrays or
@@ -87,11 +90,13 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
         The meta path is the full path where the string "/photon_dataNN"
         is replaced by "/photon_data".
     """
-    print('Call: group %s, prefix_list %s ' % (group._v_name, prefix_list))
+    if debug:
+        print('Call: group %s, prefix_list %s ' % (group._v_name, prefix_list))
     h5file = group._v_file
     for name, value in data_dict.items():
         descr_key, is_phdata, is_user = _analyze_path(name, prefix_list)
-        print('Item: %s    Descr key: %s' % (name, descr_key))
+        if debug:
+            print('Item: %s    Descr key: %s' % (name, descr_key))
         # Allow missing description in user fields
         description = fields_descr.get(descr_key, '')
         if not is_user:
@@ -109,18 +114,20 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
             _save_photon_hdf5_dict(subgroup, value, fields_descr,
                                    new_prefix_list)
         else:
-            print(' - Saving %s, value: "%s"' % (name, value))
+            if debug:
+                print(' - Saving %s, value: "%s"' % (name, value))
             _h5_write_array(group, name, obj=value, descr=description,
                             chunked=is_phdata)
-    print('End Call: group %s, prefix_list %s ' % (group._v_name,
-                                                   prefix_list))
+    if debug:
+        print('End Call: group %s, prefix_list %s ' % (group._v_name,
+                                                       prefix_list))
+
 
 def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
                 h5_fname=None,
                 title="Photon-HDF5: A container for photon data.",
-                user_descr=None
-                #iter_timestamps=None, iter_detectors=None
-                ):
+                user_descr=None,
+                debug=False):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -197,7 +204,7 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
     if user_descr is not None:
         fields_descr.update(user_descr)
     _save_photon_hdf5_dict(data_file.root, data_dict,
-                           fields_descr=fields_descr)
+                           fields_descr=fields_descr, debug=debug)
     data_file.flush()
 
 
@@ -245,6 +252,7 @@ def dict_to_group(group, dictionary):
             h5file.create_array(group, name=key, obj=value)
     h5file.flush()
 
+
 def print_attrs(data_file, node_name='/', which='user'):
     """Print the HDF5 attributes for `node_name`.
 
@@ -261,6 +269,7 @@ def print_attrs(data_file, node_name='/', which='user'):
     for attr in node._v_attrs._f_list(which):
         print('\t%s' % attr)
         print('\t    %s' % repr(node._v_attrs[attr]))
+
 
 def print_children(data_file, group='/'):
     """Print all the sub-groups in `group` and leaf-nodes children of `group`.
@@ -287,4 +296,3 @@ def print_children(data_file, group='/'):
             print('\t    %s' % node.title)
 
 del print_function
-
