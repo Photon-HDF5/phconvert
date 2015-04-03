@@ -267,7 +267,8 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
     backup.update(data_file=data_file)
 
     ## Add provenance metadata
-    provenance = data_dict.get('provenance', {})
+    if 'provenance' in data_dict:
+        provenance = data_dict['provenance']
         orig_fname = None
         if os.path.isfile(provenance['filename']):
             orig_fname = provenance['filename']
@@ -295,6 +296,7 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
 
     ## Save everything to disk
     fields_descr = official_fields_descr.copy()
+    if user_descr is not None:
         fields_descr.update(user_descr)
     _save_photon_hdf5_dict(data_file.root, data_dict,
                            fields_descr=fields_descr)
