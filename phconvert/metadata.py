@@ -13,79 +13,109 @@ from collections import OrderedDict
 
 
 official_fields_descr = OrderedDict([
+    ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## Root fields
-    ('/acquisition_time', 'Measurement duration in seconds.'),
-    ('/comment', 'A user defined comment for the data file.'),
+    ##
+    ('/acquisition_time',
+     'Measurement duration in seconds.'),
+
+    ('/comment',
+     'A user defined comment for the data file.'),
 
     ## Photon data group
     ('/photon_data',
-        'Group containing arrays of photon-data (one element per photon)'),
-    ('/photon_data/timestamps', 'Array of photon timestamps.'),
-    ('/photon_data/detectors', 'Array of detector IDs for each timestamp.'),
-    ('/photon_data/nanotimes', 'TCSPC photon arrival time (nanotimes).'),
-    ('/photon_data/particles', 'Particle IDs (integer) for each timestamp.'),
+     'Group containing arrays of photon-data (one element per photon)'),
 
-    ('/photon_data/timestamps_specs', 'Specifications for timestamps.'),
+    ('/photon_data/timestamps',
+     'Array of photon timestamps.'),
+
+    ('/photon_data/detectors',
+     'Array of detector IDs for each timestamp.'),
+
+    ('/photon_data/nanotimes',
+     'TCSPC photon arrival time (nanotimes).'),
+
+    ('/photon_data/particles',
+     'Particle IDs (integer) for each timestamp.'),
+
+    ('/photon_data/timestamps_specs',
+     'Specifications for timestamps.'),
+
     ('/photon_data/timestamps_specs/timestamps_unit',
-         ('Time in seconds of 1-unit increment in timestamps.')),
+     'Time in seconds of 1-unit increment in timestamps.'),
 
-    ('/photon_data/nanotimes_specs', 'Group for nanotime-specific data.'),
+    ('/photon_data/nanotimes_specs',
+     'Group for nanotime-specific data.'),
+
     ('/photon_data/nanotimes_specs/tcspc_unit',
-         'TCSPC time bin duration in seconds (nanotimes unit).'),
+     'TCSPC time bin duration in seconds (nanotimes unit).'),
+
     ('/photon_data/nanotimes_specs/tcspc_num_bins',
-         'Number of TCSPC bins.'),
-    ('/photon_data/nanotimes_specs/tcspc_range',
-         'TCSPC full-scale range in seconds.'),
+     'Number of TCSPC bins.'),
+
+   ('/photon_data/nanotimes_specs/tcspc_range',
+    'TCSPC full-scale range in seconds.'),
+
     ('/photon_data/nanotimes_specs/time_reversed',
      ('True (i.e. 1) if nanotimes contains the time elapsed between a photon '
       'and the next laser pulse. False (i.e. 0) if it contains the time '
       'elapsed between a laser pulse and a photon.')),
 
     ('/photon_data/measurement_specs',
-         ('Metadata necessary for interpretation of the particular type of '
-          'measurement.')),
+     ('Metadata necessary for interpretation of the particular type of '
+      'measurement.')),
+
     ('/photon_data/measurement_specs/measurement_type',
-         'Name of the measurement the data represents.'),
+     'Name of the measurement the data represents.'),
+
     ('/photon_data/measurement_specs/alex_period',
-         ('Period of laser alternation in us-ALEX measurements in timestamps '
-          'units.')),
+     ('Period of laser alternation in us-ALEX measurements in timestamps '
+      'units.')),
+
     ('/photon_data/measurement_specs/laser_pulse_rate',
-         'Repetition rate of the pulsed excitation laser.'),
+     'Repetition rate of the pulsed excitation laser.'),
+
     ('/photon_data/measurement_specs/alex_period_spectral_ch1',
-         ('Value pair identifing the range of spectral_ch1 photons in one '
-          'period of laser alternation or interleaved pulses.')),
+     ('Value pair identifing the range of spectral_ch1 photons in one '
+      'period of laser alternation or interleaved pulses.')),
+
     ('/photon_data/measurement_specs/alex_period_spectral_ch2',
-         ('Value pair identifing the range of spectral_ch2 photons in one '
-          'period of laser alternation or interleaved pulses.')),
+     ('Value pair identifing the range of spectral_ch2 photons in one '
+      'period of laser alternation or interleaved pulses.')),
 
     ('/photon_data/measurement_specs/detectors_specs',
-         'Mapping between the detector IDs and the detection channels.'),
+     'Mapping between the detector IDs and the detection channels.'),
 
     ('/photon_data/measurement_specs/detectors_specs/spectral_ch1',
-         ('Pixel IDs for the first spectral channel (i.e. donor in a '
-          '2-color smFRET measurement).')),
+     ('Pixel IDs for the first spectral channel (i.e. donor in a '
+      '2-color smFRET measurement).')),
+
     ('/photon_data/measurement_specs/detectors_specs/spectral_ch2',
-         ('Pixel IDs for the first spectral channel (i.e. acceptor in a '
-          '2-color smFRET measurement).')),
+     ('Pixel IDs for the first spectral channel (i.e. acceptor in a '
+      '2-color smFRET measurement).')),
 
     ('/photon_data/measurement_specs/detectors_specs/polarization_ch1',
-         'Pixel IDs for the first polarization channel.'),
+     'Pixel IDs for the first polarization channel.'),
+
     ('/photon_data/measurement_specs/detectors_specs/polarization_ch2',
-         'Pixel IDs for the second polarization channel.'),
+     'Pixel IDs for the second polarization channel.'),
 
     ('/photon_data/measurement_specs/detectors_specs/split_ch1',
-         ('Pixel IDs for the first channel splitted through a '
-          'non-polarizing beam splitter.')),
+     ('Pixel IDs for the first channel splitted through a '
+     'non-polarizing beam splitter.')),
+
     ('/photon_data/measurement_specs/detectors_specs/split_ch2',
-         ('Pixel IDs for the second channel splitted through a '
-          'non-polarizing beam splitter.')),
+     ('Pixel IDs for the second channel splitted through a '
+      'non-polarizing beam splitter.')),
 
     ('/photon_data/measurement_specs/detectors_specs/labels',
-         ('User defined labels for each pixel IDs. In smFRET it is strongly '
-          'suggested to use "donor" and "acceptor" for the respective '
-          'pixel IDs.')),
+     ('User defined labels for each pixel IDs. In smFRET it is strongly '
+      'suggested to use "donor" and "acceptor" for the respective '
+      'pixel IDs.')),
 
+    ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## Setup group
+    ##
     ('/setup', 'Information about the experimental setup.'),
     ('/setup/num_pixels',
      'Total number of detector pixels.'),
@@ -146,7 +176,9 @@ official_fields_descr = OrderedDict([
       'independent detection channels obtained through a non-polarizing '
       'beam splitter).')),
 
+    ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## Identity group
+    ##
     ('/identity', 'Information about the Photon-HDF5 data file.'),
 
     ('/identity/author',
@@ -193,7 +225,9 @@ official_fields_descr = OrderedDict([
     ('/identity/format_url',
      'Official URL for the Photon-HDF5 format.'),
 
+    ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## Provenance group
+    ##
     ('/provenance',
      'Information about the original data file.'),
 
@@ -216,7 +250,9 @@ official_fields_descr = OrderedDict([
     ('/provenance/software_version',
      'Version of the software used to save the original data file.'),
 
+    ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## Sample group
+    ##
     ('/sample',
      'Information about the measured sample.'),
 
