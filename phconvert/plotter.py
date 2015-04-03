@@ -14,11 +14,21 @@ _red  = 'r'
 def alternation_hist(d, bins=None, ax=None, **kwargs):
     """Plot the alternation histogram for the the data in dictionary `d`.
     """
-    assert d['alex']
-    if d['lifetime']:
+    modulated_excitation = d['setup']['modulated_excitation']
+    assert modulated_excitation
+
+    measurement_type = d['photon_data']['measurement_specs']\
+                        ['measurement_type']
+
+    if measurement_type == 'smFRET-usALEX':
+        plot_alternation = alternation_hist_usalex
+    elif measurement_type == 'smFRET-nsALEX':
         plot_alternation = alternation_hist_nsalex
     else:
-        plot_alternation = alternation_hist_usalex
+        msg = 'Alternation histogram for measurement %s not supported.' %\
+              measurement_type
+        raise ValueError(msg)
+
     plot_alternation(d, bins=bins, ax=ax, **kwargs)
 
 
@@ -33,12 +43,19 @@ def alternation_hist_usalex(d, bins=None, ax=None,
     if bins is None:
         bins = 100
 
-    ph_times_t, det_t, period = d['timestamps'], d['detectors'], d['alex_period']
-    d_ch, a_ch = d['donor'], d['acceptor']
+    ph_data = d['photon_data']
+    ph_times_t = ph_data['timestamps']
+    det_t = ph_data['detectors']
+    period = ph_data['measurement_specs']['alex_period']
+
+    det_specs = ph_data['measurement_specs']['detectors_specs']
+    d_ch =  det_specs['spectral_ch1']
+    a_ch =  det_specs['spectral_ch2']
+
     d_em_t = (det_t == d_ch)
     a_em_t = (det_t == a_ch)
-    D_ON = d['alex_period_donor']
-    A_ON = d['alex_period_acceptor']
+    D_ON = ph_data['measurement_specs']['alex_period_spectral_ch1']
+    A_ON = ph_data['measurement_specs']['alex_period_spectral_ch2']
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
 
