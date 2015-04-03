@@ -94,6 +94,8 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False):
         save = h5file.create_carray
     else:
         save = h5file.create_array
+    if isinstance(obj, str):
+        obj = obj.encode()
     save(group, name, obj=obj, title=descr)
 
 def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
