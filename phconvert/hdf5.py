@@ -56,11 +56,11 @@ def _analyze_path(name, prefix_list):
     From a name (string) and a prefix_list (list of strings)
 
     Returns:
-        - the meta_path, that is a string with the full HDF5 path
+        - (string) the meta_path, that is a string with the full HDF5 path
           with possible trailing digits removed from "/photon_dataNN"
-        - whether `name` is a user-defined field
-        - whether `name` is a photon_data array, i.e. a direct child of
+        - (bool) whether `name` is a photon_data array, i.e. a direct child of
           photon_data and not a specs group.
+        - (bool) whether `name` is a user-defined field.
 
     """
     assert name[0] != '/' and name[-1] != '/'
@@ -126,12 +126,14 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
 
             new_prefix_list = [] if prefix_list is None else list(prefix_list)
             new_prefix_list.append(name)
-            _save_photon_hdf5_dict(subgroup, value, fields_descr, new_prefix_list)
+            _save_photon_hdf5_dict(subgroup, value, fields_descr,
+                                   new_prefix_list)
         else:
-            print(' - Saving %s, value %s' % (name, value))
+            print(' - Saving %s, value: "%s"' % (name, value))
             _h5_write_array(group, name, obj=value, descr=description,
                             chunked=is_phdata)
-    print('End Call: group %s, prefix_list %s ' % (group._v_name, prefix_list))
+    print('End Call: group %s, prefix_list %s ' % (group._v_name,
+                                                   prefix_list))
 
 def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
                 h5_fname=None,
