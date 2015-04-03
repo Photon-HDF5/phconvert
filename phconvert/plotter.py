@@ -93,17 +93,24 @@ def alternation_hist_nsalex(d, bins=None, ax=None):
         plt.figure()
         ax = plt.gca()
 
-    if bins is None:
-        bins = np.arange(d['tcspc_num_bins'])
+    ph_data = d['photon_data']
 
-    d_ch, a_ch = d['donor'], d['acceptor']
-    D_ON = d['alex_period_donor']
-    A_ON = d['alex_period_acceptor']
+    if bins is None:
+        bins = np.arange(ph_data['nanotimes_specs']['tcspc_num_bins'])
+
+    det_specs = ph_data['measurement_specs']['detectors_specs']
+    d_ch =  det_specs['spectral_ch1']
+    a_ch =  det_specs['spectral_ch2']
+
+    D_ON = ph_data['measurement_specs']['alex_period_spectral_ch1']
+    A_ON = ph_data['measurement_specs']['alex_period_spectral_ch2']
+
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
 
-    nanotimes_d = d['nanotimes'][d['detectors'] == d_ch]
-    nanotimes_a = d['nanotimes'][d['detectors'] == a_ch]
+    nanotimes_d = ph_data['nanotimes'][ph_data['detectors'] == d_ch]
+    nanotimes_a = ph_data['nanotimes'][ph_data['detectors'] == a_ch]
+
     plt.hist(nanotimes_d, bins=bins, histtype='step', label=D_label, lw=1.2,
              alpha=0.5, color=_green)
     plt.hist(nanotimes_a, bins=bins, histtype='step', label=A_label, lw=1.2,
