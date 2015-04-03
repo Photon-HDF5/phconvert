@@ -29,28 +29,6 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 
 
-class H5Writer(object):
-    """Helper class for writing items with associated descriptions into HDF5.
-    """
-    def __init__(self, h5file, comp_filter):
-        self.h5file = h5file
-        self.comp_filter = comp_filter
-
-    def write_group(self, where, name, descr=None):
-        return self.h5file.create_group(where, name, title=descr)
-
-    def _write_data(self, where, name, obj, func, descr=None,
-                    **kwargs):
-        func(where, name, obj=obj, title=descr, **kwargs)
-
-    def write_array(self, where, name, obj, descr=None, chunked=False):
-        if not chunked:
-            method = self.h5file.create_array
-        else:
-            method = self.h5file.create_carray
-        self._write_data(where, name, obj=obj, func=method, descr=descr,
-                         filters=self.comp_filter)
-
 def _analyze_path(name, prefix_list):
     """
     From a name (string) and a prefix_list (list of strings)
