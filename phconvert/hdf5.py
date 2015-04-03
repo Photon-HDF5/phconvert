@@ -167,10 +167,57 @@ official_fields_descr = OrderedDict([
       'independent detection channels obtained through a non-polarizing '
       'beam splitter).')),
 
-
-    ## Other root groups
+    ## Identity group
     ('/identity', 'Information about the Photon-HDF5 data file.'),
+
+    ('/identity/author',
+     'Author of the current data file.'),
+
+    ('/identity/author_affiliation',
+     'Company or institution the author is affiliated with.'),
+
+    ('/identity/creator',
+     'The creator of the current Photon-HDF5 file.'),
+
+    ('/identity/creator_affiliation',
+     'Company or institution the creator is affiliated with.'),
+
+    ('/identity/url',
+     'URL that allow to download the Photon-HDF5 data file.'),
+
+    ('/identity/doi',
+     'Digital Object Identifier (DOI) for the Photon-HDF5 data file.'),
+
+    ('/identity/filename',
+     ('Original file name of the current Photon-HDF5 file '
+      '(i.e. file name at creation time).')),
+
+    ('/identity/filename_full',
+     'Photon-HDF5 file name (including the full path) at creation time.'),
+
+    ('/identity/creation_time',
+     'The creation time of the current Photon-HDF5 file.'),
+
+    ('/identity/software',
+     'name of the software used to create the current Photon-HDF5 file.'),
+
+    ('/identity/software_version',
+     'version of the software used to create current the Photon-HDF5 file.'),
+
+    ('/identity/format_name',
+     'Name of the file format.'),
+
+    ('/identity/format_version',
+     'Version for the Photon-HDF5 format.'),
+
+    ('/identity/format_url',
+     'Official URL for the Photon-HDF5 format.'),
+
+    ## Provenance group
     ('/provenance', 'Information about the original data file.'),
+
+
+    ## Sample group
     ('/sample', 'Information about the measured sample.'),
 
 
