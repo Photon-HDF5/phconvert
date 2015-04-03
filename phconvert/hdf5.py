@@ -179,10 +179,10 @@ def _analyze_path(name, prefix_list):
 def _h5_write_array(group, name, obj, descr=None, chunked=False):
     h5file = group._v_file
     if chunked:
-        method = h5file.create_carray
+        save = h5file.create_carray
     else:
-        method = h5file.create_array
-    method(group, name, obj=obj, title=descr)
+        save = h5file.create_array
+    save(group, name, obj=obj, title=descr)
 
 def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None):
     """
