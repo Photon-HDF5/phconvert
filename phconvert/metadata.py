@@ -24,7 +24,7 @@ official_fields_descr = OrderedDict([
 
     ## Photon data group
     ('/photon_data',
-     'Group containing arrays of photon-data (one element per photon)'),
+     'Group containing arrays of photon-data (one element per photon).'),
 
     ('/photon_data/timestamps',
      'Array of photon timestamps.'),
@@ -76,11 +76,11 @@ official_fields_descr = OrderedDict([
      'Repetition rate of the pulsed excitation laser.'),
 
     ('/photon_data/measurement_specs/alex_period_spectral_ch1',
-     ('Value pair identifing the range of spectral_ch1 photons in one '
+     ('Value pair identifying the range of spectral_ch1 photons in one '
       'period of laser alternation or interleaved pulses.')),
 
     ('/photon_data/measurement_specs/alex_period_spectral_ch2',
-     ('Value pair identifing the range of spectral_ch2 photons in one '
+     ('Value pair identifying the range of spectral_ch2 photons in one '
       'period of laser alternation or interleaved pulses.')),
 
     ('/photon_data/measurement_specs/detectors_specs',
@@ -101,11 +101,11 @@ official_fields_descr = OrderedDict([
      'Pixel IDs for the second polarization channel.'),
 
     ('/photon_data/measurement_specs/detectors_specs/split_ch1',
-     ('Pixel IDs for the first channel splitted through a '
+     ('Pixel IDs for the first channel split through a '
      'non-polarizing beam splitter.')),
 
     ('/photon_data/measurement_specs/detectors_specs/split_ch2',
-     ('Pixel IDs for the second channel splitted through a '
+     ('Pixel IDs for the second channel split through a '
       'non-polarizing beam splitter.')),
 
     ('/photon_data/measurement_specs/detectors_specs/labels',
