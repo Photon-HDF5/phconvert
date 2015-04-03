@@ -319,7 +319,7 @@ def get_file_metadata(fname):
     ctime_str = time.strftime("%Y-%m-%d %H:%M:%S", ctime)
     mtime_str = time.strftime("%Y-%m-%d %H:%M:%S", mtime)
 
-    metadata = dict(filename=filename, full_filename=full_filename,
+    metadata = dict(filename=filename, filename_full=full_filename,
                     creation_time=ctime_str, modification_time=mtime_str)
     return metadata
 
