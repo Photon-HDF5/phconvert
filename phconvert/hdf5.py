@@ -31,35 +31,35 @@ __version__ = get_versions()['version']
 
 official_fields_descr = OrderedDict([
     ## Root fields
-    ('acquisition_time', 'Measurement duration in seconds.'),
-    ('comment', 'A user defined comment for the data file.'),
+    ('/acquisition_time', 'Measurement duration in seconds.'),
+    ('/comment', 'A user defined comment for the data file.'),
 
     ## Photon data group
-    ('photon_data',
+    ('/photon_data',
          'Group containing arrays of photon-data (one element per photon)'),
-    ('photon_data/timestamps', 'Array of photon timestamps.'),
-    ('photon_data/detectors', 'Array of detector IDs for each timestamp.'),
-    ('photon_data/nanotimes', 'TCSPC photon arrival time (nanotimes).'),
-    ('photon_data/particles', 'Particle IDs (integer) for each timestamp.'),
+    ('/photon_data/timestamps', 'Array of photon timestamps.'),
+    ('/photon_data/detectors', 'Array of detector IDs for each timestamp.'),
+    ('/photon_data/nanotimes', 'TCSPC photon arrival time (nanotimes).'),
+    ('/photon_data/particles', 'Particle IDs (integer) for each timestamp.'),
 
-    ('photon_data/timestamps_specs', 'Specifications for timestamps.'),
-    ('photon_data/timestamps_specs/timestamps_unit',
+    ('/photon_data/timestamps_specs', 'Specifications for timestamps.'),
+    ('/photon_data/timestamps_specs/timestamps_unit',
          ('Time in seconds of 1-unit increment in timestamps.')),
 
-    ('photon_data/nanotimes_specs', 'Group for nanotime-specific data.'),
-    ('photon_data/nanotimes_specs/tcspc_unit',
+    ('/photon_data/nanotimes_specs', 'Group for nanotime-specific data.'),
+    ('/photon_data/nanotimes_specs/tcspc_unit',
          'TCSPC time bin duration in seconds (nanotimes unit).'),
-    ('photon_data/nanotimes_specs/tcspc_num_bins',
+    ('/photon_data/nanotimes_specs/tcspc_num_bins',
          'Number of TCSPC bins.'),
-    ('photon_data/nanotimes_specs/tcspc_range',
+    ('/photon_data/nanotimes_specs/tcspc_range',
          'TCSPC full-scale range in seconds.'),
-    ('photon_data/nanotimes_specs/irf_donor_hist',
+    ('/photon_data/nanotimes_specs/irf_donor_hist',
          ('Instrument Response Function (IRF) histogram for the donor '
           'detection channel.')),
-    ('photon_data/nanotimes_specs/irf_acceptor_hist',
+    ('/photon_data/nanotimes_specs/irf_acceptor_hist',
          ('Instrument Response Function (IRF) histogram for the acceptor '
           'detection channel.')),
-    ('photon_data/nanotimes_specs/calibration_hist',
+    ('/photon_data/nanotimes_specs/calibration_hist',
          ('Histogram of uncorrelated counts used to correct the TCSPC '
           'non-linearities.')),
 
@@ -108,10 +108,10 @@ official_fields_descr = OrderedDict([
           'pixel IDs.')),
 
     ## Other root groups
-    ('identity', 'Information about the Photon-HDF5 data file.'),
-    ('provenance', 'Information about the original data file.'),
-    ('setup', 'Information about the experimental setup.'),
-    ('sample', 'Information about the measured sample.'),
+    ('/identity', 'Information about the Photon-HDF5 data file.'),
+    ('/provenance', 'Information about the original data file.'),
+    ('/setup', 'Information about the experimental setup.'),
+    ('/sample', 'Information about the measured sample.'),
 
 
 ])
@@ -267,16 +267,16 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
 
     ## Add provenance metadata
     provenance = data_dict.get('provenance', {})
-    orig_fname = None
-    if os.path.isfile(provenance['filename']):
-        orig_fname = provenance['filename']
-    elif os.path.isfile(provenance['full_filename']):
-        orig_fname = provenance['full_filename']
-    else:
-        print("WARNING: Could not locate original file '%s'" % \
-              provenance['filename'])
-    if orig_fname is not None:
-        provenance.update(get_file_metadata(orig_fname))
+        orig_fname = None
+        if os.path.isfile(provenance['filename']):
+            orig_fname = provenance['filename']
+        elif os.path.isfile(provenance['full_filename']):
+            orig_fname = provenance['full_filename']
+        else:
+            print("WARNING: Could not locate original file '%s'" % \
+                  provenance['filename'])
+        if orig_fname is not None:
+            provenance.update(get_file_metadata(orig_fname))
 
     ## Add identity metadata
     full_h5filename = os.path.abspath(h5_fname)
@@ -294,7 +294,7 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
 
     ## Save everything to disk
     fields_descr = official_fields_descr.copy()
-    fields_descr.update(user_descr)
+        fields_descr.update(user_descr)
     _save_photon_hdf5_dict(data_file.root, data_dict,
                            fields_descr=fields_descr)
     data_file.flush()
