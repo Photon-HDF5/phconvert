@@ -192,7 +192,15 @@ def nsalex_bh(filename_spc,
     return data, metadata
 
 
-def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
+def nsalex_ht3(filename,
+               donor = 0,
+               acceptor = 1,
+               alex_period_donor = (150, 1500),
+               alex_period_acceptor = (1540, 3050),
+               excitation_wavelengths = (523e-9, 628e-9),
+               detection_wavelengths = (580e-9, 680e-9),
+               time_reversed = False,
+               laser_pulse_rate = None):
     """Load a .ht3 file containing ns-ALEX data and return a dict.
 
     This dictionary can be passed to the :func:`phconvert.hdf5.photon_hdf5`
@@ -210,37 +218,56 @@ def nsalex_ht3(filename, donor=0, acceptor=1, laser_pulse_rate=None):
     ctime_t = time.strptime(metadata['header']['FileTime'][0].decode(),
                             "%d/%m/%y %H:%M:%S")
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
-    provenance = {'creation_time': creation_time}
 
-    dict_pq = dict(
+    provenance = dict(
         filename=filename,
-        alex=True,
-        lifetime=True,
-        timestamps_unit=timestamps_unit,
-        acquisition_time=acquisition_time,
-        provenance=provenance,
+        creation_time=creation_time,
+        #software=software,
+        )
 
-        num_spots=1,
-        num_detectors=2,
-        num_polariz_ch=1,
-        num_spectral_ch=2,
-        laser_pulse_rate=1/timestamps_unit,
-        #alex_period_donor=alex_period_donor,
-        #alex_period_acceptor=alex_period_acceptor,
+    photon_data = dict(
+        timestamps = timestamps,
+        timestamps_specs = dict(timestamps_unit=timestamps_unit),
+        detectors = detectors,
+        nanotimes = nanotimes,
 
-        timestamps=timestamps,
-        detectors=detectors,
-        nanotimes=nanotimes,
-        donor=donor,
-        acceptor=acceptor,
+        nanotimes_specs = dict(
+            tcspc_unit = tcspc_unit,
+            tcspc_range = tcspc_range,
+            tcspc_num_bins = tcspc_num_bins,
+            time_reversed = time_reversed),
 
-        tcspc_num_bins=tcspc_num_bins,
-        tcspc_range=tcspc_range,
-        tcspc_unit=tcspc_unit,
-
-        #excitation_wavelengths=excitation_wavelengths,
+        measurement_specs = dict(
+            measurement_type = 'smFRET-nsALEX',
+            laser_pulse_rate = laser_pulse_rate,
+            alex_period_spectral_ch1 = alex_period_donor,
+            alex_period_spectral_ch2 = alex_period_acceptor,
+            detectors_specs = dict(spectral_ch1 = donor,
+                                   spectral_ch2 = acceptor)),
     )
-    return dict_pq, metadata
+
+    setup = dict(
+        num_pixels = 2,
+        num_spots = 1,
+        num_spectral_ch = 2,
+        num_polarization_ch = 1,
+        num_split_ch = 1,
+        modulated_excitation = True,
+        lifetime = True,
+        excitation_wavelengths = excitation_wavelengths,
+        excitation_cw = [False, False],
+        detection_wavelengths = detection_wavelengths)
+
+    data = dict(
+        filename=filename,
+        acquisition_time = acquisition_time,
+
+        photon_data = photon_data,
+        setup=setup,
+        provenance=provenance)
+
+    return data, metadata
+
 
 def nsalex_pt3(filename, donor=1, acceptor=2, laser_pulse_rate=None):
     """Load a .pt3 file containing ns-ALEX data and return a dict.
