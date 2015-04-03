@@ -249,7 +249,7 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
     comp_filter = tables.Filters(**compression)
 
     if h5_fname is None:
-        basename, extension = os.path.splitext(data_dict['filename'])
+        basename, extension = os.path.splitext(data_dict.pop('filename'))
         if compression['complib'] == 'blosc':
             basename += '_blosc'
         h5_fname = basename + '.hdf5'
@@ -262,7 +262,9 @@ def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
     data_file = tables.open_file(h5_fname, mode="w", title=title,
                                  filters=comp_filter)
     # Saving a file reference is useful in case of error
-    data_dict.update(data_file=data_file)
+    backup = data_dict
+    data_dict = data_dict.copy()
+    backup.update(data_file=data_file)
 
     ## Add provenance metadata
     provenance = data_dict.get('provenance', {})
