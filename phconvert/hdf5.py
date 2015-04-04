@@ -123,11 +123,11 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                                                        prefix_list))
 
 
-def photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
-                h5_fname=None,
-                title="Photon-HDF5: A container for photon data.",
-                user_descr=None,
-                debug=False):
+def save_photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
+                     h5_fname=None,
+                     title="Photon-HDF5: A container for photon data.",
+                     user_descr=None,
+                     debug=False):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -251,6 +251,83 @@ def dict_to_group(group, dictionary):
         else:
             h5file.create_array(group, name=key, obj=value)
     h5file.flush()
+
+def load_photon_hdf5(filename):
+    assert os.path.isfile(filename)
+    h5file = tables.open_file(filename)
+    data = dict_from_group(h5file.root)
+    assert_valid_photon_hdf5(data)
+    return data
+
+def assert_valid_photon_hdf5(data):
+    msg0 = 'Not a valid Photon-HDF5 format'
+
+    if 'photon_data' in data:
+        ph_data_m = [data['photon_data']]
+    elif 'photon_data0' in data:
+        ph_data_m = [k for k in data.keys()
+                     if k.startswith('photon_data')]
+        ph_data_m.sort()
+    else:
+        msg = msg0 + ': no "photon_data" group.'
+        raise AssertionError(msg)
+
+    for ph_data in ph_data_m:
+        _check_photon_data(ph_data)
+
+    assert 'setup' in data
+    _check_setup(data['setup'])
+
+def _check_setup(setup):
+    mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
+                        'num_polarization_ch', 'num_split_ch',
+                        'modulated_excitation', 'lifetime']
+    for name in mantatory_fields:
+        assert name in setup
+
+def _check_photon_data(ph_data):
+    assert 'timestamps' in ph_data
+    assert 'timestamps_specs' in ph_data
+    assert 'timestamps_unit' in ph_data['timestamps_specs']
+
+    valid_meas_type = ['smFRET',
+                       'smFRET-usALEX', 'smFRET-usALEX-3c',
+                       'smFRET-nsALEX']
+    if 'measurement_specs' not in ph_data:
+        return
+
+    measurement_specs = ph_data['measurement_specs']
+    if 'measurement_type' not in measurement_specs:
+        return
+
+    measurement_type = measurement_specs['measurement_type']
+    assert measurement_type in valid_meas_type
+
+    assert 'spectral_ch1' in measurement_specs['detectors_specs']
+    assert 'spectral_ch2' in measurement_specs['detectors_specs']
+
+    if measurement_type in ['smFRET-usALEX', 'smFRET-usALEX-3c']:
+        assert 'alex_period' in measurement_specs
+
+    if measurement_type == 'smFRET-nsALEX':
+        assert 'laser_pulse_rate' in measurement_specs
+        assert 'nantotimes' in ph_data
+        assert 'nantotimes_specs' in ph_data
+        for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins', 'time_reversed']:
+            assert name in ph_data['nantotimes_specs']
+
+def _assert_valid(data, prefix_list=None):
+    #print('Call, prefix_list = %s' % prefix_list)
+    for name, value in data.items():
+        descr_key, is_phdata, is_user = _analyze_path(name, prefix_list)
+        #print('  - Field %s' % descr_key)
+        if not is_user:
+            assert descr_key in official_fields_descr
+
+        if isinstance(value, dict):
+            new_prefix_list = [] if prefix_list is None else list(prefix_list)
+            new_prefix_list.append(name)
+            _assert_valid(value, new_prefix_list)
 
 
 def print_attrs(data_file, node_name='/', which='user'):
