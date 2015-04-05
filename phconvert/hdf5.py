@@ -4,11 +4,15 @@
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
-This module defines the function :func:`photon_hdf5` to save data from a
-dictionary to **Photon-HDF5** format. The keys of the dictionary must be
-valid field names in the Photon-HDF5 format.
+The module `hdf5` defines functions to save and load Photon-HDF5 files
 
-It also provides functions to save free-form dict to HDF5
+:func:`save_photon_hdf5` saves data from a dictionary whose keys are
+Photon-HDF5 field names.
+
+:func:`load_photon_hdf5` opens a HDF5 file, verifies that is
+in a valid Photon-HDF5 format and return the root node.
+
+This module also provides functions to save free-form dict to HDF5
 (:func:`dict_to_group`) and read a HDF5 group into a dict
 (:func:`dict_from_group`).
 
