@@ -268,13 +268,18 @@ class Invalid_PhotonHDF5(Exception):
     """
     pass
 
-def _raise_invalid_file(msg, strict=True):
+def _raise_invalid_file(msg, strict=True, norepeat=False, pool=None):
     """Raise Invalid_PhotonHDF5 if strict is True, print a warning otherwise.
     """
+    if norepeat:
+        if msg in pool:
+            return
     if strict:
         raise Invalid_PhotonHDF5(msg)
     else:
         print('Photon-HDF5 WARNING: %s' % msg)
+    if norepeat:
+        pool.append(msg)
 
 def _check_has_field(name, group, strict=True):
     msg = 'Missing "%s" in "%s".'
@@ -334,8 +339,9 @@ def assert_valid_photon_hdf5(data, strict=True):
         msg = 'Invalid Photon-HDF5: missing "photon_data" group.'
         raise Invalid_PhotonHDF5(msg)
 
+    pool = []
     for ph_data in ph_data_m:
-        _check_photon_data(ph_data, strict=strict)
+        _check_photon_data(ph_data, strict=strict, norepeat=True, pool=pool)
 
     if 'setup' in data:
         _check_setup(data.setup, strict=strict)
@@ -351,7 +357,7 @@ def _check_setup(setup, strict=True):
         if name not in setup:
             _raise_invalid_file('Missing "/setup/%s".' % name, strict)
 
-def _check_photon_data(ph_data, strict=True):
+def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None):
 
     def _assert_has_field(name, group):
         msg = 'Missing "%s" in "%s".'
@@ -366,12 +372,14 @@ def _check_photon_data(ph_data, strict=True):
                            'smFRET-usALEX', 'smFRET-usALEX-3c',
                            'smFRET-nsALEX']
     if 'measurement_specs' not in ph_data:
-        _raise_invalid_file('Missing "measurement_specs".', strict)
+        _raise_invalid_file('Missing "measurement_specs".',
+                            strict, norepeat, pool)
         return
 
     measurement_specs = ph_data.measurement_specs
     if 'measurement_type' not in measurement_specs:
-        _raise_invalid_file('Missing "measurement_type"', strict)
+        _raise_invalid_file('Missing "measurement_type"',
+                            strict, norepeat, pool)
         return
 
     measurement_type = measurement_specs.measurement_type.read()
