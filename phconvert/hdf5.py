@@ -275,7 +275,7 @@ def _raise_invalid_file(msg, strict=True):
 def _check_has_field(name, group, strict=True):
     msg = 'Missing "%s" in "%s".'
     if name not in group:
-        _raise_invalid_file(msg % (name, group._v_pathname))
+        _raise_invalid_file(msg % (name, group._v_pathname), strict)
 
 def _check_path(path, strict=True):
     if '/user' in path:
@@ -323,7 +323,7 @@ def assert_valid_photon_hdf5(data, strict=True):
     if 'photon_data' in data:
         ph_data_m = [data.photon_data]
     elif 'photon_data0' in data:
-        ph_data_m = [k for k in data._v_groups.keys()
+        ph_data_m = [data._f_get_child(k) for k in data._v_groups.keys()
                      if k.startswith('photon_data')]
         ph_data_m.sort()
     else:
