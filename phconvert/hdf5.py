@@ -125,7 +125,6 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
 
 def save_photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
                      h5_fname=None,
-                     title="Photon-HDF5: A container for photon data.",
                      user_descr=None,
                      debug=False):
     """
@@ -142,8 +141,8 @@ def save_photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
             and level. Passed to pytables `tables.Filters()`.
         h5_fname (string or None): if not None, contains the file name
             to be used for the HDF5 file. If None, the file name is
-            generated from d['fname'], by replacing the original extension
-            with '.hdf5'.
+            generated from d['filenamename'], by replacing the original
+            extension with '.hdf5'.
         user_descr (dict or None): dictionary of field descriptions for
             user-defined fields. The keys must be strings representing
             the full HDF5 path of each field.
@@ -164,6 +163,7 @@ def save_photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
         h5_fname = basename + '_new_copy.hdf5'
 
     print('Saving: %s' % h5_fname)
+    title = official_fields_descr['/']
     data_file = tables.open_file(h5_fname, mode="w", title=title,
                                  filters=comp_filter)
     # Saving a file reference is useful in case of error
@@ -270,7 +270,37 @@ def _raise_invalid_file(msg, strict=True):
     if strict:
         raise Invalid_PhotonHDF5(msg)
     else:
-        print('Photon-HDF5 Warning: %s' % msg)
+        print('Photon-HDF5 WARNING: %s' % msg)
+
+def _check_has_field(name, group, strict=True):
+    msg = 'Missing "%s" in "%s".'
+    if name not in group:
+        _raise_invalid_file(msg % (name, group._v_pathname))
+
+def _check_path(path, strict=True):
+    if '/user' in path:
+        return
+
+    if path not in official_fields_descr:
+        msg = ('Unknown field "%s". '
+               'Custom fields must be inside a "user" group.' % path)
+        if strict:
+            raise Invalid_PhotonHDF5(msg)
+        else:
+            print('Photon-HDF5 WARNING: %s' % msg)
+
+def _check_valid_names(data):
+    already_verified = []
+    for group in data._f_walk_groups():
+        path = group._v_pathname
+        _check_path(path)
+        already_verified.append(path)
+        for node in group._f_iter_nodes():
+            path = node._v_pathname
+            if path not in already_verified:
+                _check_path(path)
+                already_verified.append(path)
+
 
 def assert_valid_photon_hdf5(data, strict=True):
     """
@@ -281,6 +311,10 @@ def assert_valid_photon_hdf5(data, strict=True):
 
     When `strict` is True, raise an error if
     """
+    _check_valid_names(data)
+    _check_has_field('acquisition_time', data, strict=strict)
+    _check_has_field('comment', data, strict=strict)
+
     if 'photon_data' in data:
         ph_data_m = [data.photon_data]
     elif 'photon_data0' in data:

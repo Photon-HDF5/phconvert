@@ -16,6 +16,9 @@ official_fields_descr = OrderedDict([
     ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## Root fields
     ##
+    ('/',
+     'Photon-HDF5: A container for photon data.'),
+
     ('/acquisition_time',
      'Measurement duration in seconds.'),
 
