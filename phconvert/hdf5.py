@@ -18,7 +18,6 @@ Finally there are utility functions to easily print HDF5 nodes and attributes.
 from __future__ import print_function, absolute_import, division
 
 import os
-import warnings
 import time
 import re
 import tables
@@ -260,10 +259,20 @@ def load_photon_hdf5(filename, strict=True):
     return h5file.root
 
 
-class PhotonHDF5_Warning(Warning):
+class Invalid_PhotonHDF5(Exception):
+    """Error raised when a file is not a valid Photon-HDF5 file.
+    """
     pass
 
-def assert_valid_photon_hdf5(data, strict=True, action_nostrict='always'):
+def _raise_invalid_file(msg, strict=True):
+    """Raise Invalid_PhotonHDF5 if strict is True, print a warning otherwise.
+    """
+    if strict:
+        raise Invalid_PhotonHDF5(msg)
+    else:
+        print('Photon-HDF5 Warning: %s' % msg)
+
+def assert_valid_photon_hdf5(data, strict=True):
     """
     Validate the structure of a Photon-HDF5 file.
 
@@ -272,9 +281,6 @@ def assert_valid_photon_hdf5(data, strict=True, action_nostrict='always'):
 
     When `strict` is True, raise an error if
     """
-    action = "error" if strict else action_nostrict
-    warnings.filterwarnings(action, category=PhotonHDF5_Warning)
-
     if 'photon_data' in data:
         ph_data_m = [data.photon_data]
     elif 'photon_data0' in data:
@@ -283,62 +289,75 @@ def assert_valid_photon_hdf5(data, strict=True, action_nostrict='always'):
         ph_data_m.sort()
     else:
         msg = 'Invalid Photon-HDF5: missing "photon_data" group.'
-        raise AssertionError(msg)
+        raise Invalid_PhotonHDF5(msg)
 
     for ph_data in ph_data_m:
-        _check_photon_data(ph_data)
+        _check_photon_data(ph_data, strict=strict)
 
     if 'setup' in data:
-        _check_setup(data.setup)
+        _check_setup(data.setup, strict=strict)
     else:
-        warnings.warn('Missing /setup group.', PhotonHDF5_Warning)
+        _raise_invalid_file('Invalid Photon-HDF5: Missing /setup group.',
+                            strict)
 
-    # Reset warnings to default
-    warnings.resetwarnings()
-
-def _check_setup(setup):
+def _check_setup(setup, strict=True):
     mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
                         'num_polarization_ch', 'num_split_ch',
                         'modulated_excitation', 'lifetime']
     for name in mantatory_fields:
         if name not in setup:
-            warnings.warn('Missing /setup/%s' % name, PhotonHDF5_Warning)
+            _raise_invalid_file('Missing "/setup/%s".' % name, strict)
 
-def _check_photon_data(ph_data):
-    msg_missing = 'Invalid Photon-HDF5: missing %s.'
-    assert 'timestamps' in ph_data, msg_missing % '"timestamps" array'
-    assert 'timestamps_specs' in ph_data, msg_missing % '"timestamps_specs"'
-    assert 'timestamps_unit' in ph_data.timestamps_specs, \
-        msg_missing % '"timestamps_unit"'
+def _check_photon_data(ph_data, strict=True):
+
+    def _assert_has_field(name, group):
+        msg = 'Missing "%s" in "%s".'
+        if name not in group:
+            raise Invalid_PhotonHDF5(msg % (name, group._v_pathname))
+
+    _assert_has_field('timestamps', ph_data)
+    _assert_has_field('timestamps_specs', ph_data)
+    _assert_has_field('timestamps_unit', ph_data.timestamps_specs)
 
     spectral_meas_types = ['smFRET',
                            'smFRET-usALEX', 'smFRET-usALEX-3c',
                            'smFRET-nsALEX']
     if 'measurement_specs' not in ph_data:
-        warnings.warn('Missing "measurement_specs"', PhotonHDF5_Warning)
+        _raise_invalid_file('Missing "measurement_specs".', strict)
         return
 
     measurement_specs = ph_data.measurement_specs
     if 'measurement_type' not in measurement_specs:
-        warnings.warn('Missing "measurement_type"', PhotonHDF5_Warning)
+        _raise_invalid_file('Missing "measurement_type"', strict)
         return
 
     measurement_type = measurement_specs.measurement_type.read()
-    assert measurement_type in spectral_meas_types
+    if measurement_type not in spectral_meas_types:
+        raise Invalid_PhotonHDF5('Unkwnown measurement type "%s"' % \
+                                 measurement_type)
 
-    assert 'spectral_ch1' in measurement_specs.detectors_specs
-    assert 'spectral_ch2' in measurement_specs.detectors_specs
+    # At this point we have a valid measurement_type
+    # Any missing field will raise an error (regardless of `strict`).
+    def _assert_has_field_mtype(name, group):
+        msg = 'Missing "%s" in "%s".\nThis field is mandatory for "%s" data.'
+        if name not in group:
+            raise Invalid_PhotonHDF5(msg % (name, group._v_pathname,
+                                            measurement_type))
+
+    detectors_specs = measurement_specs.detectors_specs
+    _assert_has_field_mtype('spectral_ch1', detectors_specs)
+    _assert_has_field_mtype('spectral_ch2', detectors_specs)
 
     if measurement_type in ['smFRET-usALEX', 'smFRET-usALEX-3c']:
-        assert 'alex_period' in measurement_specs
+        _assert_has_field_mtype('alex_period', measurement_specs)
 
     if measurement_type == 'smFRET-nsALEX':
-        assert 'laser_pulse_rate' in measurement_specs
-        assert 'nantotimes' in ph_data
-        assert 'nantotimes_specs' in ph_data
+        _assert_has_field_mtype('laser_pulse_rate', measurement_specs)
+        _assert_has_field_mtype('nantotimes', ph_data)
+        _assert_has_field_mtype('nantotimes_specs', ph_data)
         for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins',
                      'time_reversed']:
-            assert name in ph_data.nantotimes_specs
+             _assert_has_field_mtype(name, ph_data.nantotimes_specs)
 
 
 def print_attrs(data_file, node_name='/', which='user'):
