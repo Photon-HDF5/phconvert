@@ -281,6 +281,11 @@ def _check_path(path, strict=True):
     if '/user' in path:
         return
 
+    if path.startswith('/photon_data'):
+        # Remove eventual digits after /photon_data
+        pattern = '/photon_data[0-9]*(.*)'
+        path = '/photon_data' + re.match(pattern, path).group(1)
+
     if path not in official_fields_descr:
         msg = ('Unknown field "%s". '
                'Custom fields must be inside a "user" group.' % path)
@@ -289,16 +294,16 @@ def _check_path(path, strict=True):
         else:
             print('Photon-HDF5 WARNING: %s' % msg)
 
-def _check_valid_names(data):
+def _check_valid_names(data, strict=True):
     already_verified = []
     for group in data._f_walk_groups():
         path = group._v_pathname
-        _check_path(path)
+        _check_path(path, strict=strict)
         already_verified.append(path)
         for node in group._f_iter_nodes():
             path = node._v_pathname
             if path not in already_verified:
-                _check_path(path)
+                _check_path(path, strict=strict)
                 already_verified.append(path)
 
 
@@ -311,7 +316,7 @@ def assert_valid_photon_hdf5(data, strict=True):
 
     When `strict` is True, raise an error if
     """
-    _check_valid_names(data)
+    _check_valid_names(data, strict=strict)
     _check_has_field('acquisition_time', data, strict=strict)
     _check_has_field('comment', data, strict=strict)
 
