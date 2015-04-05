@@ -74,7 +74,10 @@ def _analyze_path(name, prefix_list):
 def _h5_write_array(group, name, obj, descr=None, chunked=False):
     h5file = group._v_file
     if chunked:
-        save = h5file.create_carray
+        if obj.size == 0:
+            save = h5file.create_earray
+        else:
+            save = h5file.create_carray
     else:
         save = h5file.create_array
     if isinstance(obj, str):
@@ -127,8 +130,9 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                                                        prefix_list))
 
 
-def save_photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
+def save_photon_hdf5(data_dict,
                      h5_fname=None,
+                     compression=dict(complevel=6, complib='zlib'),
                      user_descr=None,
                      debug=False):
     """
@@ -190,17 +194,9 @@ def save_photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
             provenance.update(get_file_metadata(orig_fname))
 
     ## Add identity metadata
-    full_h5filename = os.path.abspath(h5_fname)
-    h5filename = os.path.basename(full_h5filename)
-    creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
-    identity = dict(filename=h5filename,
-                    filename_full=full_h5filename,
-                    creation_time=creation_time,
-                    software='phconvert',
-                    software_version=__version__,
-                    format_name='Photon-HDF5',
-                    format_version='0.3',
-                    format_url='http://photon-hdf5.readthedocs.org/')
+    identity = get_identity(data_file)
+    identity.update(software='phconvert',
+                    software_version=__version__)
     data_dict['identity'] = identity
 
     ## Save everything to disk
@@ -211,6 +207,18 @@ def save_photon_hdf5(data_dict, compression=dict(complevel=6, complib='zlib'),
                            fields_descr=fields_descr, debug=debug)
     data_file.flush()
 
+
+def get_identity(h5file, format_version='0.3'):
+    full_h5filename = os.path.abspath(h5file.filename)
+    h5filename = os.path.basename(full_h5filename)
+    creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
+    identity = dict(filename=h5filename,
+                    filename_full=full_h5filename,
+                    creation_time=creation_time,
+                    format_name='Photon-HDF5',
+                    format_version=format_version,
+                    format_url='http://photon-hdf5.readthedocs.org/')
+    return identity
 
 def get_file_metadata(fname):
     """Return a dict with file metadata.
