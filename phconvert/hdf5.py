@@ -318,7 +318,7 @@ def _check_has_field(name, group_dict, group_str='', strict=True):
     else:
         msg = 'Missing "%s".' % name
     if name not in group_dict:
-        _raise_invalid_file(msg % (name, group_dict), strict)
+        _raise_invalid_file(msg, strict)
 
 def _check_valid_names(data, strict=True, debug=False):
     msg = 'Unknown field "%s". Custom fields must be inside a "user" group.'
