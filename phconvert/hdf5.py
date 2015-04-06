@@ -110,9 +110,10 @@ def _iter_hdf5_dict(data_dict, fields_descr, prefix_list=None, debug=False):
         if isinstance(value, dict):
             if debug:
                 print('Start Group "%s"' % (item['full_path']))
-            new_prefix_list = [] if prefix_list is None else list(prefix_list)
-            new_prefix_list.append(name)
-            _iter_hdf5_dict(value, fields_descr, new_prefix_list)
+            new_prefix = [] if prefix_list is None else list(prefix_list)
+            new_prefix.append(name)
+            for sub_item in _iter_hdf5_dict(value, fields_descr, new_prefix):
+                yield sub_item
             if debug:
                 print('End Group "%s"' % (item['full_path']))
 
