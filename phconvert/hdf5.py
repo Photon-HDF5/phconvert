@@ -45,7 +45,7 @@ def _analyze_path(name, prefix_list):
         A dictionary containing:
         - full_path: string representing the full HDF5 path.
         - group_path: string representing the full HDF5 path of the group
-            contianing `name`.
+            containing `name`. Always ends with '/'.
         - meta_path: string representing the full HDF5 path
           with possible trailing digits removed from "/photon_dataNN"
         - is_phdata: (bool) True if `name` is a photon_data array,
@@ -54,12 +54,11 @@ def _analyze_path(name, prefix_list):
     """
     assert name[0] != '/' and name[-1] != '/'
 
-    group_path = ''
+    group_path = '/'
     if prefix_list is not None and len(prefix_list) > 0:
-        group_path = '/'.join(prefix_list)
-        assert group_path[0] != '/' and group_path[-1] != '/'
-    group_path = '/' + group_path
-    full_path = '/'.join([group_path, name])
+        group_path += '/'.join(prefix_list) + '/'
+    assert group_path[0] == '/' and group_path[-1] == '/'
+    full_path = group_path + name
 
     chunks = full_path.split('/')
     assert len(chunks) >= 2
@@ -112,7 +111,8 @@ def _iter_hdf5_dict(data_dict, fields_descr, prefix_list=None, debug=False):
                 print('Start Group "%s"' % (item['full_path']))
             new_prefix = [] if prefix_list is None else list(prefix_list)
             new_prefix.append(name)
-            for sub_item in _iter_hdf5_dict(value, fields_descr, new_prefix):
+            for sub_item in _iter_hdf5_dict(value, fields_descr, new_prefix,
+                                            debug=debug):
                 yield sub_item
             if debug:
                 print('End Group "%s"' % (item['full_path']))
@@ -133,7 +133,8 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
     for item in _iter_hdf5_dict(data_dict, fields_descr, prefix_list, debug):
         if not item['is_user']:
             if item['description'] is '':
-                print('WARNING: missing description for "%s"' % item['path'])
+                print('WARNING: missing description for "%s"' % \
+                      item['meta_path'])
 
         if isinstance(item['value'], dict):
             h5file.create_group(item['group_path'], item['name'],
