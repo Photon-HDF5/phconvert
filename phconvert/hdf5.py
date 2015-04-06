@@ -35,27 +35,36 @@ __version__ = get_versions()['version']
 
 def _analyze_path(name, prefix_list):
     """
-    From a name (string) and a prefix_list (list of strings)
+    Analyze an HDF5 path.
+
+    Arguments:
+        name (string): name of the HDF5 node.
+        prefix_list (list of strings): list of group names.
 
     Returns:
-        - (string) the meta_path, that is a string with the full HDF5 path
+        A dictionary containing:
+        - full_path: string representing the full HDF5 path.
+        - group_path: string representing the full HDF5 path of the group
+            contianing `name`.
+        - meta_path: string representing the full HDF5 path
           with possible trailing digits removed from "/photon_dataNN"
-        - (bool) whether `name` is a photon_data array, i.e. a direct child of
-          photon_data and not a specs group.
-        - (bool) whether `name` is a user-defined field.
-
+        - is_phdata: (bool) True if `name` is a photon_data array,
+            i.e. a direct child of photon_data and not a specs group.
+        - is_user: (bool) True if `name` is a user-defined field.
     """
     assert name[0] != '/' and name[-1] != '/'
-    full_path = '/' + name
+
+    group_path = ''
     if prefix_list is not None and len(prefix_list) > 0:
-        prefix = '/'.join(prefix_list)
-        assert prefix[0] != '/' and prefix[-1] != '/'
-        full_path = '/' + prefix + full_path
+        group_path = '/'.join(prefix_list)
+        assert group_path[0] != '/' and group_path[-1] != '/'
+    group_path = '/' + group_path
+    full_path = '/'.join([group_path, name])
+
     chunks = full_path.split('/')
     assert len(chunks) >= 2
     assert name == chunks[-1]
 
-    #group_path = '/'.join(chunks[:-1]) + '/'
     is_user = 'user' in chunks
 
     meta_path = full_path
@@ -68,11 +77,15 @@ def _analyze_path(name, prefix_list):
         meta_path = '/photon_data' + \
                     re.match(pattern, full_path).group(1)
 
-    return meta_path, is_phdata, is_user
+    return dict(full_path=full_path, group_path=group_path,
+                meta_path=meta_path, is_phdata=is_phdata, is_user=is_user)
 
 
-def _h5_write_array(group, name, obj, descr=None, chunked=False):
-    h5file = group._v_file
+def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
+    if isinstance(group, str):
+        assert h5file is not None
+    else:
+        h5file = group._v_file
     if chunked:
         if obj.size == 0:
             save = h5file.create_earray
@@ -84,6 +97,24 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False):
         obj = obj.encode()
     save(group, name, obj=obj, title=descr)
 
+def _iter_hdf5_dict(data_dict, fields_descr, prefix_list=None, debug=False):
+    for name, value in data_dict.items():
+        if debug:
+            print('Item "%s", prefix_list %s ' % (name, prefix_list))
+
+        item = _analyze_path(name, prefix_list)
+        item['description'] = fields_descr.get(item['meta_path'], '')
+        item.update(name=name, value=value)
+        yield item
+
+        if isinstance(value, dict):
+            if debug:
+                print('Start Group "%s"' % (item['full_path']))
+            new_prefix_list = [] if prefix_list is None else list(prefix_list)
+            new_prefix_list.append(name)
+            _iter_hdf5_dict(value, fields_descr, new_prefix_list)
+            if debug:
+                print('End Group "%s"' % (item['full_path']))
 
 def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                            debug=False):
@@ -97,38 +128,19 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
         The meta path is the full path where the string "/photon_dataNN"
         is replaced by "/photon_data".
     """
-    if debug:
-        print('Call: group %s, prefix_list %s ' % (group._v_name, prefix_list))
     h5file = group._v_file
-    for name, value in data_dict.items():
-        descr_key, is_phdata, is_user = _analyze_path(name, prefix_list)
-        if debug:
-            print('Item: %s    Descr key: %s' % (name, descr_key))
-        # Allow missing description in user fields
-        description = fields_descr.get(descr_key, '')
-        if not is_user:
-            #assert description is not None,
-            #       'Name "%s" is not valid.' % descr_key
-            if description is '':
-                print('WARNING: missing description for "%s"' % descr_key)
+    for item in _iter_hdf5_dict(data_dict, fields_descr, prefix_list, debug):
+        if not item['is_user']:
+            if item['description'] is '':
+                print('WARNING: missing description for "%s"' % item['path'])
 
-        if isinstance(value, dict):
-            # Current key is a group, create it and walk through its content
-            subgroup = h5file.create_group(group, name, title=description)
-
-            new_prefix_list = [] if prefix_list is None else list(prefix_list)
-            new_prefix_list.append(name)
-            _save_photon_hdf5_dict(subgroup, value, fields_descr,
-                                   new_prefix_list)
+        if isinstance(item['value'], dict):
+            h5file.create_group(item['group_path'], item['name'],
+                                title=item['description'])
         else:
-            if debug:
-                print(' - Saving %s, value: "%s"' % (name, value))
-            _h5_write_array(group, name, obj=value, descr=description,
-                            chunked=is_phdata)
-    if debug:
-        print('End Call: group %s, prefix_list %s ' % (group._v_name,
-                                                       prefix_list))
-
+            _h5_write_array(item['group_path'], item['name'],
+                            obj=item['value'], descr=item['description'],
+                            chunked=item['is_phdata'], h5file=group._v_file)
 
 def save_photon_hdf5(data_dict,
                      h5_fname=None,
