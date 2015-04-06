@@ -96,7 +96,10 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
         obj = obj.encode()
     save(group, name, obj=obj, title=descr)
 
-def _iter_hdf5_dict(data_dict, fields_descr, prefix_list=None, debug=False):
+def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
+                    debug=False):
+    if fields_descr is None:
+        fields_descr = {}
     for name, value in data_dict.items():
         if debug:
             print('Item "%s", prefix_list %s ' % (name, prefix_list))
@@ -111,7 +114,7 @@ def _iter_hdf5_dict(data_dict, fields_descr, prefix_list=None, debug=False):
                 print('Start Group "%s"' % (item['full_path']))
             new_prefix = [] if prefix_list is None else list(prefix_list)
             new_prefix.append(name)
-            for sub_item in _iter_hdf5_dict(value, fields_descr, new_prefix,
+            for sub_item in _iter_hdf5_dict(value, new_prefix, fields_descr,
                                             debug=debug):
                 yield sub_item
             if debug:
@@ -130,7 +133,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
         is replaced by "/photon_data".
     """
     h5file = group._v_file
-    for item in _iter_hdf5_dict(data_dict, fields_descr, prefix_list, debug):
+    for item in _iter_hdf5_dict(data_dict, prefix_list, fields_descr, debug):
         if not item['is_user']:
             if item['description'] is '':
                 print('WARNING: missing description for "%s"' % \
