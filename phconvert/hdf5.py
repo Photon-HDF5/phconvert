@@ -433,13 +433,13 @@ def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
     if measurement_type == 'smFRET-nsALEX':
         _assert_has_field_mtype('laser_pulse_rate', measurement_specs,
                                 meas_specs_path)
-        _assert_has_field_mtype('nantotimes', ph_data, ph_data_name)
-        _assert_has_field_mtype('nantotimes_specs', ph_data, ph_data_name)
-        nt_specs_path = ph_data_name + '/nantotimes_specs'
-        nantotimes_specs = ph_data['nantotimes_specs']
+        _assert_has_field_mtype('nanotimes', ph_data, ph_data_name)
+        _assert_has_field_mtype('nanotimes_specs', ph_data, ph_data_name)
+        nt_specs_path = ph_data_name + '/nanotimes_specs'
+        nanotimes_specs = ph_data['nanotimes_specs']
         for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins',
                      'time_reversed']:
-             _assert_has_field_mtype(name, nantotimes_specs, nt_specs_path)
+             _assert_has_field_mtype(name, nanotimes_specs, nt_specs_path)
 
 
 def print_attrs(data_file, node_name='/', which='user'):
