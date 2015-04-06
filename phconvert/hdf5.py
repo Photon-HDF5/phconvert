@@ -287,7 +287,8 @@ def dict_to_group(group, dictionary):
 def load_photon_hdf5(filename, strict=True):
     assert os.path.isfile(filename)
     h5file = tables.open_file(filename)
-    assert_valid_photon_hdf5(h5file.root, strict=strict)
+    data_dict = dict_from_group(h5file.root, read=False)
+    assert_valid_photon_hdf5(data_dict, strict=strict)
     return h5file.root
 
 
@@ -309,40 +310,29 @@ def _raise_invalid_file(msg, strict=True, norepeat=False, pool=None):
     if norepeat:
         pool.append(msg)
 
-def _check_has_field(name, group, strict=True):
-    msg = 'Missing "%s" in "%s".'
-    if name not in group:
-        _raise_invalid_file(msg % (name, group._v_pathname), strict)
+def _check_has_field(name, group_dict, group_str='', strict=True):
+    if group_str is not None:
+        msg = 'Missing "%s%s".' % (group_str, name)
+    else:
+        msg = 'Missing "%s".' % name
+    if name not in group_dict:
+        _raise_invalid_file(msg % (name, group_dict), strict)
 
-def _check_path(path, strict=True):
-    if '/user' in path:
-        return
+def _check_valid_names(data, strict=True, debug=False):
+    msg = 'Unknown field "%s". Custom fields must be inside a "user" group.'
+    for item in _iter_hdf5_dict(data, debug=debug):
+        if not item['is_user']:
+            if item['meta_path'] not in official_fields_descr:
+                _raise_invalid_file(msg % item['full_path'], strict=strict)
 
-    if path.startswith('/photon_data'):
-        # Remove eventual digits after /photon_data
-        pattern = '/photon_data[0-9]*(.*)'
-        path = '/photon_data' + re.match(pattern, path).group(1)
-
-    if path not in official_fields_descr:
-        msg = ('Unknown field "%s". '
-               'Custom fields must be inside a "user" group.' % path)
-        if strict:
-            raise Invalid_PhotonHDF5(msg)
-        else:
-            print('Photon-HDF5 WARNING: %s' % msg)
-
-def _check_valid_names(data, strict=True):
-    already_verified = []
-    for group in data._f_walk_groups():
-        path = group._v_pathname
-        _check_path(path, strict=strict)
-        already_verified.append(path)
-        for node in group._f_iter_nodes():
-            path = node._v_pathname
-            if path not in already_verified:
-                _check_path(path, strict=strict)
-                already_verified.append(path)
-
+def _sorted_photon_data(data):
+    """Return a sorted list of keys "/photon_dataN", sorted by N.
+    """
+    prefix = '/photon_data'
+    keys = [k for k in data.keys() if k.startswith(prefix)]
+    channels = sorted([int(v[len(prefix):]) for v in keys])
+    sorted_keys = ['%s%d' % (prefix, ch) for ch in channels]
+    return sorted_keys
 
 def assert_valid_photon_hdf5(data, strict=True):
     """
@@ -354,15 +344,13 @@ def assert_valid_photon_hdf5(data, strict=True):
     When `strict` is True, raise an error if
     """
     _check_valid_names(data, strict=strict)
-    _check_has_field('acquisition_time', data, strict=strict)
-    _check_has_field('comment', data, strict=strict)
+    _check_has_field('acquisition_time', data, '/', strict=strict)
+    _check_has_field('comment', data, '/', strict=strict)
 
     if 'photon_data' in data:
-        ph_data_m = [data.photon_data]
+        ph_data_m = [data['photon_data']]
     elif 'photon_data0' in data:
-        ph_data_m = [data._f_get_child(k) for k in data._v_groups.keys()
-                     if k.startswith('photon_data')]
-        ph_data_m.sort()
+        ph_data_m = [data[key] for key in _sorted_photon_data(data)]
     else:
         msg = 'Invalid Photon-HDF5: missing "photon_data" group.'
         raise Invalid_PhotonHDF5(msg)
@@ -372,7 +360,7 @@ def assert_valid_photon_hdf5(data, strict=True):
         _check_photon_data(ph_data, strict=strict, norepeat=True, pool=pool)
 
     if 'setup' in data:
-        _check_setup(data.setup, strict=strict)
+        _check_setup(data['setup'], strict=strict)
     else:
         _raise_invalid_file('Invalid Photon-HDF5: Missing /setup group.',
                             strict)
@@ -385,58 +373,71 @@ def _check_setup(setup, strict=True):
         if name not in setup:
             _raise_invalid_file('Missing "/setup/%s".' % name, strict)
 
-def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None):
+def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
+                       ch=None):
+    ph_data_name = '/photon_data'
+    if ch is not None:
+        ph_data_name += '%d' % ch
 
-    def _assert_has_field(name, group):
-        msg = 'Missing "%s" in "%s".'
-        if name not in group:
-            raise Invalid_PhotonHDF5(msg % (name, group._v_pathname))
+    def _assert_has_field(name, group_dict, group_str):
+        msg = 'Missing field "%s/%s".'
+        if name not in group_dict:
+            raise Invalid_PhotonHDF5(msg % (name, group_str))
 
-    _assert_has_field('timestamps', ph_data)
-    _assert_has_field('timestamps_specs', ph_data)
-    _assert_has_field('timestamps_unit', ph_data.timestamps_specs)
+    _assert_has_field('timestamps', ph_data, ph_data_name)
+    _assert_has_field('timestamps_specs', ph_data, ph_data_name)
+    _assert_has_field('timestamps_unit', ph_data['timestamps_specs'],
+                      ph_data_name + '/timestamps_specs')
 
     spectral_meas_types = ['smFRET',
                            'smFRET-usALEX', 'smFRET-usALEX-3c',
                            'smFRET-nsALEX']
     if 'measurement_specs' not in ph_data:
-        _raise_invalid_file('Missing "measurement_specs".',
+        _raise_invalid_file('Missing measurement_specs in %s.' % ph_data_name,
                             strict, norepeat, pool)
         return
 
-    measurement_specs = ph_data.measurement_specs
+    measurement_specs = ph_data['measurement_specs']
+    meas_specs_path = ph_data_name + '/measurement_specs'
     if 'measurement_type' not in measurement_specs:
-        _raise_invalid_file('Missing "measurement_type"',
-                            strict, norepeat, pool)
+        msg = 'Missing "measurement_type" in "%s".' % meas_specs_path
+        _raise_invalid_file(msg, strict, norepeat, pool)
         return
 
-    measurement_type = measurement_specs.measurement_type.read()
+    measurement_type = measurement_specs['measurement_type']
+    if not isinstance(measurement_type, str):
+        measurement_type = measurement_type.read()
     if measurement_type not in spectral_meas_types:
         raise Invalid_PhotonHDF5('Unkwnown measurement type "%s"' % \
                                  measurement_type)
 
     # At this point we have a valid measurement_type
     # Any missing field will raise an error (regardless of `strict`).
-    def _assert_has_field_mtype(name, group):
+    def _assert_has_field_mtype(name, group_dict, group_str):
         msg = 'Missing "%s" in "%s".\nThis field is mandatory for "%s" data.'
-        if name not in group:
-            raise Invalid_PhotonHDF5(msg % (name, group._v_pathname,
+        if name not in group_dict:
+            raise Invalid_PhotonHDF5(msg % (name, group_str,
                                             measurement_type))
 
-    detectors_specs = measurement_specs.detectors_specs
-    _assert_has_field_mtype('spectral_ch1', detectors_specs)
-    _assert_has_field_mtype('spectral_ch2', detectors_specs)
+    det_specs_path = meas_specs_path + '/detectors_specs'
+    detectors_specs = measurement_specs['detectors_specs']
+    _assert_has_field_mtype('spectral_ch1', detectors_specs, det_specs_path)
+    _assert_has_field_mtype('spectral_ch2', detectors_specs, det_specs_path)
 
     if measurement_type in ['smFRET-usALEX', 'smFRET-usALEX-3c']:
-        _assert_has_field_mtype('alex_period', measurement_specs)
+        _assert_has_field_mtype('alex_period', measurement_specs,
+                                meas_specs_path)
 
     if measurement_type == 'smFRET-nsALEX':
-        _assert_has_field_mtype('laser_pulse_rate', measurement_specs)
-        _assert_has_field_mtype('nantotimes', ph_data)
-        _assert_has_field_mtype('nantotimes_specs', ph_data)
+        _assert_has_field_mtype('laser_pulse_rate', measurement_specs,
+                                meas_specs_path)
+        _assert_has_field_mtype('nantotimes', ph_data, ph_data_name)
+        _assert_has_field_mtype('nantotimes_specs', ph_data, ph_data_name)
+        nt_specs_path = ph_data_name + '/nantotimes_specs'
+        nantotimes_specs = ph_data['nantotimes_specs']
         for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins',
                      'time_reversed']:
-             _assert_has_field_mtype(name, ph_data.nantotimes_specs)
+             _assert_has_field_mtype(name, nantotimes_specs, nt_specs_path)
 
 
 def print_attrs(data_file, node_name='/', which='user'):
