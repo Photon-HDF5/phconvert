@@ -101,6 +101,8 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
     if fields_descr is None:
         fields_descr = {}
     for name, value in data_dict.items():
+        if name.startswith('_'):
+            continue
         if debug:
             print('Item "%s", prefix_list %s ' % (name, prefix_list))
 
@@ -178,7 +180,7 @@ def save_photon_hdf5(data_dict,
     comp_filter = tables.Filters(**compression)
 
     if h5_fname is None:
-        basename, extension = os.path.splitext(data_dict.pop('filename'))
+        basename, extension = os.path.splitext(data_dict['_filename'])
         if compression['complib'] == 'blosc':
             basename += '_blosc'
         h5_fname = basename + '.hdf5'
@@ -194,7 +196,7 @@ def save_photon_hdf5(data_dict,
     # Saving a file reference is useful in case of error
     orig_data_dict = data_dict
     data_dict = data_dict.copy()
-    orig_data_dict.update(data_file=data_file)
+    orig_data_dict.update(_data_file=data_file)
 
     ## Add provenance metadata
     if 'provenance' in data_dict:

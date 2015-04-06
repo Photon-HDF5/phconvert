@@ -71,7 +71,7 @@ def usalex_sm(
     provenance = dict(filename=filename, software=software)
     acquisition_time = (timestamps[-1] - timestamps[0])
     data = dict(
-        filename = filename,
+        _filename = filename,
         acquisition_time = round(acquisition_time),
         #comment = comment,
         photon_data = photon_data,
@@ -183,9 +183,8 @@ def nsalex_bh(filename_spc,
     acquisition_time = (timestamps.max() - timestamps.min())*timestamps_unit
 
     data = dict(
-        filename=filename_spc,
+        _filename = filename_spc,
         acquisition_time = round(acquisition_time),
-
         photon_data = photon_data,
         setup=setup,
         provenance=provenance)
@@ -263,7 +262,7 @@ def nsalex_ht3(filename,
         detection_wavelengths = detection_wavelengths)
 
     data = dict(
-        filename=filename,
+        _filename=filename,
         acquisition_time = acquisition_time,
 
         photon_data = photon_data,
