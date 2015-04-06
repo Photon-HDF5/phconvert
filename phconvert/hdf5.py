@@ -408,7 +408,7 @@ def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
 
     measurement_type = measurement_specs['measurement_type']
     if not isinstance(measurement_type, str):
-        measurement_type = measurement_type.read()
+        measurement_type = measurement_type.read().decode()
     if measurement_type not in spectral_meas_types:
         raise Invalid_PhotonHDF5('Unkwnown measurement type "%s"' % \
                                  measurement_type)
