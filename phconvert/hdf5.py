@@ -255,14 +255,17 @@ def _get_file_metadata(fname):
     return metadata
 
 
-def dict_from_group(group):
+def dict_from_group(group, read=True):
     """Return a dict with the content of a PyTables `group`."""
     out = {}
     for node in group:
         if isinstance(node, tables.Group):
-            value = dict_from_group(node)
+            value = dict_from_group(node, read=read)
         else:
-            value = node.read()
+            if read:
+                value = node.read()
+            else:
+                value = node
         out[node._v_name] = value
     return out
 
