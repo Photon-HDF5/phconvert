@@ -175,9 +175,9 @@ def save_photon_hdf5(data_dict,
     data_file = tables.open_file(h5_fname, mode="w", title=title,
                                  filters=comp_filter)
     # Saving a file reference is useful in case of error
-    backup = data_dict
+    orig_data_dict = data_dict
     data_dict = data_dict.copy()
-    backup.update(data_file=data_file)
+    orig_data_dict.update(data_file=data_file)
 
     ## Add provenance metadata
     if 'provenance' in data_dict:
@@ -191,7 +191,7 @@ def save_photon_hdf5(data_dict,
             print("WARNING: Could not locate original file '%s'" % \
                   provenance['filename'])
         if orig_fname is not None:
-            provenance.update(get_file_metadata(orig_fname))
+            provenance.update(_get_file_metadata(orig_fname))
 
     ## Add identity metadata
     identity = get_identity(data_file)
@@ -220,7 +220,7 @@ def get_identity(h5file, format_version='0.3'):
                     format_url='http://photon-hdf5.readthedocs.org/')
     return identity
 
-def get_file_metadata(fname):
+def _get_file_metadata(fname):
     """Return a dict with file metadata.
     """
     assert os.path.isfile(fname)
