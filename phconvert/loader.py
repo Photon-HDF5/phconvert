@@ -69,7 +69,7 @@ def usalex_sm(
         detection_wavelengths = detection_wavelengths)
 
     provenance = dict(filename=filename, software=software)
-    acquisition_time = (timestamps[-1] - timestamps[0])
+    acquisition_time = (timestamps[-1] - timestamps[0])*12.5e-9
     data = dict(
         _filename = filename,
         acquisition_time = round(acquisition_time),
