@@ -336,6 +336,17 @@ def _sorted_photon_data(data):
     sorted_keys = ['%s%d' % (prefix, ch) for ch in channels]
     return sorted_keys
 
+def photon_data_mapping(group, name='timestamps'):
+    """Return a mapping ch -> photon data array.
+    """
+    from collections import OrderedDict
+    data_dict = dict_from_group(group, read=False)
+    ph_data_keys = _sorted_photon_data(data_dict)
+    names_list = [k + '/' + name for k in ph_data_keys]
+    ph_data_list = [group._f_get_child(name_) for name_ in names_list]
+    return OrderedDict((ch, ph) for ch, ph in enumerate(ph_data_list)
+                       if ph.shape[-1] > 0)
+
 def assert_valid_photon_hdf5(data, strict=True):
     """
     Validate the structure of a Photon-HDF5 file.
