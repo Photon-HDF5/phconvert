@@ -336,6 +336,10 @@ def _sorted_photon_data(data):
     sorted_keys = ['%s%d' % (prefix, ch) for ch in channels]
     return sorted_keys
 
+def get_photon_data_list(name='timestamps', group):
+    data_dict = dict_from_group(group, read=False)
+    return [group._f_getchild(k) for k in _sorted_photon_data(data_dict)]
+
 def assert_valid_photon_hdf5(data, strict=True):
     """
     Validate the structure of a Photon-HDF5 file.
