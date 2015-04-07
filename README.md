@@ -4,7 +4,7 @@
 
 *phconvert* contains the reference implementation for creating Photon-HDF5 files.
 
-Current formats that can be read are: PicoQuant .pt3, Becker & Hickl .spc/.set and usALEX .SM files.
+Current formats that can be read are: PicoQuant .ht3, Becker & Hickl .spc/.set and usALEX .SM files.
 Example notebooks show how to convert these formats.
 
 ## Installation
