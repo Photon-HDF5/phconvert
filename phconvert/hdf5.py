@@ -408,7 +408,7 @@ def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
                            'smFRET-nsALEX']
     if 'measurement_specs' not in ph_data:
         _raise_invalid_file('Missing measurement_specs in %s.' % ph_data_name,
-                            strict, norepeat, pool)
+                            False, norepeat, pool)
         return
 
     measurement_specs = ph_data['measurement_specs']
