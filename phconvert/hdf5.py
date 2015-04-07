@@ -330,7 +330,7 @@ def _check_valid_names(data, strict=True, debug=False):
 def _sorted_photon_data(data):
     """Return a sorted list of keys "/photon_dataN", sorted by N.
     """
-    prefix = '/photon_data'
+    prefix = 'photon_data'
     keys = [k for k in data.keys() if k.startswith(prefix)]
     channels = sorted([int(v[len(prefix):]) for v in keys])
     sorted_keys = ['%s%d' % (prefix, ch) for ch in channels]
@@ -367,6 +367,7 @@ def assert_valid_photon_hdf5(data, strict=True):
     else:
         msg = 'Invalid Photon-HDF5: missing "photon_data" group.'
         raise Invalid_PhotonHDF5(msg)
+    assert len(ph_data_m) > 0
 
     pool = []
     for ph_data in ph_data_m:
