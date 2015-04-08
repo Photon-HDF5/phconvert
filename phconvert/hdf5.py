@@ -153,7 +153,8 @@ def save_photon_hdf5(data_dict,
                      h5_fname=None,
                      compression=dict(complevel=6, complib='zlib'),
                      user_descr=None,
-                     debug=False):
+                     debug=False,
+                     close=True):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -225,6 +226,8 @@ def save_photon_hdf5(data_dict,
     _save_photon_hdf5_dict(data_file.root, data_dict,
                            fields_descr=fields_descr, debug=debug)
     data_file.flush()
+    if close:
+        data_file.close()
 
 
 def get_identity(h5file, format_version='0.3'):
