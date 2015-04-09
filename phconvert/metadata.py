@@ -12,6 +12,15 @@ This module defines the string descriptions for all the fields in the
 from collections import OrderedDict
 
 
+# Metadata for the HDF5 root node
+root_attributes = OrderedDict([
+    ('format_name', 'Photon-HDF5'),
+    ('format_title', 'HDF5-based format for time-series of photon data.'),
+    ('format_version', '0.3'),
+    ('format_url', 'http://photon-hdf5.readthedocs.org/'),
+])
+
+
 official_fields_descr = OrderedDict([
     ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ## Root fields

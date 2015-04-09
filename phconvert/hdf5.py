@@ -26,7 +26,7 @@ import time
 import re
 import tables
 
-from .metadata import official_fields_descr
+from .metadata import official_fields_descr, root_attributes
 from ._version import get_versions
 
 
@@ -198,6 +198,10 @@ def save_photon_hdf5(data_dict,
     orig_data_dict = data_dict
     data_dict = data_dict.copy()
     orig_data_dict.update(_data_file=data_file)
+
+    ## Add root attributes
+    for name, value in root_attributes.items():
+        data_file.root._f_setattr(name, value)
 
     ## Add provenance metadata
     if 'provenance' in data_dict:
