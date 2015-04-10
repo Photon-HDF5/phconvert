@@ -461,6 +461,27 @@ def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
              _assert_has_field_mtype(name, nanotimes_specs, nt_specs_path)
 
 
+def _check_version(filename):
+    assert os.path.isfile(filename)
+    format_name = 'Photon-HDF5'
+
+    with tables.open_file(filename) as h5file:
+        version = ''
+        if 'format_name' in h5file.root._v_attrs:
+            assert h5file.root._v_attrs['format_name'].decode() == format_name
+            assert 'format_version' in h5file.root._v_attrs
+            version = h5file.root._v_attrs['format_version'].decode()
+
+        if version == '':
+            fformat = h5file.root.identity.format_name.read().decode()
+            assert fformat == format_name
+            version = h5file.root.identity.format_version.read().decode()
+
+    if version == '':
+        raise Invalid_PhotonHDF5('No version identification.')
+    return version
+
+
 def print_attrs(data_file, node_name='/', which='user'):
     """Print the HDF5 attributes for `node_name`.
 
