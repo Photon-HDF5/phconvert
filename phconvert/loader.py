@@ -104,7 +104,7 @@ def nsalex_bh(filename_spc,
         detectors, nanotime, ...); the second contains the raw data from the
         .set file (it can be saved in a user group in Photon-HDF5).
     """
-    software = 'SPCM'
+    software = 'Becker & Hickl SPCM'
     # Load .SPC file
     assert os.path.isfile(filename_spc), \
            "File '%s' not found." % filename_spc
@@ -123,13 +123,13 @@ def nsalex_bh(filename_spc,
 
     # Estract the creation time from the .SET file metadata as it will be
     # more reliable than the creation time from the file system
-    provenance = {}
+    provenance = dict(filename=filename_spc, software=software)
     if 'identification' in metadata:
         identification = metadata['identification']
         date_str = identification['Date'].decode()
         time_str = identification['Time'].decode()
         creation_time = date_str + ' ' + time_str
-        provenance = {'creation_time': creation_time}
+        provenance.update({'creation_time': creation_time})
 
     tcspc_num_bins = 4096
     if metadata is not None:
@@ -176,9 +176,6 @@ def nsalex_bh(filename_spc,
         excitation_wavelengths = excitation_wavelengths,
         excitation_cw = [False, False],
         detection_wavelengths = detection_wavelengths)
-
-    provenance = dict(filename=filename_spc,
-                      software=software)
 
     acquisition_time = (timestamps.max() - timestamps.min())*timestamps_unit
 
