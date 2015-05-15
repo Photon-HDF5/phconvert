@@ -18,9 +18,8 @@ requirements:
   run:
     - python
     - setuptools
-    - numpy
+    - numpy >=1.9
     - pytables
-    - pandas
     - matplotlib
     - future
 
