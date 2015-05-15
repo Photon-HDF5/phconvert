@@ -198,6 +198,7 @@ def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
         timestamps[i] += overflow_correction
 
 def _correct_overflow2(timestamps, detectors, overflow_ch, overflow):
+    print('NOTE: You can speed-up the loading time by installing numba.')
     index_overflows = np.where((detectors == overflow_ch))[0]
     for n, (idx1, idx2) in enumerate(zip(index_overflows[:-1],
                                          index_overflows[1:])):

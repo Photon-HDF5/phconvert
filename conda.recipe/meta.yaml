@@ -21,7 +21,6 @@ requirements:
     - numpy
     - pytables
     - pandas
-    - numba
     - matplotlib
     - future
 
