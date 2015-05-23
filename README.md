@@ -1,11 +1,21 @@
 # phconvert
 
-*phconvert* is a python library to read from several file formats and to save in [Photon-HDF5 format](http://photon-hdf5.readthedocs.org/).
+*phconvert* is python 2/3 library for saving and reading 
+[Photon-HDF5 files](http://photon-hdf5.readthedocs.org/),
+a file format for timestamp-based single-molecule spectroscopy.
+*phconvert* is especially useful when saving Photon-HDF5, because 
+it tests the compliaiance to the Photon-HDF5 specification
+before saving the file.
 
-*phconvert* contains the reference implementation for creating Photon-HDF5 files.
+To simply read a Photon-HDF5 file, phconvert is not needed (although it provides 
+some helper functions). Examples on reading Photon-HDF5 directly (without phconvert) 
+can be found in [this repository](https://github.com/Photon-Data/photon_hdf5_reading_examples).
 
-Current formats that can be read are: PicoQuant .ht3, Becker & Hickl .spc/.set and usALEX .SM files.
-Example notebooks show how to convert these formats.
+*phconvert* contains also functions to load a few common binary formats 
+used in in single-molecule spectroscopy such as PicoQuant .ht3, 
+Becker & Hickl .spc/.set and usALEX .SM files.
+
+The included notebooks show how to convert these formats to Photon-HDF5.
 
 ## Installation
 
