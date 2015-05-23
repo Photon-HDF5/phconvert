@@ -27,7 +27,7 @@ or PIP:
 
     pip install phconvert
 
-or downloading the souces and doing the usual:
+or by downloading the sources and doing the usual:
 
     python setup.py build
     python setup.py install
@@ -36,9 +36,9 @@ or downloading the souces and doing the usual:
 
 - python 2.7, 3.3 or greater
 - future
-- numpy
-- pytables
-- numba (optional)
+- numpy >=1.9
+- pytables >=3.1
+- numba (optional) *for enable the fast HT3 file reader*
     
 ## License
 
