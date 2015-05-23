@@ -38,7 +38,7 @@ or by downloading the sources and doing the usual:
 - future
 - numpy >=1.9
 - pytables >=3.1
-- numba (optional) *for enable the fast HT3 file reader*
+- numba (optional) *to enable a fast HT3 file reader*
     
 ## License
 
