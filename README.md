@@ -4,7 +4,7 @@
 [Photon-HDF5 files](http://photon-hdf5.readthedocs.org/),
 a file format for timestamp-based single-molecule spectroscopy.
 *phconvert* is especially useful when saving Photon-HDF5, because 
-it tests the compliaiance to the Photon-HDF5 specification
+it tests the compliance to the Photon-HDF5 specification
 before saving the file.
 
 To simply read a Photon-HDF5 file, phconvert is not needed (although it provides 
