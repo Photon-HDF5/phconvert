@@ -1,14 +1,15 @@
 # phconvert
 
-*phconvert* is python 2/3 library for saving and reading 
+*phconvert* is python 2/3 library for writing and reading 
 [Photon-HDF5 files](http://photon-hdf5.readthedocs.org/),
 a file format for timestamp-based single-molecule spectroscopy.
-*phconvert* is especially useful when saving Photon-HDF5, because 
+*phconvert* is especially useful when saving to Photon-HDF5, because 
 it tests the compliance to the Photon-HDF5 specification
-before saving the file.
+and it automatically adds description attributes for each field.
 
-To simply read a Photon-HDF5 file, phconvert is not needed (although it provides 
-some helper functions). Examples on reading Photon-HDF5 directly (without phconvert) 
+In case you just want to read a Photon-HDF5 file, using phconvert is not 
+necessary (although it provides some helper functions). 
+Examples on reading Photon-HDF5 directly (without phconvert) 
 can be found in [this repository](https://github.com/Photon-Data/photon_hdf5_reading_examples).
 
 *phconvert* contains also functions to load a few common binary formats 
