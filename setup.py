@@ -39,6 +39,7 @@ setup(name = project_name,
                    'Topic :: Scientific/Engineering',
                    ],
       packages = ['phconvert'],
+      package_data = {'phconvert': ['specs/*.json']},
       keywords = ('single-molecule FRET smFRET biophysics file-format HDF5 '
                   'Photon-HDF5'),
       )
