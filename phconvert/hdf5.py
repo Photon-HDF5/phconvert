@@ -25,6 +25,7 @@ import os
 import time
 import re
 import tables
+import numpy as np
 
 from .metadata import official_fields_descr, root_attributes
 from ._version import get_versions
@@ -108,7 +109,7 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
 
         item = _analyze_path(name, prefix_list)
         item['description'] = fields_descr.get(item['meta_path'], '')
-        item.update(name=name, value=value)
+        item.update(name=name, value=value, curr_dict=data_dict)
         yield item
 
         if isinstance(value, dict):
@@ -190,14 +191,14 @@ def save_photon_hdf5(data_dict,
         basename, extension = os.path.splitext(h5_fname)
         h5_fname = basename + '_new_copy.hdf5'
 
+    _sanitize_data(data_dict)
+
     print('Saving: %s' % h5_fname)
     title = official_fields_descr['/']
     data_file = tables.open_file(h5_fname, mode="w", title=title,
                                  filters=comp_filter)
     # Saving a file reference is useful in case of error
-    orig_data_dict = data_dict
-    data_dict = data_dict.copy()
-    orig_data_dict.update(_data_file=data_file)
+    data_dict.update(_data_file=data_file)
 
     ## Add root attributes
     for name, value in root_attributes.items():
@@ -245,6 +246,22 @@ def get_identity(h5file, format_version='0.3'):
                     format_version=format_version,
                     format_url='http://photon-hdf5.readthedocs.org/')
     return identity
+
+def _sanitize_data(data_dict):
+    ref_field = '/photon_data/detectors'
+    for item in _iter_hdf5_dict(data_dict):
+        if item['meta_path'] == ref_field:
+            dtype = item['value'].dtype
+            break
+
+    base = '/photon_data/measurement_specs/detectors_specs/'
+    names = ['spectral_ch1', 'spectral_ch2', 'split_ch1', 'split_ch2',
+             'polarization_ch1', 'polarization_ch2']
+    cast_fields = [base + name for name in names]
+    for item in _iter_hdf5_dict(data_dict):
+        if item['meta_path'] in cast_fields:
+            cdict = item['curr_dict']
+            cdict[item['name']] = np.array(item['value'], dtype=dtype)
 
 def _get_file_metadata(fname):
     """Return a dict with file metadata.
