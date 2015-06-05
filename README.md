@@ -20,7 +20,7 @@ can be found in [this repository](https://github.com/Photon-Data/photon_hdf5_rea
 used in in single-molecule spectroscopy such as PicoQuant .ht3, 
 Becker & Hickl .spc/.set and usALEX .SM files.
 
-The included notebooks show how to convert these formats to Photon-HDF5.
+The [included notebooks](https://github.com/Photon-Data/phconvert/tree/master/notebooks) ([online viewer](http://nbviewer.ipython.org/github/Photon-Data/phconvert/tree/master/notebooks/)) show how to convert these formats to Photon-HDF5.
 
 ## Installation
 
