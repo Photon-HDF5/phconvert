@@ -7,6 +7,10 @@ a file format for timestamp-based single-molecule spectroscopy.
 it tests the compliance to the Photon-HDF5 specification
 and it automatically adds description attributes for each field.
 
+This repository also contains a JSON field descriptions for Photon-HDF5 files:
+
+- [photon-hdf5_fields.json](https://github.com/Photon-Data/phconvert/blob/master/phconvert/specs/photon-hdf5_fields.json)
+
 In case you just want to read a Photon-HDF5 file, using phconvert is not 
 necessary (although it provides some helper functions). 
 Examples on reading Photon-HDF5 directly (without phconvert) 
