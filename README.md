@@ -3,24 +3,24 @@
 *phconvert* is python 2/3 library for writing and reading 
 [Photon-HDF5 files](http://photon-hdf5.readthedocs.org/),
 a file format for timestamp-based single-molecule spectroscopy.
+Additionally, *phconvert* contains functions to load a few common binary formats 
+used in in single-molecule spectroscopy such as PicoQuant .ht3, 
+Becker & Hickl .spc/.set files.
+
+The [included notebooks](https://github.com/Photon-Data/phconvert/tree/master/notebooks) ([online viewer](http://nbviewer.ipython.org/github/Photon-Data/phconvert/tree/master/notebooks/)) show how to convert these formats to Photon-HDF5.
+
 *phconvert* is especially useful when **saving** to Photon-HDF5, because 
-it tests the compliance to the Photon-HDF5 specification
+it tests the compliance to the Photon-HDF5 specifications
 and it automatically adds description attributes for each field.
-
-This repository also contains a JSON field descriptions for Photon-HDF5 files:
-
-- [photon-hdf5_fields.json](https://github.com/Photon-Data/phconvert/blob/master/phconvert/specs/photon-hdf5_fields.json)
 
 In case you just want to read a Photon-HDF5 file, using phconvert is not 
 necessary (although it provides some helper functions). 
 Examples on reading Photon-HDF5 directly (without phconvert) 
 can be found in [this repository](https://github.com/Photon-Data/photon_hdf5_reading_examples).
 
-*phconvert* contains also functions to load a few common binary formats 
-used in in single-molecule spectroscopy such as PicoQuant .ht3, 
-Becker & Hickl .spc/.set and usALEX .SM files.
+This repository also contains a JSON descriptions of the Photon-HDF5 fields:
 
-The [included notebooks](https://github.com/Photon-Data/phconvert/tree/master/notebooks) ([online viewer](http://nbviewer.ipython.org/github/Photon-Data/phconvert/tree/master/notebooks/)) show how to convert these formats to Photon-HDF5.
+- [photon-hdf5_fields.json](https://github.com/Photon-Data/phconvert/blob/master/phconvert/specs/photon-hdf5_fields.json)
 
 ## Installation
 
