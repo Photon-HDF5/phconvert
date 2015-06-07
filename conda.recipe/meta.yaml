@@ -3,7 +3,7 @@ package:
   version: {{ environ['GIT_DESCRIBE_TAG'] }}
 
 source:
-    git_url: https://github.com/tritemio/phconvert.git
+    git_url: https://github.com/Photon-HDF5/phconvert.git
     #git_tag: dev
 
 build:
@@ -30,4 +30,4 @@ test:
 about:
   home: http://github.com/tritemio/FRETBursts/
   license: GPLv2
-  summary: 'Converter for the Photon-HDF5 file format.'
+  summary: 'Reference library to read and save Photon-HDF5 files.'
