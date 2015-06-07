@@ -47,5 +47,5 @@ or by downloading the sources and doing the usual:
 
 ## License
 
-*phconvert* is released under the license GNU GPL Version 2.
+*phconvert* is released under the open source MIT license.
 
