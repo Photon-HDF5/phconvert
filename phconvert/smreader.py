@@ -1,11 +1,11 @@
 #
-# phconvert - Convert files to Photon-HDF5 format
+# phconvert - Reference library to read and save Photon-HDF5 files
 #
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
-SM Format, written by the LV program in WeissLab us-ALEX setup
---------------------------------------------------------------
+SM Format, written by a LV program in WeissLab us-ALEX setup
+------------------------------------------------------------
 
 A SM file is composed by two parts:
 

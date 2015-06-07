@@ -1,4 +1,6 @@
 #
+# phconvert - Reference library to read and save Photon-HDF5 files
+#
 # Copyright (C) 2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 
