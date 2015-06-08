@@ -361,11 +361,10 @@ def photon_data_mapping(group, name='timestamps'):
                        if ph.shape[-1] > 0)
 
 def _sanitize_data(data_dict):
-    ref_field = '/photon_data/detectors'
-    for item in _iter_hdf5_dict(data_dict):
-        if item['meta_path'] == ref_field:
-            dtype = item['value'].dtype
-            break
+    """Assure that detectors_specs fields have the same dtype as detectors.
+    """
+    ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
+    dtype = ph_data['detectors'].dtype
 
     base = '/photon_data/measurement_specs/detectors_specs/'
     names = ['spectral_ch1', 'spectral_ch2', 'split_ch1', 'split_ch2',
