@@ -216,7 +216,13 @@ def save_photon_hdf5(data_dict,
             print("WARNING: Could not locate original file '%s'" % \
                   provenance['filename'])
         if orig_fname is not None:
+            # Use metadata from the file except for creation time if
+            # already present in `provenance`. i.e. the user-provided
+            # creation time has priority over the filesystem one.
+            orig_creation_time = provenance.get('creation_time', None)
             provenance.update(_get_file_metadata(orig_fname))
+            if orig_creation_time is not None:
+                provenance['creation_time'] = orig_creation_time
 
     ## Add identity metadata
     identity = get_identity(data_file)
