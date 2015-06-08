@@ -27,7 +27,8 @@ import re
 import tables
 import numpy as np
 
-from .metadata import official_fields_descr, root_attributes
+from .metadata import (official_fields_descr, root_attributes,
+                       LATEST_FORMAT_VERSION)
 from ._version import get_versions
 
 
@@ -241,7 +242,7 @@ def save_photon_hdf5(data_dict,
         data_file.close()
 
 
-def get_identity(h5file, format_version='0.3'):
+def get_identity(h5file, format_version=LATEST_FORMAT_VERSION):
     full_h5filename = os.path.abspath(h5file.filename)
     h5filename = os.path.basename(full_h5filename)
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -495,11 +496,13 @@ def _check_version(filename):
 
     with tables.open_file(filename) as h5file:
         version = ''
+        # Check the root attributes first
         if 'format_name' in h5file.root._v_attrs:
             assert h5file.root._v_attrs['format_name'].decode() == format_name
             assert 'format_version' in h5file.root._v_attrs
             version = h5file.root._v_attrs['format_version'].decode()
 
+        # Fall back to the identity group
         if version == '':
             fformat = h5file.root.identity.format_name.read().decode()
             assert fformat == format_name
