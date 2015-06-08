@@ -126,8 +126,8 @@ def nsalex_bh(filename_spc,
     provenance = dict(filename=filename_spc, software=software)
     if 'identification' in metadata:
         identification = metadata['identification']
-        date_str = identification['Date'].decode()
-        time_str = identification['Time'].decode()
+        date_str = identification['Date']
+        time_str = identification['Time']
         creation_time = date_str + ' ' + time_str
         provenance.update({'creation_time': creation_time})
 

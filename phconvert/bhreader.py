@@ -27,6 +27,7 @@ Drawing (note: each char represents 2 bits)::
     overflow bit: 13, bit_mask = 2^(13-1) = 4096
 """
 
+from __future__ import print_function, division
 import numpy as np
 
 
@@ -69,36 +70,42 @@ def load_set(fname_set):
 def bh_set_identification(fname_set):
     """Return a dict containing the IDENTIFICATION section of .SET files.
 
-    The keys are strings (unicode) while the values are the unmodified
-    byte-string from the file.
+    The both keys and values are native strings (traditional strings on py2
+    and unicode strings on py3).
     """
     with open(fname_set, 'rb') as f:
         line = f.readline()
         assert line.strip().endswith(b'IDENTIFICATION')
         identification = {}
-        line = f.readline().strip()
-        while not line.startswith(b'*END'):
-            item = [s.strip() for s in line.split(b':')]
+        # .decode() returns a unicode string and str() a native string
+        # on both py2 and py3
+        line = str(f.readline().strip().decode('utf8'))
+        while not line.startswith('*END'):
+            item = [s.strip() for s in line.split(':')]
             if len(item) == 1:
-                value = b' '.join([identification[key], item[0]])
+                # no ':'  ->  it's a new line coninuing the previousl key
+                value = ' '.join([identification[key], item[0]])
             else:
-                key = item[0].decode()
-                value = b':'.join(item[1:])
+                # found ':'  ->  retrive key and value
+                key = item[0]
+                value = ':'.join(item[1:])
             identification[key] = value
-            line = f.readline().strip()
+            line = str(f.readline().strip().decode('utf8'))
     return identification
 
 def bh_set_sys_params(fname_set):
     """Return a dict containing the SYS_PARAMS section of .SET files.
 
-    The keys are strings (unicode) while the values are the unmodified
-    byte-string from the file.
+    The keys are native strings (traditional strings on py2
+    and unicode strings on py3) while values are numerical type or
+    byte strings.
     """
     with open(fname_set, 'rb') as f:
         ## Make a dictionary of system parameters
         start = False
         sys_params  = {}
         for line in f.readlines():
+            # line can contain byte garbage, so don't convert to str
             line = line.strip()
             if line == b'SYS_PARA_BEGIN:':
                 start = True
@@ -106,6 +113,7 @@ def bh_set_sys_params(fname_set):
             if line == b'SYS_PARA_END:':
                 break
             if start and line.startswith(b'#'):
+                # Still there can be unknown fields, keep it binary
                 fields = line[5:-1].split(b',')
 
                 if fields[1] == b'B':
@@ -115,11 +123,11 @@ def bh_set_sys_params(fname_set):
                 elif fields[1] == b'F':
                     value = float(fields[2])
                 elif fields[1] == b'S':
-                    value = fields[2]
+                    value = fields[2]  # binary string
                 else:
-                    value = fields[1:]
+                    value = b','.join(fields[1:])  # unknown, recomposing it
 
-                sys_params[fields[0].decode()] = value
+                sys_params[str(fields[0].decode())] = value
     return sys_params
 
 def bh_decode(s):
@@ -142,10 +150,10 @@ def bh_print_sys_params(sys_params):
     """Print a summary of the Becker & Hickl system parameters (.SET file)."""
     for k, v in sys_params.iteritems():
         if 'TAC' in k: print('%s\t %f' % (bh_decode(k), v))
-    print
+    print()
     for k, v in sys_params.iteritems():
         if 'CFD' in k: print('%s\t %f' % (bh_decode(k), v))
-    print
+    print()
     for k, v in sys_params.iteritems():
         if 'SYN' in k: print('%s\t %f' % (bh_decode(k), v))
 
