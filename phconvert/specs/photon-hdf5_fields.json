@@ -126,7 +126,7 @@
     "/provenance/filename_full":
         "File name (with full path) of the original data file before conversion to Photon-HDF5.",
     "/provenance/creation_time":
-        "The creation time of the original data file.",
+        "Creation time of the original data file.",
     "/provenance/modification_time":
         "Time of last modification of the original data file.",
     "/provenance/software":
