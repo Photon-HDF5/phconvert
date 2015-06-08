@@ -285,6 +285,7 @@ def dict_from_group(group, read=True):
         else:
             if read:
                 value = node.read()
+                # Load strings as native strings
                 if isinstance(value, bytes) and not isinstance(value, str):
                     # value is a binary string and we are in python 3
                     value = value.decode('utf8')
