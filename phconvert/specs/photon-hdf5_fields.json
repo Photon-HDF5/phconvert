@@ -37,10 +37,10 @@
         "Period of laser alternation in us-ALEX measurements in timestamps units.",
     "/photon_data/measurement_specs/laser_pulse_rate":
         "Repetition rate of the pulsed excitation laser.",
-    "/photon_data/measurement_specs/alex_period_spectral_ch1":
-        "Value pair identifying the range of spectral_ch1 photons in one period of laser alternation or interleaved pulses.",
-    "/photon_data/measurement_specs/alex_period_spectral_ch2":
-        "Value pair identifying the range of spectral_ch2 photons in one period of laser alternation or interleaved pulses.",
+    "/photon_data/measurement_specs/alex_period_excitation1":
+        "Values pair (start-stop range) identifying photons in the excitation period of wavelength 1 (the shortest).",
+    "/photon_data/measurement_specs/alex_period_excitation2":
+        "Values pair (start-stop range) identifying photons in the excitation period of wavelength 2.",
     "/photon_data/measurement_specs/detectors_specs":
         "Mapping between the detector IDs and the detection channels.",
     "/photon_data/measurement_specs/detectors_specs/spectral_ch1":
