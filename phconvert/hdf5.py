@@ -247,21 +247,6 @@ def get_identity(h5file, format_version='0.3'):
                     format_url='http://photon-hdf5.readthedocs.org/')
     return identity
 
-def _sanitize_data(data_dict):
-    ref_field = '/photon_data/detectors'
-    for item in _iter_hdf5_dict(data_dict):
-        if item['meta_path'] == ref_field:
-            dtype = item['value'].dtype
-            break
-
-    base = '/photon_data/measurement_specs/detectors_specs/'
-    names = ['spectral_ch1', 'spectral_ch2', 'split_ch1', 'split_ch2',
-             'polarization_ch1', 'polarization_ch2']
-    cast_fields = [base + name for name in names]
-    for item in _iter_hdf5_dict(data_dict):
-        if item['meta_path'] in cast_fields:
-            cdict = item['curr_dict']
-            cdict[item['name']] = np.array(item['value'], dtype=dtype)
 
 def _get_file_metadata(fname):
     """Return a dict with file metadata.
@@ -344,21 +329,25 @@ def _check_has_field(name, group_dict, group_str='', strict=True):
     if name not in group_dict:
         _raise_invalid_file(msg, strict)
 
-def _check_valid_names(data, strict=True, debug=False):
+def _check_valid_names(data_dict, strict=True, debug=False):
     msg = 'Unknown field "%s". Custom fields must be inside a "user" group.'
-    for item in _iter_hdf5_dict(data, debug=debug):
+    for item in _iter_hdf5_dict(data_dict, debug=debug):
         if not item['is_user']:
             if item['meta_path'] not in official_fields_descr:
                 _raise_invalid_file(msg % item['full_path'], strict=strict)
 
-def _sorted_photon_data(data):
-    """Return a sorted list of keys "/photon_dataN", sorted by N.
+def _sorted_photon_data(data_dict):
+    """Return a sorted list of keys "photon_dataN", sorted by N.
+
+    If there is only one "photon_data" key (with no N) it returns the list
+    ['photon_data'].
     """
     prefix = 'photon_data'
-    keys = [k for k in data.keys() if k.startswith(prefix)]
-    channels = sorted([int(v[len(prefix):]) for v in keys])
-    sorted_keys = ['%s%d' % (prefix, ch) for ch in channels]
-    return sorted_keys
+    keys = [k for k in data_dict.keys() if k.startswith(prefix)]
+    if len(keys) > 1:
+        sorted_channels = sorted([int(k[len(prefix):]) for k in keys])
+        keys = ['%s%d' % (prefix, ch) for ch in sorted_channels]
+    return keys
 
 def photon_data_mapping(group, name='timestamps'):
     """Return a mapping ch -> photon data array.
@@ -371,23 +360,40 @@ def photon_data_mapping(group, name='timestamps'):
     return OrderedDict((ch, ph) for ch, ph in enumerate(ph_data_list)
                        if ph.shape[-1] > 0)
 
-def assert_valid_photon_hdf5(data, strict=True):
+def _sanitize_data(data_dict):
+    ref_field = '/photon_data/detectors'
+    for item in _iter_hdf5_dict(data_dict):
+        if item['meta_path'] == ref_field:
+            dtype = item['value'].dtype
+            break
+
+    base = '/photon_data/measurement_specs/detectors_specs/'
+    names = ['spectral_ch1', 'spectral_ch2', 'split_ch1', 'split_ch2',
+             'polarization_ch1', 'polarization_ch2']
+    cast_fields = [base + name for name in names]
+    for item in _iter_hdf5_dict(data_dict):
+        if item['meta_path'] in cast_fields:
+            cdict = item['curr_dict']
+            cdict[item['name']] = np.array(item['value'], dtype=dtype)
+
+def assert_valid_photon_hdf5(data_dict, strict=True):
     """
     Validate the structure of a Photon-HDF5 file.
 
     Raise an error when missing photon_data group, timestamps array and
     timestamps_unit.
 
-    When `strict` is True, raise an error if
+    When `strict` is True, raise an error if there is any name not officially
+    suppoorted andif setup is missing or not complete.
     """
-    _check_valid_names(data, strict=strict)
-    _check_has_field('acquisition_time', data, '/', strict=strict)
-    _check_has_field('comment', data, '/', strict=strict)
+    _check_valid_names(data_dict, strict=strict)
+    _check_has_field('acquisition_time', data_dict, '/', strict=strict)
+    _check_has_field('comment', data_dict, '/', strict=strict)
 
-    if 'photon_data' in data:
-        ph_data_m = [data['photon_data']]
-    elif 'photon_data0' in data:
-        ph_data_m = [data[key] for key in _sorted_photon_data(data)]
+    if 'photon_data' in data_dict:
+        ph_data_m = [data_dict['photon_data']]
+    elif 'photon_data0' in data_dict:
+        ph_data_m = [data_dict[key] for key in _sorted_photon_data(data_dict)]
     else:
         msg = 'Invalid Photon-HDF5: missing "photon_data" group.'
         raise Invalid_PhotonHDF5(msg)
@@ -397,8 +403,8 @@ def assert_valid_photon_hdf5(data, strict=True):
     for ph_data in ph_data_m:
         _check_photon_data(ph_data, strict=strict, norepeat=True, pool=pool)
 
-    if 'setup' in data:
-        _check_setup(data['setup'], strict=strict)
+    if 'setup' in data_dict:
+        _check_setup(data_dict['setup'], strict=strict)
     else:
         _raise_invalid_file('Invalid Photon-HDF5: Missing /setup group.',
                             strict)
