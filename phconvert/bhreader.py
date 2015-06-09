@@ -70,7 +70,7 @@ def load_set(fname_set):
 def bh_set_identification(fname_set):
     """Return a dict containing the IDENTIFICATION section of .SET files.
 
-    The both keys and values are native strings (traditional strings on py2
+    The both keys and values are native strings (binary strings on py2
     and unicode strings on py3).
     """
     with open(fname_set, 'rb') as f:
@@ -83,7 +83,7 @@ def bh_set_identification(fname_set):
         while not line.startswith('*END'):
             item = [s.strip() for s in line.split(':')]
             if len(item) == 1:
-                # no ':'  ->  it's a new line coninuing the previousl key
+                # no ':'  ->  it's a new line continuing the previous key
                 value = ' '.join([identification[key], item[0]])
             else:
                 # found ':'  ->  retrive key and value
