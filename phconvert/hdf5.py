@@ -506,15 +506,20 @@ def _check_version(filename):
         version = ''
         # Check the root attributes first
         if 'format_name' in h5file.root._v_attrs:
-            assert h5file.root._v_attrs['format_name'].decode() == format_name
+            # String attributes are numpy.str_ that can be compared
+            # to native string on both py3 and py2
+            assert h5file.root._v_attrs['format_name'] == format_name
             assert 'format_version' in h5file.root._v_attrs
-            version = h5file.root._v_attrs['format_version'].decode()
+            # For consistency cast `version` to native string
+            version = str(h5file.root._v_attrs['format_version'])
 
         # Fall back to the identity group
         if version == '':
-            fformat = h5file.root.identity.format_name.read().decode()
+            # String fields are read as binary strings so we convert them
+            # to native strings (binary -> unicode -> native)
+            fformat = str(h5file.root.identity.format_name.read().decode())
             assert fformat == format_name
-            version = h5file.root.identity.format_version.read().decode()
+            version = str(h5file.root.identity.format_version.read().decode())
 
     if version == '':
         raise Invalid_PhotonHDF5('No version identification.')
