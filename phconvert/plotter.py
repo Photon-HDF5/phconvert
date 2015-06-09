@@ -56,20 +56,21 @@ def alternation_hist_usalex(d, bins=None, ax=None,
     a_em_t = (det_t == a_ch)
     D_ON = ph_data['measurement_specs']['alex_period_excitation1']
     A_ON = ph_data['measurement_specs']['alex_period_excitation2']
+    offset = ph_data['measurement_specs']['alex_offset']
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
 
-    hist_style_ = dict(bins=bins, alpha=0.2)
+    hist_style_ = dict(bins=bins,  alpha=0.5, histtype='stepfilled', lw=1.3)
     hist_style_.update(hist_style)
 
     span_style_ = dict(alpha=0.1)
     span_style_.update(span_style)
 
-    plt.hist(ph_times_t[d_em_t] % period, color=_green, label=D_label,
-         **hist_style_)
-    plt.hist(ph_times_t[a_em_t] % period, color=_red, label=A_label,
-         **hist_style_)
-    plt.xlabel('Timestamp MODULO Alternation period')
+    ax.hist((ph_times_t[d_em_t] - offset) % period, color=_green, label=D_label,
+            **hist_style_)
+    ax.hist((ph_times_t[a_em_t] - offset) % period, color=_red, label=A_label,
+            **hist_style_)
+    ax.set_xlabel('Timestamp MODULO Alternation period')
 
     if D_ON[0] < D_ON[1]:
         plt.axvspan(D_ON[0], D_ON[1], color=_green, **span_style_)

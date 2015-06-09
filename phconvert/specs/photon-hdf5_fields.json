@@ -37,6 +37,8 @@
         "Period of laser alternation in us-ALEX measurements in timestamps units.",
     "/photon_data/measurement_specs/laser_pulse_rate":
         "Repetition rate of the pulsed excitation laser.",
+    "/photon_data/measurement_specs/alex_offset":
+        "Time offset (in timestamps unit) to apply to timestamps to obtain a properly aligned alternation histogram.",
     "/photon_data/measurement_specs/alex_period_excitation1":
         "Values pair (start-stop range) identifying photons in the excitation period of wavelength 1 (the shortest).",
     "/photon_data/measurement_specs/alex_period_excitation2":

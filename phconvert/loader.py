@@ -27,7 +27,7 @@ from . import pqreader
 
 
 def usalex_sm(
-        filename, donor=0, acceptor=1, alex_period=4000,
+        filename, donor=0, acceptor=1, alex_period=4000, alex_offset=750,
         alex_period_donor=(2850, 580), alex_period_acceptor=(930, 2580),
         excitation_wavelengths=(532e-9, 635e-9),
         detection_wavelengths = (580e-9, 680e-9),
@@ -50,6 +50,7 @@ def usalex_sm(
         measurement_specs = dict(
             measurement_type = 'smFRET-usALEX',
             alex_period = alex_period,
+            alex_offset = alex_offset,
             alex_period_excitation1 = alex_period_donor,
             alex_period_excitation2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = donor,
