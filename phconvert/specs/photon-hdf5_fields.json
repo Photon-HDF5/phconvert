@@ -1,6 +1,6 @@
 {
     "/":
-        "Photon-HDF5: A container for photon data.",
+        "A file format for freely-diffusing single-molecule spectroscopy experiments.",
     "/acquisition_time":
         "Measurement duration in seconds.",
     "/comment":
