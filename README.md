@@ -24,7 +24,7 @@ This repository also contains a JSON descriptions of the Photon-HDF5 fields:
 
 ## Installation
 
-You can install *phconvert* using conda:
+You can install *phconvert* using conda (recommended):
 
     conda install -c tritemio phconvert
 
@@ -44,6 +44,10 @@ or by downloading the sources and doing the usual:
 - numpy >=1.9
 - pytables >=3.1
 - numba (optional) *to enable a fast HT3 file reader*
+
+> **Note**
+> when installing via `conda` all the dependencies are automatically installed.
+
 
 ## License
 
