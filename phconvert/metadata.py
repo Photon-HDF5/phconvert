@@ -21,7 +21,9 @@ _specs_file_fields = 'specs/photon-hdf5_fields.json'
 def _get_fields_descr():
     s = pkg_resources.resource_string('phconvert',
                                       _specs_file_fields).decode('utf8')
-    return json.loads(s)
+    descr = {k: v if isinstance(v, str) else v.encode()
+             for k, v in json.loads(s).items()}
+    return descr
 
 # Metadata for the HDF5 root node
 root_attributes = OrderedDict([

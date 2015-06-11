@@ -96,7 +96,7 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
         save = h5file.create_array
     if isinstance(obj, str):
         obj = obj.encode()
-    save(group, name, obj=obj, title=descr.encode())
+    save(group, name, obj=obj, title=descr)
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                     debug=False):
