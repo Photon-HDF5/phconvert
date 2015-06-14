@@ -85,7 +85,7 @@ def usalex_sm(
 def nsalex_bh(filename_spc,
               donor = 4,
               acceptor = 6,
-              laser_pulse_rate = 40e6,
+              laser_repetition_rate = 40e6,
               tcspc_range = 60e-9,
               timestamps_unit = 60e-9,
               alex_period_donor = (10, 1500),
@@ -159,7 +159,7 @@ def nsalex_bh(filename_spc,
 
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
-            laser_pulse_rate = laser_pulse_rate,
+            laser_repetition_rate = laser_repetition_rate,
             alex_period_excitation1 = alex_period_donor,
             alex_period_excitation2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = donor,
@@ -208,7 +208,7 @@ def nsalex_ht3(filename,
     tcspc_unit = metadata.pop('nanotimes_unit')
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins*tcspc_unit
-    laser_pulse_rate = metadata['ttmode']['SyncRate']
+    laser_repetition_rate = metadata['ttmode']['SyncRate']
     acquisition_time = metadata['header']['Tacq'][0]*1e-3
     software = metadata['header']['CreatorName']
     software_version = metadata['header']['CreatorVersion']
@@ -240,7 +240,7 @@ def nsalex_ht3(filename,
 
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
-            laser_pulse_rate = laser_pulse_rate,
+            laser_repetition_rate = laser_repetition_rate,
             alex_period_excitation1 = alex_period_donor,
             alex_period_excitation2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = donor,
