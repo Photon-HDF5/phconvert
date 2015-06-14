@@ -83,6 +83,8 @@ def _analyze_path(name, prefix_list):
 
 
 def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
+    """Writes `obj` in the pytables HDF5 `group` with name `name`.
+    """
     if isinstance(group, str):
         assert h5file is not None
     else:
@@ -100,6 +102,13 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                     debug=False):
+    """Recursively iterate over `data_dict` returning "items" (i.e. a dict).
+
+    This is an iterator returning a dicts, each containing info related
+    to the current field. The keys of the returned dict are:
+    'full_path', 'group_path', 'meta_path', 'is_phdata', 'is_user',
+    'description'.
+    """
     if fields_descr is None:
         fields_descr = {}
     for name, value in data_dict.items():
@@ -127,11 +136,13 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
 def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                            debug=False):
     """
+    Save a hierarchical structure `data_dict` in a HDF5 `group`.
+
     Assumptions:
         data_dict is a hierarchical dict whose values are either arrays or
         sub-dictionaries representing a sub-group.
 
-        fields_descr merges official and user-defined field descriptions
+        `fields_descr` merges official and user-defined field descriptions
         where the key is always the normalized full path (meta path).
         The meta path is the full path where the string "/photon_dataNN"
         is replaced by "/photon_data".
