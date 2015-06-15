@@ -51,8 +51,8 @@ def usalex_sm(
             measurement_type = 'smFRET-usALEX',
             alex_period = alex_period,
             alex_offset = alex_offset,
-            alex_period_excitation1 = alex_period_donor,
-            alex_period_excitation2 = alex_period_acceptor,
+            alex_excitation_period1 = alex_period_donor,
+            alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = donor,
                                    spectral_ch2 = acceptor))
     )
@@ -160,8 +160,8 @@ def nsalex_bh(filename_spc,
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
             laser_repetition_rate = laser_repetition_rate,
-            alex_period_excitation1 = alex_period_donor,
-            alex_period_excitation2 = alex_period_acceptor,
+            alex_excitation_period1 = alex_period_donor,
+            alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = donor,
                                    spectral_ch2 = acceptor)),
     )
@@ -241,8 +241,8 @@ def nsalex_ht3(filename,
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
             laser_repetition_rate = laser_repetition_rate,
-            alex_period_excitation1 = alex_period_donor,
-            alex_period_excitation2 = alex_period_acceptor,
+            alex_excitation_period1 = alex_period_donor,
+            alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = donor,
                                    spectral_ch2 = acceptor)),
     )

@@ -54,8 +54,8 @@ def alternation_hist_usalex(d, bins=None, ax=None,
 
     d_em_t = (det_t == d_ch)
     a_em_t = (det_t == a_ch)
-    D_ON = ph_data['measurement_specs']['alex_period_excitation1']
-    A_ON = ph_data['measurement_specs']['alex_period_excitation2']
+    D_ON = ph_data['measurement_specs']['alex_excitation_period1']
+    A_ON = ph_data['measurement_specs']['alex_excitation_period2']
     offset = ph_data['measurement_specs']['alex_offset']
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
@@ -103,8 +103,8 @@ def alternation_hist_nsalex(d, bins=None, ax=None):
     d_ch =  det_specs['spectral_ch1']
     a_ch =  det_specs['spectral_ch2']
 
-    D_ON = ph_data['measurement_specs']['alex_period_excitation1']
-    A_ON = ph_data['measurement_specs']['alex_period_excitation2']
+    D_ON = ph_data['measurement_specs']['alex_excitation_period1']
+    A_ON = ph_data['measurement_specs']['alex_excitation_period2']
 
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
