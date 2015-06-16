@@ -175,7 +175,7 @@ def save_photon_hdf5(data_dict,
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
-    As a side effect `d` is modified by adding the key 'data_file' that
+    As a side effect `d` is modified by adding the key '_data_file' that
     contains a reference to the pytables file.
 
     Arguments:
@@ -190,7 +190,8 @@ def save_photon_hdf5(data_dict,
             extension with '.hdf5'.
         user_descr (dict or None): dictionary of field descriptions for
             user-defined fields. The keys must be strings representing
-            the full HDF5 path of each field.
+            the full HDF5 path of each field. The values must be
+            binary (i.e. encoded) strings restricted to the ASCII set.
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
