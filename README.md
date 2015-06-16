@@ -26,7 +26,7 @@ This repository also contains a JSON descriptions of the Photon-HDF5 fields:
 
 ## How to use?
 
-### Converting supported formats (users)
+### Converting supported formats (for users)
 
 Converting one of the supported files formats to Photon-HDF5 does not require being able to program in python. 
 All you need is running the [appropriate notebook](https://github.com/Photon-HDF5/phconvert/tree/master/notebooks) 
@@ -41,7 +41,7 @@ Before executing the notebook, you also need to install the *phconvert* library 
 
     conda install -c tritemio phconvert
 
-### phconvert library (developers)
+### The phconvert library (for developers)
 
 The *phconvert* library contains two main modules `hdf5` and `loader`. The former contains 
 the function `save_photon_hdf5()` that is used to create Photon-HDF5 files.
@@ -64,11 +64,11 @@ for examples.
 
 ## Installation
 
-The recommended way is *phconvert* using conda (requires installing [Continuum Anaconda](https://store.continuum.io/cshop/anaconda/) first):
+The recommended way to install *phconvert* is by using conda (requires installing [Continuum Anaconda](https://store.continuum.io/cshop/anaconda/) first):
 
     conda install -c tritemio phconvert
 
-or PIP (requires installing python, numpy and pytables first):
+You can also install through PIP (requires installing python, numpy and pytables first):
 
     pip install phconvert
 
