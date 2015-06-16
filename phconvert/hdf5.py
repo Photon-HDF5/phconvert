@@ -186,7 +186,7 @@ def save_photon_hdf5(data_dict,
             and level. Passed to pytables `tables.Filters()`.
         h5_fname (string or None): if not None, contains the file name
             to be used for the HDF5 file. If None, the file name is
-            generated from d['filenamename'], by replacing the original
+            generated from d['filename'], by replacing the original
             extension with '.hdf5'.
         user_descr (dict or None): dictionary of field descriptions for
             user-defined fields. The keys must be strings representing
@@ -414,7 +414,7 @@ def assert_valid_photon_hdf5(data_dict, strict=True):
     timestamps_unit.
 
     When `strict` is True, raise an error if there is any name not officially
-    suppoorted andif setup is missing or not complete.
+    supported and if setup is missing or not complete.
     """
     _check_valid_names(data_dict, strict=strict)
     _check_has_field('acquisition_time', data_dict, '/', strict=strict)
