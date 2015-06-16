@@ -98,7 +98,11 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
         save = h5file.create_array
     if isinstance(obj, str):
         obj = obj.encode()
-    save(group, name, obj=obj, title=descr)
+    save(group, name, obj=obj)
+    # Set title through property access to work around pytable issue
+    # under python 3 (https://github.com/PyTables/PyTables/issues/469)
+    node = group._f_get_child(name)
+    node.title = descr  # descr is a binary string both on py2 and py3
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                     debug=False):
