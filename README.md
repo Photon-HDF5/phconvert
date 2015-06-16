@@ -7,7 +7,9 @@ Additionally, *phconvert* contains functions to load a few common binary formats
 used in in single-molecule spectroscopy such as PicoQuant .ht3,
 Becker & Hickl .spc/.set files.
 
-The [included notebooks](https://github.com/Photon-HDF5/phconvert/tree/master/notebooks) ([online viewer](http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/)) show how to convert these formats to Photon-HDF5.
+The [included notebooks](https://github.com/Photon-HDF5/phconvert/tree/master/notebooks) 
+([online viewer](http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/)) 
+show how to convert these formats to Photon-HDF5.
 
 *phconvert* is especially useful when **saving** to Photon-HDF5, because
 it tests the compliance to the Photon-HDF5 specifications
@@ -22,17 +24,55 @@ This repository also contains a JSON descriptions of the Photon-HDF5 fields:
 
 - [photon-hdf5_fields.json](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_fields.json)
 
-## Installation
+## How to use?
 
-You can install *phconvert* using conda (recommended):
+### Converting supported formats (users)
+
+Converting one of the supported files formats to Photon-HDF5 does not require being able to program in python. 
+All you need is running the [appropriate notebook](https://github.com/Photon-HDF5/phconvert/tree/master/notebooks) 
+for your input format and follow the instructions therein.
+
+To run a notebook on your machine you need to install the *Jupyter Notebook App*. 
+A quick-start guide on installing and running the *Jupyter Notebook App* is available here:
+
+- [Jupyter/IPython Notebook Quick Start Guide](http://jupyter-notebook-beginner-guide.readthedocs.org/)
+
+Before executing the notebook, you also need to install the *phconvert* library with the command:
 
     conda install -c tritemio phconvert
 
-or PIP:
+### phconvert library (developers)
+
+The *phconvert* library contains two main modules `hdf5` and `loader`. The former contains 
+the function `save_photon_hdf5()` that is used to create Photon-HDF5 files.
+
+The function `save_photon_hdf5()` requires as an argument the data to be saved.
+This input data needs to have the hierarchical structure of a Photon-HDF5 file. 
+In practice we use a standard python dict: each item value can be a data field
+or another dict (in which case it represents an HDF5 group). The keys corresponds 
+to the Photon-HDF5 field names.
+
+The module `loader` contains loader functions that load data from disk and return a dict
+object to be passed to `save_photon_hdf5()`. These functions can be used as examples
+when converting a new unsupported file format.
+
+The `loader` module contains high-level functions that "fill" the dict-based
+with the appropriate arrays. The actual decoding of the input binary files is perfomed
+by low-level functions in other modules (`smreader.py`, `pqreader.py`, `bhreader.py`).
+Therefore when trying to decode a new file format you can look at those modules
+for examples.
+
+## Installation
+
+The recommended way is *phconvert* using conda (requires installing [Continuum Anaconda](https://store.continuum.io/cshop/anaconda/) first):
+
+    conda install -c tritemio phconvert
+
+or PIP (requires installing python, numpy and pytables first):
 
     pip install phconvert
 
-or by downloading the sources and doing the usual:
+or by downloading the sources and doing the usual (all dependencies need to be installed first):
 
     python setup.py build
     python setup.py install
