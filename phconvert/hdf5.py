@@ -498,7 +498,7 @@ def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
                                 meas_specs_path)
 
     if measurement_type == 'smFRET-nsALEX':
-        _assert_has_field_mtype('laser_pulse_rate', measurement_specs,
+        _assert_has_field_mtype('laser_repetition_rate', measurement_specs,
                                 meas_specs_path)
         _assert_has_field_mtype('nanotimes', ph_data, ph_data_name)
         _assert_has_field_mtype('nanotimes_specs', ph_data, ph_data_name)
