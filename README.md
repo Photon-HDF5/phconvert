@@ -48,9 +48,10 @@ the function `save_photon_hdf5()` that is used to create Photon-HDF5 files.
 
 The function `save_photon_hdf5()` requires as an argument the data to be saved.
 This input data needs to have the hierarchical structure of a Photon-HDF5 file. 
-In practice we use a standard python dict: each item value can be a data field
-or another dict (in which case it represents an HDF5 group). The keys corresponds 
-to the Photon-HDF5 field names.
+In practice we use a standard python dict: each keys is a Photon-HDF5 field name and
+each value contains data (e.g. array, string, etc..) or another dict 
+(in this case it represents an HDF5 sub-group). Similarly, sub-dictionaries 
+contain data or other dict in order to represent the hierachy of Photon-HDF5 files.
 
 The module `loader` contains loader functions that load data from disk and return a dict
 object to be passed to `save_photon_hdf5()`. These functions can be used as examples
