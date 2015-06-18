@@ -82,23 +82,28 @@ def _analyze_path(name, prefix_list):
                 meta_path=meta_path, is_phdata=is_phdata, is_user=is_user)
 
 
-def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
+def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None,
+                    chunksize=None):
     """Writes `obj` in the pytables HDF5 `group` with name `name`.
     """
     if isinstance(group, str):
         assert h5file is not None
     else:
         h5file = group._v_file
+    kwargs = {}
     if chunked:
         if obj.size == 0:
             save = h5file.create_earray
         else:
             save = h5file.create_carray
+        if chunksize is not None:
+            chunkshape = (chunksize//obj.dtype.itemsize,)
+            kwargs = {'chunkshape': chunkshape}
     else:
         save = h5file.create_array
     if isinstance(obj, str):
         obj = obj.encode()
-    save(group, name, obj=obj)
+    save(group, name, obj=obj, **kwargs)
     # Set title through property access to work around pytable issue
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
     node = h5file.get_node(group)._f_get_child(name)
@@ -138,7 +143,7 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                 print('End Group "%s"' % (item['full_path']))
 
 def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
-                           debug=False):
+                           debug=False, chunksize=None):
     """
     Save a hierarchical structure `data_dict` in a HDF5 `group`.
 
@@ -164,14 +169,16 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
         else:
             _h5_write_array(item['group_path'], item['name'],
                             obj=item['value'], descr=item['description'],
-                            chunked=item['is_phdata'], h5file=group._v_file)
+                            chunked=item['is_phdata'], h5file=group._v_file,
+                            chunksize=chunksize)
 
 def save_photon_hdf5(data_dict,
                      h5_fname=None,
                      compression=dict(complevel=6, complib='zlib'),
                      user_descr=None,
                      debug=False,
-                     close=True):
+                     close=True,
+                     chunksize=None):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -251,7 +258,7 @@ def save_photon_hdf5(data_dict,
     fields_descr = official_fields_descr.copy()
     if user_descr is not None:
         fields_descr.update(user_descr)
-    _save_photon_hdf5_dict(data_file.root, data_dict,
+    _save_photon_hdf5_dict(data_file.root, data_dict, chunksize=chunksize,
                            fields_descr=fields_descr, debug=debug)
     data_file.flush()
     if close:
