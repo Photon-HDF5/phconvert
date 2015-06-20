@@ -417,8 +417,8 @@ def assert_valid_photon_hdf5(data_dict, strict=True):
     supported and if setup is missing or not complete.
     """
     _check_valid_names(data_dict, strict=strict)
-    _check_has_field('acquisition_time', data_dict, '/', strict=strict)
-    _check_has_field('comment', data_dict, '/', strict=strict)
+    _check_has_field('acquisition_duration', data_dict, '/', strict=strict)
+    _check_has_field('description', data_dict, '/', strict=strict)
 
     if 'photon_data' in data_dict:
         ph_data_m = [data_dict['photon_data']]

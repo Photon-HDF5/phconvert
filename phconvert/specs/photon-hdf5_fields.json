@@ -1,10 +1,10 @@
 {
     "/":
         "A file format for freely-diffusing single-molecule spectroscopy experiments.",
-    "/acquisition_time":
+    "/acquisition_duration":
         "Measurement duration in seconds.",
-    "/comment":
-        "A user defined comment for the data file.",
+    "/description":
+        "A user defined comment describing the data file.",
     "/photon_data":
         "Group containing arrays of photon-data (one element per photon).",
     "/photon_data/timestamps":

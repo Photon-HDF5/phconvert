@@ -70,11 +70,10 @@ def usalex_sm(
         detection_wavelengths = detection_wavelengths)
 
     provenance = dict(filename=filename, software=software)
-    acquisition_time = (timestamps[-1] - timestamps[0])*12.5e-9
+    acquisition_duration = (timestamps[-1] - timestamps[0])*12.5e-9
     data = dict(
         _filename = filename,
-        acquisition_time = round(acquisition_time),
-        #comment = comment,
+        acquisition_duration = round(acquisition_duration),
         photon_data = photon_data,
         setup=setup,
         provenance=provenance)
@@ -178,11 +177,11 @@ def nsalex_bh(filename_spc,
         excitation_cw = [False, False],
         detection_wavelengths = detection_wavelengths)
 
-    acquisition_time = (timestamps.max() - timestamps.min())*timestamps_unit
+    acquisition_duration = (timestamps.max() - timestamps.min())*timestamps_unit
 
     data = dict(
         _filename = filename_spc,
-        acquisition_time = round(acquisition_time),
+        acquisition_duration = round(acquisition_duration),
         photon_data = photon_data,
         setup=setup,
         provenance=provenance)
@@ -209,7 +208,7 @@ def nsalex_ht3(filename,
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins*tcspc_unit
     laser_repetition_rate = metadata['ttmode']['SyncRate']
-    acquisition_time = metadata['header']['Tacq'][0]*1e-3
+    acquisition_duration = metadata['header']['Tacq'][0]*1e-3
     software = metadata['header']['CreatorName']
     software_version = metadata['header']['CreatorVersion']
 
@@ -261,7 +260,7 @@ def nsalex_ht3(filename,
 
     data = dict(
         _filename=filename,
-        acquisition_time = acquisition_time,
+        acquisition_duration = acquisition_duration,
 
         photon_data = photon_data,
         setup=setup,
