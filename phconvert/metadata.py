@@ -29,7 +29,7 @@ def _get_fields_descr():
 root_attributes = OrderedDict([
     ('format_name', b'Photon-HDF5'),
     ('format_version', LATEST_FORMAT_VERSION),
-    ('format_url', b'http://photon-hdf5.readthedocs.org/'),
+    ('format_url', b'http://photon-hdf5.org/'),
 ])
 
 
