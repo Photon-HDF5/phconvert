@@ -121,6 +121,10 @@
         "Version for the Photon-HDF5 format.",
     "/identity/format_url":
         "Official URL for the Photon-HDF5 format.",
+    "/identity/funding":
+        "A description of funding sources and/or grants used to produce the data.",
+    "/identity/license":
+        "The license under which the data is released.",
     "/provenance":
         "Information about the original data file.",
     "/provenance/filename":
