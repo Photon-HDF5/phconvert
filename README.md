@@ -22,7 +22,7 @@ can be found in [this repository](https://github.com/Photon-HDF5/photon_hdf5_rea
 
 This repository also contains a JSON descriptions of the Photon-HDF5 fields:
 
-- [photon-hdf5_fields.json](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_fields.json)
+- [photon-hdf5_specs.json](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json)
 
 ## How to use?
 
