@@ -28,6 +28,6 @@ test:
     - phconvert
 
 about:
-  home: http://github.com/tritemio/FRETBursts/
-  license: GPLv2
-  summary: 'Reference library to read and save Photon-HDF5 files.'
+  home: https://github.com/Photon-HDF5/phconvert
+  license: MIT
+  summary: 'Reference library to read and write Photon-HDF5 files.'
