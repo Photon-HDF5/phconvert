@@ -267,16 +267,16 @@ def save_photon_hdf5(data_dict,
         data_file.close()
 
 
-def get_identity(h5file, format_version=LATEST_FORMAT_VERSION):
+def get_identity(h5file):
     full_h5filename = os.path.abspath(h5file.filename)
     h5filename = os.path.basename(full_h5filename)
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
     identity = dict(filename=h5filename,
                     filename_full=full_h5filename,
                     creation_time=creation_time,
-                    format_name='Photon-HDF5',
-                    format_version=format_version,
-                    format_url='http://photon-hdf5.readthedocs.org/')
+                    format_name=root_attributes['format_name'],
+                    format_version=LATEST_FORMAT_VERSION,
+                    format_url=root_attributes['format_url'])
     return identity
 
 
