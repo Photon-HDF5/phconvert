@@ -340,7 +340,7 @@ def load_photon_hdf5(filename, strict=True):
     assert os.path.isfile(filename)
     h5file = tables.open_file(filename)
     data_dict = dict_from_group(h5file.root, read=False)
-    assert_valid_photon_hdf5(data_dict, strict=strict)
+    assert_valid_photon_hdf5(data_dict, strict=strict, type_check=False)
     return h5file.root
 
 
@@ -370,7 +370,7 @@ def _check_has_field(name, group_dict, group_str='', strict=True):
     if name not in group_dict:
         _raise_invalid_file(msg, strict)
 
-def _check_valid_names(data_dict, strict=True, debug=False):
+def _check_valid_names(data_dict, strict=True, type_check=True, debug=False):
     msg1 = 'Unknown field "%s". Custom fields must be inside a "user" group.'
     msg2 = 'Wrong type for field "%s". This field should be a "%s".'
 
@@ -378,7 +378,7 @@ def _check_valid_names(data_dict, strict=True, debug=False):
         if not item['is_user']:
             if item['meta_path'] not in official_fields_specs:
                 _raise_invalid_file(msg1 % item['full_path'], strict)
-            else:
+            elif type_check:
                 official_type = official_fields_specs[item['meta_path']][1]
                 obj = item['value']
                 invalid_type = False
@@ -442,7 +442,7 @@ def _sanitize_data(data_dict):
             cdict = item['curr_dict']
             cdict[item['name']] = np.array(item['value'], dtype=dtype)
 
-def assert_valid_photon_hdf5(data_dict, strict=True):
+def assert_valid_photon_hdf5(data_dict, strict=True, type_check=True):
     """
     Validate the structure of a Photon-HDF5 file.
 
@@ -452,7 +452,7 @@ def assert_valid_photon_hdf5(data_dict, strict=True):
     When `strict` is True, raise an error if there is any name not officially
     supported and if setup is missing or not complete.
     """
-    _check_valid_names(data_dict, strict=strict)
+    _check_valid_names(data_dict, strict=strict, type_check=type_check)
     _check_has_field('acquisition_duration', data_dict, '/', strict=strict)
     _check_has_field('description', data_dict, '/', strict=strict)
 
