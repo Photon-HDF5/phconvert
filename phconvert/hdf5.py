@@ -168,11 +168,12 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                             chunked=item['is_phdata'], h5file=group._v_file)
 
 def save_photon_hdf5(data_dict,
-                     h5_fname=None,
-                     compression=dict(complevel=6, complib='zlib'),
-                     user_descr=None,
-                     debug=False,
-                     close=True):
+                     h5_fname = None,
+                     compression = dict(complevel=6, complib='zlib'),
+                     user_descr = None,
+                     debug = False,
+                     close = True,
+                     overwrite = False):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -193,6 +194,13 @@ def save_photon_hdf5(data_dict,
             user-defined fields. The keys must be strings representing
             the full HDF5 path of each field. The values must be
             binary (i.e. encoded) strings restricted to the ASCII set.
+        debug (bool): if True prints addition debug information.
+        close (bool): If True (default) the HDF5 file is closed before
+            returning. If False the file is left open.
+        overwrite (bool): if True, when an HDF5 file with the same name is
+            found, overwrite it. If False, save the new file by adding the
+            suffix "new_copy" (and if a "_new_copy" file is already present
+            overwrites it).
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
@@ -205,7 +213,7 @@ def save_photon_hdf5(data_dict,
             basename += '_blosc'
         h5_fname = basename + '.hdf5'
 
-    if os.path.isfile(h5_fname):
+    if os.path.isfile(h5_fname) and not overwrite:
         basename, extension = os.path.splitext(h5_fname)
         h5_fname = basename + '_new_copy.hdf5'
 
@@ -547,9 +555,8 @@ def print_attrs(node, which='user'):
     """Print the HDF5 attributes for `node_name`.
 
     Parameters:
-        data_file (pytables HDF5 file object): the data file to print
-        node_name (string): name of the path inside the file to be printed.
-            Can be either a group or a leaf-node. Default: '/', the root node.
+        node (pytables node): node whose attributes will be printed.
+            Can be either a group or a leaf-node.
         which (string): Valid values are 'user' for user-defined attributes,
             'sys' for pytables-specific attributes and 'all' to print both
             groups of attributes. Default 'user'.
