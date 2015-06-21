@@ -70,21 +70,20 @@ def alternation_hist_usalex(d, bins=None, ax=None,
             **hist_style_)
     ax.hist((ph_times_t[a_em_t] - offset) % period, color=_red, label=A_label,
             **hist_style_)
-    ax.set_xlabel('Timestamp MODULO Alternation period')
+    ax.set_xlabel('(timestamps - alex_offset) MOD alex_period')
 
     if D_ON[0] < D_ON[1]:
-        plt.axvspan(D_ON[0], D_ON[1], color=_green, **span_style_)
+        ax.axvspan(D_ON[0], D_ON[1], color=_green, **span_style_)
     else:
-        plt.axvspan(0, D_ON[1], color=_green, **span_style_)
-        plt.axvspan(D_ON[0], period, color=_green, **span_style_)
+        ax.axvspan(0, D_ON[1], color=_green, **span_style_)
+        ax.axvspan(D_ON[0], period, color=_green, **span_style_)
 
     if A_ON[0] < A_ON[1]:
-        plt.axvspan(A_ON[0], A_ON[1], color=_red, **span_style_)
+        ax.axvspan(A_ON[0], A_ON[1], color=_red, **span_style_)
     else:
-        plt.axvspan(0, A_ON[1], color=_red, **span_style_)
-        plt.axvspan(A_ON[0], period, color=_red, **span_style_)
-
-    plt.legend(loc='best')
+        ax.axvspan(0, A_ON[1], color=_red, **span_style_)
+        ax.axvspan(A_ON[0], period, color=_red, **span_style_)
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
 
 
 def alternation_hist_nsalex(d, bins=None, ax=None):
@@ -112,12 +111,13 @@ def alternation_hist_nsalex(d, bins=None, ax=None):
     nanotimes_d = ph_data['nanotimes'][ph_data['detectors'] == d_ch]
     nanotimes_a = ph_data['nanotimes'][ph_data['detectors'] == a_ch]
 
-    plt.hist(nanotimes_d, bins=bins, histtype='step', label=D_label, lw=1.2,
+    ax.hist(nanotimes_d, bins=bins, histtype='step', label=D_label, lw=1.2,
              alpha=0.5, color=_green)
-    plt.hist(nanotimes_a, bins=bins, histtype='step', label=A_label, lw=1.2,
+    ax.hist(nanotimes_a, bins=bins, histtype='step', label=A_label, lw=1.2,
              alpha=0.5, color=_red)
-    plt.xlabel('TCSPC Nanotime')
+    ax.set_xlabel('TCSPC nanotimes bins')
 
-    plt.yscale('log')
-    plt.axvspan(D_ON[0], D_ON[1], color=_green, alpha=0.1)
-    plt.axvspan(A_ON[0], A_ON[1], color=_red, alpha=0.1)
+    ax.set_yscale('log')
+    ax.axvspan(D_ON[0], D_ON[1], color=_green, alpha=0.1)
+    ax.axvspan(A_ON[0], A_ON[1], color=_red, alpha=0.1)
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
