@@ -103,7 +103,7 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     # Set title through property access to work around pytable issue
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
     node = h5file.get_node(group)._f_get_child(name)
-    node.title = descr  # descr is a binary string both on py2 and py3
+    node.title = descr.encode()  # saved as binary both on py2 and py3
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                     debug=False):
@@ -220,7 +220,7 @@ def save_photon_hdf5(data_dict,
     _sanitize_data(data_dict)
 
     print('Saving: %s' % h5_fname)
-    title = official_fields_descr['/']
+    title = official_fields_descr['/'].encode()
     data_file = tables.open_file(h5_fname, mode="w", title=title,
                                  filters=comp_filter)
     # Saving a file reference is useful in case of error
