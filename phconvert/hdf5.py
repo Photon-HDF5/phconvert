@@ -578,9 +578,12 @@ def print_children(group):
             content = '(Group)'
         else:
             content = value.read()
+        title = value._v_title
+        if isinstance(title, bytes):
+            title = title.decode()
         print(name)
         print('    Content:     %s' % content)
-        print('    Description: %s\n' % value._v_title.decode())
+        print('    Description: %s\n' % title)
 
 
 del print_function
