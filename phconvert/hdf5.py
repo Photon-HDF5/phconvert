@@ -390,7 +390,8 @@ def _check_valid_names(data_dict, strict=True, type_check=True, debug=False):
                         invalid_type = True
                 elif official_type == 'scalar':
                     if not np.isscalar(obj):
-                        invalid_type = True
+                        if not (hasattr(obj, '__array__') and obj.size == 1):
+                            invalid_type = True
                 elif official_type == 'array':
                     if not (isinstance(obj, (list, tuple)) or
                             hasattr(obj, '__array__')):
