@@ -15,7 +15,7 @@ import json
 
 LATEST_FORMAT_VERSION = b'0.4'
 
-_specs_file_fields = 'specs/photon-hdf5_fields.json'
+_specs_file_fields = 'specs/photon-hdf5_specs.json'
 
 
 def _get_fields_descr():
@@ -32,4 +32,5 @@ root_attributes = OrderedDict([
 ])
 
 
-official_fields_descr = _get_fields_descr()
+official_fields_descr = {k: v[0] for k, v in _get_fields_descr().items()}
+official_fields_types = {k: v[1] for k, v in _get_fields_descr().items()}

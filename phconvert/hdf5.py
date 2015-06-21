@@ -25,11 +25,12 @@ from __future__ import print_function, absolute_import, division
 import os
 import time
 import re
+import collections
 import tables
 import numpy as np
 
-from .metadata import (official_fields_descr, root_attributes,
-                       LATEST_FORMAT_VERSION)
+from .metadata import (official_fields_descr, official_fields_types,
+                       root_attributes, LATEST_FORMAT_VERSION)
 from ._version import get_versions
 
 
@@ -370,11 +371,37 @@ def _check_has_field(name, group_dict, group_str='', strict=True):
         _raise_invalid_file(msg, strict)
 
 def _check_valid_names(data_dict, strict=True, debug=False):
-    msg = 'Unknown field "%s". Custom fields must be inside a "user" group.'
+    msg1 = 'Unknown field "%s". Custom fields must be inside a "user" group.'
+    msg2 = 'Wrong type for field "%s". This field should be a "%s".'
+
     for item in _iter_hdf5_dict(data_dict, debug=debug):
         if not item['is_user']:
-            if item['meta_path'] not in official_fields_descr:
-                _raise_invalid_file(msg % item['full_path'], strict=strict)
+            if item['meta_path'] not in official_fields_types:
+                _raise_invalid_file(msg1 % item['full_path'], strict)
+            else:
+                official_type = official_fields_types[item['meta_path']]
+                obj = item['value']
+                invalid_type = False
+                if official_type == 'group':
+                    if not isinstance(obj, collections.Mapping):
+                        invalid_type = True
+                elif official_type == 'string':
+                    if not isinstance(obj, str):
+                        invalid_type = True
+                elif official_type == 'scalar':
+                    if not np.iscalar(obj):
+                        invalid_type = True
+                elif official_type == 'array':
+                    if not (isinstance(obj, (list, tuple)) or
+                            hasattr(obj, '__array__')):
+                        invalid_type = True
+                else:
+                    raise ValueError('Wrong type in JSON specs.')
+
+                if invalid_type:
+                    _raise_invalid_file(
+                        msg2 % (item['full_path'], official_type), strict)
+
 
 def _sorted_photon_data(data_dict):
     """Return a sorted list of keys "photon_dataN", sorted by N.
