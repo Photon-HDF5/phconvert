@@ -29,8 +29,8 @@ import collections
 import tables
 import numpy as np
 
-from .metadata import (official_fields_descr, official_fields_types,
-                       root_attributes, LATEST_FORMAT_VERSION)
+from .metadata import (official_fields_specs, root_attributes,
+                       LATEST_FORMAT_VERSION)
 from ._version import get_versions
 
 
@@ -221,7 +221,7 @@ def save_photon_hdf5(data_dict,
     _sanitize_data(data_dict)
 
     print('Saving: %s' % h5_fname)
-    title = official_fields_descr['/'].encode()
+    title = official_fields_specs['/'][0].encode()
     data_file = tables.open_file(h5_fname, mode="w", title=title,
                                  filters=comp_filter)
     # Saving a file reference is useful in case of error
@@ -258,7 +258,7 @@ def save_photon_hdf5(data_dict,
     data_dict['identity'] = identity
 
     ## Save everything to disk
-    fields_descr = official_fields_descr.copy()
+    fields_descr = {k: v[0] for k, v in official_fields_specs.items()}
     if user_descr is not None:
         fields_descr.update(user_descr)
     _save_photon_hdf5_dict(data_file.root, data_dict,
@@ -376,10 +376,10 @@ def _check_valid_names(data_dict, strict=True, debug=False):
 
     for item in _iter_hdf5_dict(data_dict, debug=debug):
         if not item['is_user']:
-            if item['meta_path'] not in official_fields_types:
+            if item['meta_path'] not in official_fields_specs:
                 _raise_invalid_file(msg1 % item['full_path'], strict)
             else:
-                official_type = official_fields_types[item['meta_path']]
+                official_type = official_fields_specs[item['meta_path']][1]
                 obj = item['value']
                 invalid_type = False
                 if official_type == 'group':
@@ -389,7 +389,7 @@ def _check_valid_names(data_dict, strict=True, debug=False):
                     if not isinstance(obj, str):
                         invalid_type = True
                 elif official_type == 'scalar':
-                    if not np.iscalar(obj):
+                    if not np.isscalar(obj):
                         invalid_type = True
                 elif official_type == 'array':
                     if not (isinstance(obj, (list, tuple)) or

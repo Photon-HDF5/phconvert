@@ -31,6 +31,4 @@ root_attributes = OrderedDict([
     ('format_url', b'http://photon-hdf5.org/'),
 ])
 
-
-official_fields_descr = {k: v[0] for k, v in _get_fields_descr().items()}
-official_fields_types = {k: v[1] for k, v in _get_fields_descr().items()}
+official_fields_specs = _get_fields_descr()
