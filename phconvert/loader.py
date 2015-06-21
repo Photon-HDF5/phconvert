@@ -210,8 +210,8 @@ def nsalex_ht3(filename,
     tcspc_range = tcspc_num_bins*tcspc_unit
     laser_repetition_rate = metadata['ttmode']['SyncRate']
     acquisition_duration = metadata['header']['Tacq'][0]*1e-3
-    software = metadata['header']['CreatorName']
-    software_version = metadata['header']['CreatorVersion']
+    software = str(metadata['header']['CreatorName'][0])
+    software_version = str(metadata['header']['CreatorVersion'][0])
 
     # Estract the creation time from the HT3 file header as it will be
     # more reliable than the creation time from the file system
@@ -220,10 +220,10 @@ def nsalex_ht3(filename,
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
 
     provenance = dict(
-        filename=filename,
-        creation_time=creation_time,
-        software=software,
-        software_version=software_version,
+        filename = filename,
+        creation_time = creation_time,
+        software = software,
+        software_version = software_version,
         )
 
     photon_data = dict(
