@@ -44,7 +44,7 @@ Then you need to install the *phconvert* library with the command (type it in th
 Finally you can download one of the provided notebooks and run it on your machine.
 To download all the notebooks in one step you can download the 
 [phconvert zip](https://github.com/Photon-HDF5/phconvert/archive/master.zip), 
-wich contains all the notebooks in the `notebooks` subfolder.
+which contains all the notebooks in the `notebooks` subfolder.
 
 ### The phconvert library (for developers)
 
