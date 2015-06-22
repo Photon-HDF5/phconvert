@@ -37,7 +37,7 @@ A quick-start guide on installing and running the *Jupyter Notebook App* is avai
 
 - [Jupyter/IPython Notebook Quick Start Guide](http://jupyter-notebook-beginner-guide.readthedocs.org/)
 
-Then you need to install the *phconvert* library with the command:
+Then you need to install the *phconvert* library with the command (type it in the terminal, cmd on windows):
 
     conda install -c tritemio phconvert
     
