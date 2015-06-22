@@ -37,9 +37,14 @@ A quick-start guide on installing and running the *Jupyter Notebook App* is avai
 
 - [Jupyter/IPython Notebook Quick Start Guide](http://jupyter-notebook-beginner-guide.readthedocs.org/)
 
-Before executing the notebook, you also need to install the *phconvert* library with the command:
+Then you need to install the *phconvert* library with the command:
 
     conda install -c tritemio phconvert
+    
+and finally you can download one of the provided notebooks and run it on your machine.
+To download all the notebooks in one step you can download this 
+[zip file](https://github.com/Photon-HDF5/phconvert/archive/master.zip), 
+that contains all the phconvert notebooks in the `notebooks` subfolder.
 
 ### The phconvert library (for developers)
 
