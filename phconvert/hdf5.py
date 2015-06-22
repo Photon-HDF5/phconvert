@@ -25,10 +25,11 @@ from __future__ import print_function, absolute_import, division
 import os
 import time
 import re
+import collections
 import tables
 import numpy as np
 
-from .metadata import (official_fields_descr, root_attributes,
+from .metadata import (official_fields_specs, root_attributes,
                        LATEST_FORMAT_VERSION)
 from ._version import get_versions
 
@@ -103,7 +104,7 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     # Set title through property access to work around pytable issue
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
     node = h5file.get_node(group)._f_get_child(name)
-    node.title = descr  # descr is a binary string both on py2 and py3
+    node.title = descr.encode()  # saved as binary both on py2 and py3
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                     debug=False):
@@ -220,7 +221,7 @@ def save_photon_hdf5(data_dict,
     _sanitize_data(data_dict)
 
     print('Saving: %s' % h5_fname)
-    title = official_fields_descr['/']
+    title = official_fields_specs['/'][0].encode()
     data_file = tables.open_file(h5_fname, mode="w", title=title,
                                  filters=comp_filter)
     # Saving a file reference is useful in case of error
@@ -257,7 +258,7 @@ def save_photon_hdf5(data_dict,
     data_dict['identity'] = identity
 
     ## Save everything to disk
-    fields_descr = official_fields_descr.copy()
+    fields_descr = {k: v[0] for k, v in official_fields_specs.items()}
     if user_descr is not None:
         fields_descr.update(user_descr)
     _save_photon_hdf5_dict(data_file.root, data_dict,
@@ -339,7 +340,7 @@ def load_photon_hdf5(filename, strict=True):
     assert os.path.isfile(filename)
     h5file = tables.open_file(filename)
     data_dict = dict_from_group(h5file.root, read=False)
-    assert_valid_photon_hdf5(data_dict, strict=strict)
+    assert_valid_photon_hdf5(data_dict, strict=strict, type_check=False)
     return h5file.root
 
 
@@ -369,12 +370,39 @@ def _check_has_field(name, group_dict, group_str='', strict=True):
     if name not in group_dict:
         _raise_invalid_file(msg, strict)
 
-def _check_valid_names(data_dict, strict=True, debug=False):
-    msg = 'Unknown field "%s". Custom fields must be inside a "user" group.'
+def _check_valid_names(data_dict, strict=True, type_check=True, debug=False):
+    msg1 = 'Unknown field "%s". Custom fields must be inside a "user" group.'
+    msg2 = 'Wrong type for field "%s". This field should be a "%s".'
+
     for item in _iter_hdf5_dict(data_dict, debug=debug):
         if not item['is_user']:
-            if item['meta_path'] not in official_fields_descr:
-                _raise_invalid_file(msg % item['full_path'], strict=strict)
+            if item['meta_path'] not in official_fields_specs:
+                _raise_invalid_file(msg1 % item['full_path'], strict)
+            elif type_check:
+                official_type = official_fields_specs[item['meta_path']][1]
+                obj = item['value']
+                invalid_type = False
+                if official_type == 'group':
+                    if not isinstance(obj, collections.Mapping):
+                        invalid_type = True
+                elif official_type == 'string':
+                    if not isinstance(obj, str):
+                        invalid_type = True
+                elif official_type == 'scalar':
+                    if not np.isscalar(obj):
+                        if not (hasattr(obj, '__array__') and obj.size == 1):
+                            invalid_type = True
+                elif official_type == 'array':
+                    if not (isinstance(obj, (list, tuple)) or
+                            hasattr(obj, '__array__')):
+                        invalid_type = True
+                else:
+                    raise ValueError('Wrong type in JSON specs.')
+
+                if invalid_type:
+                    _raise_invalid_file(
+                        msg2 % (item['full_path'], official_type), strict)
+
 
 def _sorted_photon_data(data_dict):
     """Return a sorted list of keys "photon_dataN", sorted by N.
@@ -415,7 +443,7 @@ def _sanitize_data(data_dict):
             cdict = item['curr_dict']
             cdict[item['name']] = np.array(item['value'], dtype=dtype)
 
-def assert_valid_photon_hdf5(data_dict, strict=True):
+def assert_valid_photon_hdf5(data_dict, strict=True, type_check=True):
     """
     Validate the structure of a Photon-HDF5 file.
 
@@ -425,7 +453,7 @@ def assert_valid_photon_hdf5(data_dict, strict=True):
     When `strict` is True, raise an error if there is any name not officially
     supported and if setup is missing or not complete.
     """
-    _check_valid_names(data_dict, strict=strict)
+    _check_valid_names(data_dict, strict=strict, type_check=type_check)
     _check_has_field('acquisition_duration', data_dict, '/', strict=strict)
     _check_has_field('description', data_dict, '/', strict=strict)
 
@@ -578,9 +606,12 @@ def print_children(group):
             content = '(Group)'
         else:
             content = value.read()
+        title = value._v_title
+        if isinstance(title, bytes):
+            title = title.decode()
         print(name)
         print('    Content:     %s' % content)
-        print('    Description: %s\n' % value._v_title.decode())
+        print('    Description: %s\n' % title)
 
 
 del print_function

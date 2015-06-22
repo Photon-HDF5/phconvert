@@ -15,14 +15,13 @@ import json
 
 LATEST_FORMAT_VERSION = b'0.4'
 
-_specs_file_fields = 'specs/photon-hdf5_fields.json'
+_specs_file_fields = 'specs/photon-hdf5_specs.json'
 
 
 def _get_fields_descr():
     s = pkg_resources.resource_string('phconvert',
                                       _specs_file_fields).decode('utf8')
-    descr = {k: v.encode()
-             for k, v in json.loads(s).items()}
+    descr = json.loads(s)
     return descr
 
 # Metadata for the HDF5 root node
@@ -32,5 +31,4 @@ root_attributes = OrderedDict([
     ('format_url', b'http://photon-hdf5.org/'),
 ])
 
-
-official_fields_descr = _get_fields_descr()
+official_fields_specs = _get_fields_descr()
