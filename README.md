@@ -41,10 +41,10 @@ Then you need to install the *phconvert* library with the command (type it in th
 
     conda install -c tritemio phconvert
     
-and finally you can download one of the provided notebooks and run it on your machine.
-To download all the notebooks in one step you can download this 
-[zip file](https://github.com/Photon-HDF5/phconvert/archive/master.zip), 
-that contains all the phconvert notebooks in the `notebooks` subfolder.
+Finally you can download one of the provided notebooks and run it on your machine.
+To download all the notebooks in one step you can download the 
+[phconvert zip](https://github.com/Photon-HDF5/phconvert/archive/master.zip), 
+wich contains all the notebooks in the `notebooks` subfolder.
 
 ### The phconvert library (for developers)
 
