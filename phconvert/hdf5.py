@@ -334,6 +334,10 @@ def dict_to_group(group, dictionary):
                 # no-op on py2, convert to binary on py3
                 value = value.encode()
             h5file.create_array(group, name=key, obj=value)
+            # Set title through property access to work around pytable issue
+            # under python 3 (https://github.com/PyTables/PyTables/issues/469)
+            node = group._f_get_child(key)
+            node.title = b''  # saved as binary both on py2 and py3
     h5file.flush()
 
 def load_photon_hdf5(filename, strict=True):
