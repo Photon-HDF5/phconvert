@@ -28,6 +28,6 @@ test:
     - phconvert
 
 about:
-  home: https://github.com/Photon-HDF5/phconvert
+  home: https://photon-hdf5.github.io/phconvert
   license: MIT
-  summary: 'Reference library to read and write Photon-HDF5 files.'
+  summary: 'Reference library to convert and write Photon-HDF5 files.'
