@@ -106,3 +106,7 @@ The phconvert repository also contains a JSON specification of the Photon-HDF5 f
 
 *phconvert* is released under the open source MIT license.
 
+
+## Acknowledgements
+This work was supported by NIH Grant R01-GM95904.
+
