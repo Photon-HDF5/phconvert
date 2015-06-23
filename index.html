@@ -35,46 +35,24 @@
 <a id="phconvert" class="anchor" href="#phconvert" aria-hidden="true"><span class="octicon octicon-link"></span></a>phconvert</h1>
 
 <p><em>phconvert</em> is python 2/3 library for writing and reading
-<a href="http://photon-hdf5.readthedocs.org/">Photon-HDF5 files</a>,
-a file format for timestamp-based single-molecule spectroscopy.
-Additionally, <em>phconvert</em> contains functions to load a few common binary formats
-used in in single-molecule spectroscopy such as PicoQuant .ht3,
-Becker &amp; Hickl .spc/.set files.</p>
-
-<p>The <a href="https://github.com/Photon-HDF5/phconvert/tree/master/notebooks">included notebooks</a> 
-(<a href="http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/">online viewer</a>) 
-show how to convert these formats to Photon-HDF5.</p>
-
-<p><em>phconvert</em> is especially useful when <strong>saving</strong> to Photon-HDF5, because
-it tests the compliance to the Photon-HDF5 specifications
-and it automatically adds description attributes for each field.</p>
-
-<p>In case you just want to read a Photon-HDF5 file, using phconvert is not
-necessary (although it provides some helper functions).
-Examples on reading Photon-HDF5 directly (without phconvert)
-can be found in <a href="https://github.com/Photon-HDF5/photon_hdf5_reading_examples">this repository</a>.</p>
-
-<p>This repository also contains a JSON descriptions of the Photon-HDF5 fields:</p>
-
-<ul>
-<li><a href="https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json">photon-hdf5_specs.json</a></li>
-</ul>
+<a href="http://photon-hdf5.org/" target="_blank">Photon-HDF5</a>
+files, a file format for timestamp-based single-molecule spectroscopy.
+Additionally, <em>phconvert</em> can convert a few common binary formats
+used in in single-molecule spectroscopy (PicoQuant .HT3,
+Becker &amp; Hickl .SPC/.SET) to Photon-HDF5.</p>
 
 <h2>
-<a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to use?</h2>
+<a id="quick-start-converting-files-to-photon-hdf5" class="anchor" href="#quick-start-converting-files-to-photon-hdf5" aria-hidden="true"><span class="octicon octicon-link"></span></a>Quick-start: Converting files to Photon-HDF5</h2>
 
-<h3>
-<a id="converting-supported-formats-for-users" class="anchor" href="#converting-supported-formats-for-users" aria-hidden="true"><span class="octicon octicon-link"></span></a>Converting supported formats (for users)</h3>
-
-<p>Converting one of the supported files formats to Photon-HDF5 does not require being able to program in python. 
-All you need is running the <a href="https://github.com/Photon-HDF5/phconvert/tree/master/notebooks">appropriate notebook</a> 
+<p>Converting one of the supported files formats to Photon-HDF5 does not require 
+being able to program in python. All you need is running the appropriate notebook
 for your input format and follow the instructions therein.</p>
 
 <p>To run a notebook on your machine you need to install the <em>Jupyter Notebook App</em>. 
 A quick-start guide on installing and running the <em>Jupyter Notebook App</em> is available here:</p>
 
 <ul>
-<li><a href="http://jupyter-notebook-beginner-guide.readthedocs.org/">Jupyter/IPython Notebook Quick Start Guide</a></li>
+<li><a href="http://jupyter-notebook-beginner-guide.readthedocs.org/" target="_blank">Jupyter/IPython Notebook Quick Start Guide</a></li>
 </ul>
 
 <p>Then you need to install the <em>phconvert</em> library with the command (type it in the terminal, cmd on windows):</p>
@@ -87,28 +65,28 @@ To download all the notebooks in one step you can download the
 <a href="https://github.com/Photon-HDF5/phconvert/archive/master.zip">phconvert zip</a>, 
 which contains all the notebooks in the <code>notebooks</code> subfolder.</p>
 
-<h3>
-<a id="the-phconvert-library-for-developers" class="anchor" href="#the-phconvert-library-for-developers" aria-hidden="true"><span class="octicon octicon-link"></span></a>The phconvert library (for developers)</h3>
+<h2>
+<a id="project-details" class="anchor" href="#project-details" aria-hidden="true"><span class="octicon octicon-link"></span></a>Project details</h2>
 
-<p>The <em>phconvert</em> library contains two main modules <code>hdf5</code> and <code>loader</code>. The former contains 
-the function <code>save_photon_hdf5()</code> that is used to create Photon-HDF5 files.</p>
+<p><em>phconvert</em> repository contains a python packages (library) and a set of
+<a href="https://github.com/Photon-HDF5/phconvert/tree/master/notebooks">notebooks</a> 
+(<a href="http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/">online viewer</a>) 
+that show how to convert other formats to Photon-HDF5.</p>
 
-<p>The function <code>save_photon_hdf5()</code> requires as an argument the data to be saved.
-This input data needs to have the hierarchical structure of a Photon-HDF5 file. 
-In practice we use a standard python dict: each keys is a Photon-HDF5 field name and
-each value contains data (e.g. array, string, etc..) or another dict 
-(in this case it represents an HDF5 sub-group). Similarly, sub-dictionaries 
-contain data or other dict in order to represent the hierachy of Photon-HDF5 files.</p>
+<p><em>phconvert</em> tests the compliance to the Photon-HDF5 specifications
+before saving a new files and it automatically adds description 
+attributes for each field.</p>
 
-<p>The module <code>loader</code> contains loader functions that load data from disk and return a dict
-object to be passed to <code>save_photon_hdf5()</code>. These functions can be used as examples
-when converting a new unsupported file format.</p>
+<h2>
+<a id="read-photon-hdf5-files" class="anchor" href="#read-photon-hdf5-files" aria-hidden="true"><span class="octicon octicon-link"></span></a>Read Photon-HDF5 files</h2>
 
-<p>The <code>loader</code> module contains high-level functions that "fill" the dict-based
-with the appropriate arrays. The actual decoding of the input binary files is perfomed
-by low-level functions in other modules (<code>smreader.py</code>, <code>pqreader.py</code>, <code>bhreader.py</code>).
-Therefore when trying to decode a new file format you can look at those modules
-for examples.</p>
+<p>In case you just want to read Photon-HDF5 files, phconvert is not
+necessary (although it provides some helper functions).
+Photon-HDF5 files can be opened with the standard HDF5 viewer
+<a href="https://www.hdfgroup.org/products/java/hdfview/">HDFView</a>.
+Moreover, we provide code examples on reading Photon-HDF5 files
+in multiple languages in 
+<a href="https://github.com/Photon-HDF5/photon_hdf5_reading_examples">this repository</a>.</p>
 
 <h2>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
@@ -145,6 +123,35 @@ python setup.py install
 <p><strong>Note</strong>
 when installing via <code>conda</code> all the dependencies are automatically installed.</p>
 </blockquote>
+
+<h2>
+<a id="the-phconvert-library-for-developers" class="anchor" href="#the-phconvert-library-for-developers" aria-hidden="true"><span class="octicon octicon-link"></span></a>The phconvert library (for developers)</h2>
+
+<p>The <em>phconvert</em> library contains two main modules <code>hdf5</code> and <code>loader</code>. The former contains 
+the function <code>save_photon_hdf5()</code> that is used to create Photon-HDF5 files.</p>
+
+<p>The function <code>save_photon_hdf5()</code> requires as an argument the data to be saved.
+This input data needs to have the hierarchical structure of a Photon-HDF5 file. 
+In practice we use a standard python dict: each keys is a Photon-HDF5 field name and
+each value contains data (e.g. array, string, etc..) or another dict 
+(in this case it represents an HDF5 sub-group). Similarly, sub-dictionaries 
+contain data or other dict in order to represent the hierachy of Photon-HDF5 files.</p>
+
+<p>The module <code>loader</code> contains loader functions that load data from disk and return a dict
+object to be passed to <code>save_photon_hdf5()</code>. These functions can be used as examples
+when converting a new unsupported file format.</p>
+
+<p>The <code>loader</code> module contains high-level functions that "fill" the dict-based
+with the appropriate arrays. The actual decoding of the input binary files is perfomed
+by low-level functions in other modules (<code>smreader.py</code>, <code>pqreader.py</code>, <code>bhreader.py</code>).
+Therefore when trying to decode a new file format you can look at those modules
+for examples.</p>
+
+<p>The phconvert repository also contains a JSON specification of the Photon-HDF5 format:</p>
+
+<ul>
+<li><a href="https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json">photon-hdf5_specs.json</a></li>
+</ul>
 
 <h2>
 <a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
