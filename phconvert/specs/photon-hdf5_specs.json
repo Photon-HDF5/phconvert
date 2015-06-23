@@ -288,8 +288,8 @@
         "scalar"
     ],
     "/sample/dye_names": [
-        "List of dye names present in the sample.",
-        "array"
+        "String containing a comma-separated list of dye or fluorophore names.",
+        "string"
     ],
     "/sample/buffer_name": [
         "A descriptive name for the buffer.",
