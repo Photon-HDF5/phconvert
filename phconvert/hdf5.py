@@ -337,7 +337,8 @@ def dict_to_group(group, dictionary):
             # Set title through property access to work around pytable issue
             # under python 3 (https://github.com/PyTables/PyTables/issues/469)
             node = group._f_get_child(key)
-            node.title = b''  # saved as binary both on py2 and py3
+            # Save a single space to workaround h5labview bug (see issue #4)
+            node.title = b' '  # saved as binary both on py2 and py3
     h5file.flush()
 
 def load_photon_hdf5(filename, strict=True):
