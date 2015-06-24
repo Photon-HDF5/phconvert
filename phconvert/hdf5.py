@@ -36,6 +36,8 @@ from ._version import get_versions
 
 __version__ = get_versions()['version']
 
+_EMPTY = b' '
+
 
 def _analyze_path(name, prefix_list):
     """
@@ -124,7 +126,7 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
             print('Item "%s", prefix_list %s ' % (name, prefix_list))
 
         item = _analyze_path(name, prefix_list)
-        item['description'] = fields_descr.get(item['meta_path'], '')
+        item['description'] = fields_descr.get(item['meta_path'], _EMPTY)
         item.update(name=name, value=value, curr_dict=data_dict)
         yield item
 
@@ -156,7 +158,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
     h5file = group._v_file
     for item in _iter_hdf5_dict(data_dict, prefix_list, fields_descr, debug):
         if not item['is_user']:
-            if item['description'] is '':
+            if item['description'] == _EMPTY:
                 print('WARNING: missing description for "%s"' % \
                       item['meta_path'])
 
@@ -326,7 +328,7 @@ def dict_to_group(group, dictionary):
     h5file = group._v_file
     for key, value in dictionary.items():
         if isinstance(value, dict):
-            subgroup = h5file.create_group(group, key)
+            subgroup = h5file.create_group(group, key, title=_EMPTY)
             dict_to_group(subgroup, value)
         else:
             if isinstance(value, str):
@@ -338,7 +340,7 @@ def dict_to_group(group, dictionary):
             # under python 3 (https://github.com/PyTables/PyTables/issues/469)
             node = group._f_get_child(key)
             # Save a single space to workaround h5labview bug (see issue #4)
-            node.title = b' '  # saved as binary both on py2 and py3
+            node.title = _EMPTY  # saved as binary both on py2 and py3
     h5file.flush()
 
 def load_photon_hdf5(filename, strict=True):
@@ -367,7 +369,7 @@ def _raise_invalid_file(msg, strict=True, norepeat=False, pool=None):
     if norepeat:
         pool.append(msg)
 
-def _check_has_field(name, group_dict, group_str='', strict=True):
+def _check_has_field(name, group_dict, group_str=None, strict=True):
     if group_str is not None:
         msg = 'Missing "%s%s".' % (group_str, name)
     else:
@@ -560,7 +562,7 @@ def _check_version(filename):
     """Return file format version string (unicode on both py2 and py3).
     """
     assert os.path.isfile(filename)
-    format_name = b'Photon-HDF5'
+    format_name = root_attributes['format_name']
 
     with tables.open_file(filename) as h5file:
         version = None
