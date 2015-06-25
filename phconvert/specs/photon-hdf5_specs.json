@@ -1,6 +1,6 @@
 {
     "/": [
-        "A file format for freely-diffusing single-molecule spectroscopy experiments.",
+        "A file format for photon-counting detector based single-molecule spectroscopy experiments.",
         "group"
     ],
     "/acquisition_duration": [
@@ -8,15 +8,15 @@
         "scalar"
     ],
     "/description": [
-        "A user defined comment describing the data file.",
+        "A user-defined comment describing the data file.",
         "string"
     ],
     "/photon_data": [
-        "Group containing arrays of photon-data (one element per photon).",
+        "Group containing arrays of photon-data.",
         "group"
     ],
     "/photon_data/timestamps": [
-        "Array of photon timestamps. Units specified in timestamps_specs/timestamps_units.",
+        "Array of photon timestamps. Units specified in timestamps_units (defined in timestamps_specs/).",
         "array"
     ],
     "/photon_data/detectors": [
@@ -36,7 +36,7 @@
         "group"
     ],
     "/photon_data/timestamps_specs/timestamps_unit": [
-        "Time in seconds of 1-unit increment in timestamps.",
+        "Value of 1-unit timestamp-increment in seconds.",
         "scalar"
     ],
     "/photon_data/nanotimes_specs": [
@@ -44,7 +44,7 @@
         "group"
     ],
     "/photon_data/nanotimes_specs/tcspc_unit": [
-        "TCSPC time bin duration in seconds (nanotimes unit).",
+        "Value of 1-unit nanotime-increment in seconds (TCSPC bin size).",
         "scalar"
     ],
     "/photon_data/nanotimes_specs/tcspc_num_bins": [
@@ -56,7 +56,7 @@
         "scalar"
     ],
     "/photon_data/nanotimes_specs/time_reversed": [
-        "True (i.e. 1) if nanotimes contains the time elapsed between a photon and the next laser pulse. False (i.e. 0) if it contains the time elapsed between a laser pulse and a photon.",
+        "True (i.e. 1) if nanotimes contains the time elapsed between a photon and a subsequent laser pulse. False (i.e. 0) if it contains the time elapsed between a laser pulse and a photon.",
         "scalar"
     ],
     "/photon_data/measurement_specs": [
@@ -68,11 +68,11 @@
         "string"
     ],
     "/photon_data/measurement_specs/alex_period": [
-        "Period of laser alternation in us-ALEX measurements in timestamps units.",
+        "Period of laser alternation in us-ALEX measurements in timestamps units (defined in timestamps_specs/).",
         "scalar"
     ],
     "/photon_data/measurement_specs/laser_repetition_rate": [
-        "Repetition rate of the pulsed excitation laser (Hertz).",
+        "Repetition rate of the pulsed excitation laser (in Hertz).",
         "scalar"
     ],
     "/photon_data/measurement_specs/alex_offset": [
@@ -80,11 +80,11 @@
         "scalar"
     ],
     "/photon_data/measurement_specs/alex_excitation_period1": [
-        "Values pair (start-stop range) identifying photons in the excitation period of wavelength 1 (the shortest). Timestamps units. ",
+        "Values pair (start-stop range, in timestamps units) identifying photons in the excitation period of wavelength 1 (the shortest).",
         "array"
     ],
     "/photon_data/measurement_specs/alex_excitation_period2": [
-        "Values pair (start-stop range) identifying photons in the excitation period of wavelength 2. Timestamps units.",
+        "Values pair (start-stop range, in timestamps units) identifying photons in the excitation period of wavelength 2.",
         "array"
     ],
     "/photon_data/measurement_specs/detectors_specs": [
@@ -132,27 +132,27 @@
         "scalar"
     ],
     "/setup/num_spectral_ch": [
-        "Number of distinct spectral bands that are acquired.",
+        "Number of distinct spectral bands which are acquired.",
         "scalar"
     ],
     "/setup/num_polarization_ch": [
-        "Number of distinct polarization states that are acquired.",
+        "Number of distinct polarization states which are acquired.",
         "scalar"
     ],
     "/setup/num_split_ch": [
-        "Number of distinct detection channels detecting the same spectral band and polarization. These are channels are > 1 when using a non-polarizing beam splitter.",
+        "Number of distinct detection channels detecting the same spectral band and polarization. This value is > 1 when using a non-polarizing beam splitter.",
         "scalar"
     ],
     "/setup/modulated_excitation": [
-        "True (or 1) if there is any form of excitation modulation either in the wavelength space (as in us-ALEX or PAX) or in the polarization space. This field is also True for pulse-interleaved excitation (PIE) or ns-ALEX measurements.",
+        "True (i.e. 1) if there is any form of excitation modulation of excitation wavelength (as in us-ALEX or PAX) or polarization. This field is also True for pulse-interleaved excitation (PIE) or ns-ALEX measurements.",
         "scalar"
     ],
     "/setup/lifetime": [
-        "True (or 1) if the measurements includes a nanotimes array of (usually sub-ns resolution) photon arrival times with respect to a laser pulse (as in TCSPC measurements).",
+        "True (i.e. 1) if the measurement includes a nanotimes array of photon arrival times with respect to a laser pulse (as in TCSPC measurements).",
         "scalar"
     ],
     "/setup/excitation_wavelengths": [
-        "List of excitation wavelengths (center wavelength if broad-band) in increasing order (unit: meters).",
+        "List of excitation wavelengths (center wavelength if broad-band) in increasing order (unit: meter).",
         "array"
     ],
     "/setup/excitation_cw": [
@@ -168,15 +168,15 @@
         "array"
     ],
     "/setup/excitation_intensity": [
-        "Excitation intensity in the sample for each excitation source (units: Watts/meters^2). In the case of confocal excitation this is the peak PSF intensity.",
+        "Excitation intensity in the sample for each excitation source (units: Watt/meter^2). In the case of confocal excitation this is the peak PSF intensity.",
         "array"
     ],
     "/setup/detection_wavelengths": [
-        "Reference wavelengths (units: meters) for each detected spectral band.",
+        "Reference wavelengths (units: meter) for each detected spectral band.",
         "array"
     ],
     "/setup/detection_polarizations": [
-        "Polarization angles for each detected polarization.",
+        "Polarization angles (in degrees) for each detected polarization.",
         "array"
     ],
     "/setup/detection_split_ch_ratios": [
