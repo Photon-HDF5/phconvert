@@ -16,7 +16,7 @@
         "group"
     ],
     "/photon_data/timestamps": [
-        "Array of photon timestamps.",
+        "Array of photon timestamps. Units specified in timestamps_specs/timestamps_units.",
         "array"
     ],
     "/photon_data/detectors": [
@@ -24,7 +24,7 @@
         "array"
     ],
     "/photon_data/nanotimes": [
-        "TCSPC photon arrival time (nanotimes).",
+        "TCSPC photon arrival time (nanotimes). Units and other specifications are in nanotimes_specs group.",
         "array"
     ],
     "/photon_data/particles": [
@@ -72,7 +72,7 @@
         "scalar"
     ],
     "/photon_data/measurement_specs/laser_repetition_rate": [
-        "Repetition rate of the pulsed excitation laser.",
+        "Repetition rate of the pulsed excitation laser (Hertz).",
         "scalar"
     ],
     "/photon_data/measurement_specs/alex_offset": [
@@ -80,11 +80,11 @@
         "scalar"
     ],
     "/photon_data/measurement_specs/alex_excitation_period1": [
-        "Values pair (start-stop range) identifying photons in the excitation period of wavelength 1 (the shortest).",
+        "Values pair (start-stop range) identifying photons in the excitation period of wavelength 1 (the shortest). Timestamps units. ",
         "array"
     ],
     "/photon_data/measurement_specs/alex_excitation_period2": [
-        "Values pair (start-stop range) identifying photons in the excitation period of wavelength 2.",
+        "Values pair (start-stop range) identifying photons in the excitation period of wavelength 2. Timestamps units.",
         "array"
     ],
     "/photon_data/measurement_specs/detectors_specs": [
@@ -116,7 +116,7 @@
         "array"
     ],
     "/photon_data/measurement_specs/detectors_specs/labels": [
-        "User defined labels for each pixel IDs. In smFRET it is strongly suggested to use \"donor\" and \"acceptor\" for the respective pixel IDs.",
+        "User defined labels for each pixel IDs. In smFRET it is suggested to use \"donor\" and \"acceptor\" for the respective pixel IDs.",
         "string"
     ],
     "/setup": [
@@ -152,7 +152,7 @@
         "scalar"
     ],
     "/setup/excitation_wavelengths": [
-        "List of excitation wavelengths (center wavelength if broad-band) in increasing order (unit: meter).",
+        "List of excitation wavelengths (center wavelength if broad-band) in increasing order (unit: meters).",
         "array"
     ],
     "/setup/excitation_cw": [
@@ -172,7 +172,7 @@
         "array"
     ],
     "/setup/detection_wavelengths": [
-        "Reference wavelengths (m) for each detected spectral band.",
+        "Reference wavelengths (units: meters) for each detected spectral band.",
         "array"
     ],
     "/setup/detection_polarizations": [
