@@ -20,7 +20,7 @@
         "array"
     ],
     "/photon_data/detectors": [
-        "Array of detector IDs for each timestamp.",
+        "Array of pixel IDs for each timestamp.",
         "array"
     ],
     "/photon_data/nanotimes": [
@@ -88,7 +88,7 @@
         "array"
     ],
     "/photon_data/measurement_specs/detectors_specs": [
-        "Mapping between the detector IDs and the detection channels.",
+        "Mapping between the pixel IDs and the detection channels.",
         "group"
     ],
     "/photon_data/measurement_specs/detectors_specs/spectral_ch1": [
