@@ -13,7 +13,12 @@ requirements:
   build:
     - python
     - setuptools
-    - numpy
+    - mock
+    - nose
+    - numpy >=1.9
+    - pytables
+    - matplotlib
+    - future
 
   run:
     - python
