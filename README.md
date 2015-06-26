@@ -7,6 +7,10 @@ Additionally, *phconvert* can convert a few common binary formats
 used in in single-molecule spectroscopy (PicoQuant .HT3,
 Becker & Hickl .SPC/.SET) to Photon-HDF5.
 
+For questions or issues running this software please use the 
+[Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5)
+or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
+
 ## Quick-start: Converting files to Photon-HDF5
 
 Converting one of the supported files formats to Photon-HDF5 does not require 
@@ -26,6 +30,12 @@ Finally, you can download one of the provided notebooks and run it on your machi
 To download all notebooks in one step, download the 
 [phconvert zip](https://github.com/Photon-HDF5/phconvert/archive/master.zip), 
 which contains all the notebooks in the `notebooks` subfolder.
+
+###For questions or issues:
+
+- [Open an GitHub issue](https://github.com/Photon-HDF5/phconvert/issues) or 
+- Ask a question on the [Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5).
+
 
 ## Project details
 
