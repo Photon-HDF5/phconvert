@@ -164,7 +164,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
 
         if isinstance(item['value'], dict):
             h5file.create_group(item['group_path'], item['name'],
-                                title=item['description'])
+                                title=item['description'].encode())
         else:
             _h5_write_array(item['group_path'], item['name'],
                             obj=item['value'], descr=item['description'],
