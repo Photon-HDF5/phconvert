@@ -171,6 +171,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                             chunked=item['is_phdata'], h5file=group._v_file)
 
 def save_photon_hdf5(data_dict,
+                     strict = True,
                      h5_fname = None,
                      compression = dict(complevel=6, complib='zlib'),
                      user_descr = None,
@@ -187,6 +188,8 @@ def save_photon_hdf5(data_dict,
         data_dict (dict): the dictionary containing the photon data.
             The keys must strings matching valid Photon-HDF5 paths.
             The values must be scalars, arrays or strings.
+        strict (bool): if True, raises an error when not following the specs.
+            If False, does not rais an error but print a warning.
         compression (dict): a dictionary containing the compression type
             and level. Passed to pytables `tables.Filters()`.
         h5_fname (string or None): if not None, contains the file name
@@ -208,6 +211,8 @@ def save_photon_hdf5(data_dict,
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
     """
+    assert_valid_photon_hdf5(data_dict, strict=strict, sanitize=True)
+
     comp_filter = tables.Filters(**compression)
 
     if h5_fname is None:
@@ -219,8 +224,6 @@ def save_photon_hdf5(data_dict,
     if os.path.isfile(h5_fname) and not overwrite:
         basename, extension = os.path.splitext(h5_fname)
         h5_fname = basename + '_new_copy.hdf5'
-
-    _sanitize_data(data_dict)
 
     print('Saving: %s' % h5_fname)
     title = official_fields_specs['/'][0].encode()
@@ -397,8 +400,7 @@ def _check_valid_names(data_dict, strict=True, type_check=True, debug=False):
                         invalid_type = True
                 elif official_type == 'scalar':
                     if not np.isscalar(obj):
-                        if not (hasattr(obj, '__array__') and obj.size == 1):
-                            invalid_type = True
+                        invalid_type = True
                 elif official_type == 'array':
                     if not (isinstance(obj, (list, tuple)) or
                             hasattr(obj, '__array__')):
@@ -436,8 +438,14 @@ def photon_data_mapping(group, name='timestamps'):
                        if ph.shape[-1] > 0)
 
 def _sanitize_data(data_dict):
-    """Assure that detectors_specs fields have the same dtype as detectors.
+    """Perform type conversions to strictly conform to Photon-HDF5 specs.
+
+    Conversions implemented:
+
+    - assure that fields in detectors_specs have same dtype as detectors
+    - convert scalar fields that are array of size == 1 to scalars
     """
+    ## detectors_specs conversions
     ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
     dtype = ph_data['detectors'].dtype
 
@@ -450,16 +458,39 @@ def _sanitize_data(data_dict):
             cdict = item['curr_dict']
             cdict[item['name']] = np.array(item['value'], dtype=dtype)
 
-def assert_valid_photon_hdf5(data_dict, strict=True, type_check=True):
+    ## scalar fields conversions
+    for item in _iter_hdf5_dict(data_dict):
+        if official_fields_specs[item['meta_path']][1] == 'scalar':
+            if not np.isscalar(item['value']):
+                try:
+                    # sequences are converted to array then to scalar
+                    scalar_value = np.asscalar(np.asarray(item['value']))
+                except ValueError:
+                    raise Invalid_PhotonHDF5('Cannot convert "%s" to scalar.'\
+                                             % item['meta_path'])
+                cdict = item['curr_dict']
+                cdict[item['name']] = scalar_value
+
+
+def assert_valid_photon_hdf5(data_dict, strict=True, type_check=True,
+                             sanitize=False):
     """
     Validate the structure of a Photon-HDF5 file.
 
     Raise an error when missing photon_data group, timestamps array and
     timestamps_unit.
 
-    When `strict` is True, raise an error if there is any name not officially
-    supported and if setup is missing or not complete.
+    Arguments:
+        strict (bool): if True, raise an error if there is any name not
+            officially supported and if setup is missing or not complete.
+        type_check (bool): if True perform type checks and raise an error
+            if a field has wrong type. If False, skip type checks.
+        sanitize (bool): if True, before validating the structure `data_dict`
+            is modified in-place by casting types to types mandated by the
+            specs (e.g. array of size == 1 converted to scalar, etc...).
     """
+    if sanitize:
+        _sanitize_data(data_dict)
     _check_valid_names(data_dict, strict=strict, type_check=type_check)
     _check_has_field('acquisition_duration', data_dict, '/', strict=strict)
     _check_has_field('description', data_dict, '/', strict=strict)
