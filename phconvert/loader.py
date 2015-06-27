@@ -92,7 +92,6 @@ def nsalex_bh(filename_spc,
               alex_period_acceptor = (2000, 3500),
               excitation_wavelengths = (532e-9, 635e-9),
               detection_wavelengths = (580e-9, 680e-9),
-              time_reversed = False,
               allow_missing_set = False):
     """Load a .spc and (optionally) .set files for ns-ALEX and return 2 dict.
 
@@ -154,8 +153,7 @@ def nsalex_bh(filename_spc,
         nanotimes_specs = dict(
             tcspc_unit = tcspc_unit,
             tcspc_range = tcspc_range,
-            tcspc_num_bins = tcspc_num_bins,
-            time_reversed = time_reversed),
+            tcspc_num_bins = tcspc_num_bins),
 
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
@@ -196,8 +194,7 @@ def nsalex_ht3(filename,
                alex_period_donor = (150, 1500),
                alex_period_acceptor = (1540, 3050),
                excitation_wavelengths = (523e-9, 628e-9),
-               detection_wavelengths = (580e-9, 680e-9),
-               time_reversed = False):
+               detection_wavelengths = (580e-9, 680e-9)):
     """Load a .ht3 file containing ns-ALEX data and return a dict.
 
     This dictionary can be passed to the :func:`phconvert.hdf5.photon_hdf5`
@@ -235,8 +232,7 @@ def nsalex_ht3(filename,
         nanotimes_specs = dict(
             tcspc_unit = tcspc_unit,
             tcspc_range = tcspc_range,
-            tcspc_num_bins = tcspc_num_bins,
-            time_reversed = time_reversed),
+            tcspc_num_bins = tcspc_num_bins),
 
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',

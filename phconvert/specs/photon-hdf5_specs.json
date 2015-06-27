@@ -55,10 +55,6 @@
         "TCSPC full-scale range in seconds.",
         "scalar"
     ],
-    "/photon_data/nanotimes_specs/time_reversed": [
-        "True (i.e. 1) if nanotimes contains the time elapsed between a photon and a subsequent laser pulse. False (i.e. 0) if it contains the time elapsed between a laser pulse and a photon.",
-        "scalar"
-    ],
     "/photon_data/measurement_specs": [
         "Metadata necessary for interpretation of the particular type of measurement.",
         "group"
