@@ -584,8 +584,7 @@ def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
         _assert_has_field_mtype('nanotimes_specs', ph_data, ph_data_name)
         nt_specs_path = ph_data_name + '/nanotimes_specs'
         nanotimes_specs = ph_data['nanotimes_specs']
-        for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins',
-                     'time_reversed']:
+        for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins']:
              _assert_has_field_mtype(name, nanotimes_specs, nt_specs_path)
 
 
