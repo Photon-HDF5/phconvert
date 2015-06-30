@@ -460,6 +460,7 @@ def _sanitize_data(data_dict):
 
     ## scalar fields conversions
     for item in _iter_hdf5_dict(data_dict):
+        if item['is_user']: continue
         if official_fields_specs[item['meta_path']][1] == 'scalar':
             if not np.isscalar(item['value']):
                 try:
