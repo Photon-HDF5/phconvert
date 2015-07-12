@@ -100,8 +100,9 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
             save = h5file.create_carray
     else:
         save = h5file.create_array
-    if isinstance(obj, str):
-        obj = obj.encode()
+        if isinstance(obj, str):
+            obj = obj.encode()
+
     save(group, name, obj=obj)
     # Set title through property access to work around pytable issue
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
