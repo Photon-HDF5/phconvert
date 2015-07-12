@@ -118,7 +118,7 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                     debug=False):
-    """Recursively iterate over `data_dict` returning a dict for each items.
+    """Recursively iterate over `data_dict` returning a dict for each item.
 
     This is an iterator returning a dict for each item in `data_dict` (i.e.
     a data-field in HDF5 file) and its sub-dicts (i.e. a group in HDF5 file).
