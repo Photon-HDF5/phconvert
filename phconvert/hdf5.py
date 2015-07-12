@@ -85,6 +85,11 @@ def _analyze_path(name, prefix_list):
     return dict(full_path=full_path, group_path=group_path,
                 meta_path=meta_path, is_phdata=is_phdata, is_user=is_user)
 
+def _is_structured_array(obj):
+    if hasattr(obj, 'dtype') and obj.dtype.kind == 'V':
+        return True
+    else:
+        return False
 
 def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     """Writes `obj` in the pytables HDF5 `group` with name `name`.
@@ -98,6 +103,8 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
             save = h5file.create_earray
         else:
             save = h5file.create_carray
+    elif _is_structured_array(obj):
+        save = h5file.create_table
     else:
         save = h5file.create_array
         if isinstance(obj, str):
