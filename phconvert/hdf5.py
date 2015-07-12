@@ -36,7 +36,7 @@ from ._version import get_versions
 
 __version__ = get_versions()['version']
 
-_EMPTY = b' '
+_EMPTY = ' '
 
 
 def _analyze_path(name, prefix_list):
@@ -341,7 +341,7 @@ def dict_to_group(group, dictionary):
     h5file = group._v_file
     for key, value in dictionary.items():
         if isinstance(value, dict):
-            subgroup = h5file.create_group(group, key, title=_EMPTY)
+            subgroup = h5file.create_group(group, key, title=_EMPTY.encode())
             dict_to_group(subgroup, value)
         else:
             if isinstance(value, str):
@@ -353,7 +353,7 @@ def dict_to_group(group, dictionary):
             # under python 3 (https://github.com/PyTables/PyTables/issues/469)
             node = group._f_get_child(key)
             # Save a single space to workaround h5labview bug (see issue #4)
-            node.title = _EMPTY  # saved as binary both on py2 and py3
+            node.title = _EMPTY.encode()  # saved as binary both on py2 and py3
     h5file.flush()
 
 def load_photon_hdf5(filename, strict=True):
