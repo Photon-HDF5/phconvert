@@ -609,31 +609,43 @@ def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
              _assert_has_field_mtype(name, nanotimes_specs, nt_specs_path)
 
 
-def _check_version(filename):
+def _get_version(h5file):
     """Return file format version string (unicode on both py2 and py3).
+
+    Arguments:
+        h5file (pytables File): pytables File object.
     """
-    assert os.path.isfile(filename)
+    version = None
     format_name = root_attributes['format_name']
 
-    with tables.open_file(filename) as h5file:
-        version = None
-        # Check the root attributes first
-        if 'format_name' in h5file.root._v_attrs:
-            # All string are saved as binary strings
-            assert h5file.root._v_attrs['format_name'] == format_name
-            assert 'format_version' in h5file.root._v_attrs
-            version = h5file.root._v_attrs['format_version'].decode()
+    # Check the root attributes first
+    if 'format_name' in h5file.root._v_attrs:
+        # All string are saved as binary strings
+        assert h5file.root._v_attrs['format_name'] == format_name
+        assert 'format_version' in h5file.root._v_attrs
+        version = h5file.root._v_attrs['format_version'].decode()
 
-        # Fall back to the identity group
-        if version is None:
-            # String fields are read as binary strings so we convert them
-            # to native strings (binary -> unicode -> native)
-            fformat = str(h5file.root.identity.format_name.read().decode())
-            assert fformat == format_name
-            version = h5file.root.identity.format_version.read().decode()
+    # Fall back to the identity group
+    if version is None:
+        # String fields are read as binary strings so we convert them
+        # to native strings (binary -> unicode -> native)
+        fformat = str(h5file.root.identity.format_name.read().decode())
+        assert fformat == format_name
+        version = h5file.root.identity.format_version.read().decode()
 
     if version is None:
         raise Invalid_PhotonHDF5('No version identification.')
+    return version
+
+def _check_version(filename):
+    """Return file format version string (unicode on both py2 and py3).
+
+    Arguments:
+        filename (string): path of the data file.s
+    """
+    assert os.path.isfile(filename)
+    with tables.open_file(filename) as h5file:
+        version = _get_version(h5file)
     return version
 
 
