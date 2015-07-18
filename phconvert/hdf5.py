@@ -486,7 +486,7 @@ def _sanitize_data(data_dict):
 def assert_valid_photon_hdf5(data_dict, strict=True, type_check=True,
                              sanitize=False):
     """
-    Validate the structure of a Photon-HDF5 file.
+    Validate a dict-based data structure to comply with Photon-HDF5 specs.
 
     Raise an error when missing photon_data group, timestamps array and
     timestamps_unit.
@@ -525,13 +525,23 @@ def assert_valid_photon_hdf5(data_dict, strict=True, type_check=True,
         _raise_invalid_file('Invalid Photon-HDF5: Missing /setup group.',
                             strict)
 
-def _check_setup(setup, strict=True):
+def _check_setup(setup_group_or_dict, strict=True):
+    """Assert that setup contains all the mandatory fields."""
     mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
                         'num_polarization_ch', 'num_split_ch',
                         'modulated_excitation', 'lifetime']
     for name in mantatory_fields:
-        if name not in setup:
+        if name not in setup_group_or_dict:
             _raise_invalid_file('Missing "/setup/%s".' % name, strict)
+
+
+def _check_mandatory_fields(root_group_or_dict):
+    """Assert that the basic mandatory fields are present."""
+    assert 'acquisition_duration' in root_group_or_dict
+    assert 'description' in root_group_or_dict
+    assert 'photon_data' in root_group_or_dict or \
+           'photon_data0' in root_group_or_dict
+
 
 def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
                        ch=None):
