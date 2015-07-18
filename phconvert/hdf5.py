@@ -363,64 +363,48 @@ def load_photon_hdf5(filename, strict=True):
     assert_valid_photon_hdf5(data_dict, strict=strict, type_check=False)
     return h5file.root
 
+##
+# Utility functions
+#
 
-class Invalid_PhotonHDF5(Exception):
-    """Error raised when a file is not a valid Photon-HDF5 file.
+def _get_version(h5file):
+    """Return file format version string (unicode on both py2 and py3).
+
+    Arguments:
+        h5file (pytables File): pytables File object.
     """
-    pass
+    version = None
+    format_name = root_attributes['format_name']
 
-def _raise_invalid_file(msg, strict=True, norepeat=False, pool=None):
-    """Raise Invalid_PhotonHDF5 if strict is True, print a warning otherwise.
+    # Check the root attributes first
+    if 'format_name' in h5file.root._v_attrs:
+        # All string are saved as binary strings
+        assert h5file.root._v_attrs['format_name'] == format_name
+        assert 'format_version' in h5file.root._v_attrs
+        version = h5file.root._v_attrs['format_version'].decode()
+
+    # Fall back to the identity group
+    if version is None:
+        # String fields are read as binary strings so we convert them
+        # to native strings (binary -> unicode -> native)
+        fformat = str(h5file.root.identity.format_name.read().decode())
+        assert fformat == format_name
+        version = h5file.root.identity.format_version.read().decode()
+
+    if version is None:
+        raise Invalid_PhotonHDF5('No version identification.')
+    return version
+
+def _check_version(filename):
+    """Return file format version string (unicode on both py2 and py3).
+
+    Arguments:
+        filename (string): path of the data file.s
     """
-    if norepeat:
-        if msg in pool:
-            return
-    if strict:
-        raise Invalid_PhotonHDF5(msg)
-    else:
-        print('Photon-HDF5 WARNING: %s' % msg)
-    if norepeat:
-        pool.append(msg)
-
-def _check_has_field(name, group_dict, group_str=None, strict=True):
-    if group_str is not None:
-        msg = 'Missing "%s%s".' % (group_str, name)
-    else:
-        msg = 'Missing "%s".' % name
-    if name not in group_dict:
-        _raise_invalid_file(msg, strict)
-
-def _check_valid_names(data_dict, strict=True, type_check=True, debug=False):
-    msg1 = 'Unknown field "%s". Custom fields must be inside a "user" group.'
-    msg2 = 'Wrong type for field "%s". This field should be a "%s".'
-
-    for item in _iter_hdf5_dict(data_dict, debug=debug):
-        if not item['is_user']:
-            if item['meta_path'] not in official_fields_specs:
-                _raise_invalid_file(msg1 % item['full_path'], strict)
-            elif type_check:
-                official_type = official_fields_specs[item['meta_path']][1]
-                obj = item['value']
-                invalid_type = False
-                if official_type == 'group':
-                    if not isinstance(obj, collections.Mapping):
-                        invalid_type = True
-                elif official_type == 'string':
-                    if not isinstance(obj, str):
-                        invalid_type = True
-                elif official_type == 'scalar':
-                    if not np.isscalar(obj):
-                        invalid_type = True
-                elif official_type == 'array':
-                    if not (isinstance(obj, (list, tuple)) or
-                            hasattr(obj, '__array__')):
-                        invalid_type = True
-                else:
-                    raise ValueError('Wrong type in JSON specs.')
-
-                if invalid_type:
-                    _raise_invalid_file(
-                        msg2 % (item['full_path'], official_type), strict)
+    assert os.path.isfile(filename)
+    with tables.open_file(filename) as h5file:
+        version = _get_version(h5file)
+    return version
 
 
 def _sorted_photon_data(data_dict):
@@ -481,6 +465,67 @@ def _sanitize_data(data_dict):
                                              % item['meta_path'])
                 cdict = item['curr_dict']
                 cdict[item['name']] = scalar_value
+
+##
+# Validation functions
+#
+class Invalid_PhotonHDF5(Exception):
+    """Error raised when a file is not a valid Photon-HDF5 file.
+    """
+    pass
+
+def _raise_invalid_file(msg, strict=True, norepeat=False, pool=None):
+    """Raise Invalid_PhotonHDF5 if strict is True, print a warning otherwise.
+    """
+    if norepeat:
+        if msg in pool:
+            return
+    if strict:
+        raise Invalid_PhotonHDF5(msg)
+    else:
+        print('Photon-HDF5 WARNING: %s' % msg)
+    if norepeat:
+        pool.append(msg)
+
+def _check_has_field(name, group_dict, group_str=None, strict=True):
+    if group_str is not None:
+        msg = 'Missing "%s%s".' % (group_str, name)
+    else:
+        msg = 'Missing "%s".' % name
+    if name not in group_dict:
+        _raise_invalid_file(msg, strict)
+
+def _check_valid_names(data_dict, strict=True, type_check=True, debug=False):
+    msg1 = 'Unknown field "%s". Custom fields must be inside a "user" group.'
+    msg2 = 'Wrong type for field "%s". This field should be a "%s".'
+
+    for item in _iter_hdf5_dict(data_dict, debug=debug):
+        if not item['is_user']:
+            if item['meta_path'] not in official_fields_specs:
+                _raise_invalid_file(msg1 % item['full_path'], strict)
+            elif type_check:
+                official_type = official_fields_specs[item['meta_path']][1]
+                obj = item['value']
+                invalid_type = False
+                if official_type == 'group':
+                    if not isinstance(obj, collections.Mapping):
+                        invalid_type = True
+                elif official_type == 'string':
+                    if not isinstance(obj, str):
+                        invalid_type = True
+                elif official_type == 'scalar':
+                    if not np.isscalar(obj):
+                        invalid_type = True
+                elif official_type == 'array':
+                    if not (isinstance(obj, (list, tuple)) or
+                            hasattr(obj, '__array__')):
+                        invalid_type = True
+                else:
+                    raise ValueError('Wrong type in JSON specs.')
+
+                if invalid_type:
+                    _raise_invalid_file(
+                        msg2 % (item['full_path'], official_type), strict)
 
 
 def assert_valid_photon_hdf5(data_dict, strict=True, type_check=True,
@@ -607,46 +652,6 @@ def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
         nanotimes_specs = ph_data['nanotimes_specs']
         for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins']:
              _assert_has_field_mtype(name, nanotimes_specs, nt_specs_path)
-
-
-def _get_version(h5file):
-    """Return file format version string (unicode on both py2 and py3).
-
-    Arguments:
-        h5file (pytables File): pytables File object.
-    """
-    version = None
-    format_name = root_attributes['format_name']
-
-    # Check the root attributes first
-    if 'format_name' in h5file.root._v_attrs:
-        # All string are saved as binary strings
-        assert h5file.root._v_attrs['format_name'] == format_name
-        assert 'format_version' in h5file.root._v_attrs
-        version = h5file.root._v_attrs['format_version'].decode()
-
-    # Fall back to the identity group
-    if version is None:
-        # String fields are read as binary strings so we convert them
-        # to native strings (binary -> unicode -> native)
-        fformat = str(h5file.root.identity.format_name.read().decode())
-        assert fformat == format_name
-        version = h5file.root.identity.format_version.read().decode()
-
-    if version is None:
-        raise Invalid_PhotonHDF5('No version identification.')
-    return version
-
-def _check_version(filename):
-    """Return file format version string (unicode on both py2 and py3).
-
-    Arguments:
-        filename (string): path of the data file.s
-    """
-    assert os.path.isfile(filename)
-    with tables.open_file(filename) as h5file:
-        version = _get_version(h5file)
-    return version
 
 
 def print_attrs(node, which='user'):
