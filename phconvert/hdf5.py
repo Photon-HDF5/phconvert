@@ -29,6 +29,7 @@ import collections
 import tables
 import numpy as np
 
+
 from .metadata import (official_fields_specs, root_attributes,
                        LATEST_FORMAT_VERSION)
 from ._version import get_versions
@@ -406,6 +407,21 @@ def _check_version(filename):
         version = _get_version(h5file)
     return version
 
+def _sorted_photon_data_tables(h5file):
+    """Return a sorted list of keys "photon_dataN", sorted by N.
+
+    If there is only one "photon_data" (with no N) it returns the list
+    ['photon_data'].
+    """
+    prefix = 'photon_data'
+    ph_datas = [n for n in h5file.root._f_iter_nodes()
+                if n._v_name.startswith(prefix)]
+
+    def _cmp(a, b):
+        return cmp(a._v_name[len(prefix):], b._v_name[len(prefix):])
+
+    ph_datas.sort(_cmp)
+    return ph_datas
 
 def _sorted_photon_data(data_dict):
     """Return a sorted list of keys "photon_dataN", sorted by N.
@@ -474,6 +490,32 @@ class Invalid_PhotonHDF5(Exception):
     """
     pass
 
+def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
+    """Assert `condition` and raise Invalid_PhotonHDF5(msg) on fail.
+    """
+    if norepeat:
+        if msg in pool:
+            return
+        else:
+            pool.append(msg)
+
+    if not condition:
+        if strict:
+            raise Invalid_PhotonHDF5(msg)
+        else:
+            print('Photon-HDF5 WARNING: %s' % msg)
+    return condition
+
+def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
+                      norepeat=False, pool=None, verbose=False):
+    if verbose:
+        print('Checking "%s" in %s.' % (name, group._v_pathname))
+    if msg is None:
+        msg = 'Missing field "%s" in "%s".' % (name, group._v_pathname)
+    if msg_add is not None:
+        msg += msg_add
+    return _assert_valid(name in group, msg, mandatory, norepeat, pool)
+
 def _raise_invalid_file(msg, strict=True, norepeat=False, pool=None):
     """Raise Invalid_PhotonHDF5 if strict is True, print a warning otherwise.
     """
@@ -488,6 +530,8 @@ def _raise_invalid_file(msg, strict=True, norepeat=False, pool=None):
         pool.append(msg)
 
 def _check_has_field(name, group_dict, group_str=None, strict=True):
+    """Check if `name` is in `group_dict` and throw error or warning on fail.
+    """
     if group_str is not None:
         msg = 'Missing "%s%s".' % (group_str, name)
     else:
@@ -570,6 +614,60 @@ def assert_valid_photon_hdf5(data_dict, strict=True, type_check=True,
         _raise_invalid_file('Invalid Photon-HDF5: Missing /setup group.',
                             strict)
 
+def assert_valid_photon_hdf5_tables(filename, strict=True, verbose=False):
+    """
+    Assert the an HDF5 file follows the Photon-HDF5 specs.
+
+    Raise an error when missing photon_data group, timestamps array and
+    timestamps_unit.
+
+    Arguments:
+        strict (bool): if True, raise an error optional groups (i.e. setup
+            and identity are missing or lack mandatory fields). If False,
+            print only a warning.
+        verbose (bool): if True print details about the performed tests.
+    """
+    assert os.path.isfile(filename)
+    h5file = tables.open_file(filename)
+
+    _assert_valid_fields(h5file, verbose=verbose)
+    _assert_mandatory_fields(h5file, verbose=verbose)
+
+    pool = []
+    for ph_data in _sorted_photon_data_tables(h5file):
+        _check_photon_data_tables(ph_data, strict=strict, norepeat=True,
+                                  pool=pool)
+
+    _assert_setup(h5file, strict=strict, verbose=verbose)
+    _assert_identity(h5file, strict=strict, verbose=verbose)
+
+def _assert_setup(h5file, strict=True, verbose=False):
+    """Assert that setup contains all the mandatory fields."""
+    if _assert_has_field('setup', h5file.root, mandatory=strict,
+                         verbose=verbose):
+        mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
+                            'num_polarization_ch', 'num_split_ch',
+                            'modulated_excitation', 'lifetime']
+        for name in mantatory_fields:
+            _assert_has_field(name, h5file.root.setup, mandatory=strict,
+                              verbose=verbose)
+
+def _assert_identity(h5file, strict=True, verbose=False):
+    """Assert that identity contains all the mandatory fields."""
+    if _assert_has_field('identity', h5file.root, mandatory=strict,
+                         verbose=verbose):
+        mantatory_fields = ['format_name', 'format_version', 'format_url',
+                            'software', 'software_version', 'creation_time']
+        for name in mantatory_fields:
+            _assert_has_field(name, h5file.root.identity, mandatory=strict,
+                              verbose=verbose)
+
+        optional_fields = ['author', 'author_affiliation']
+        for name in optional_fields:
+            _assert_has_field(name, h5file.root.identity, mandatory=False,
+                              verbose=verbose)
+
+
 def _check_setup(setup_group_or_dict, strict=True):
     """Assert that setup contains all the mandatory fields."""
     mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
@@ -580,94 +678,104 @@ def _check_setup(setup_group_or_dict, strict=True):
             _raise_invalid_file('Missing "/setup/%s".' % name, strict)
 
 
-def _check_mandatory_fields(root_group_or_dict):
+def _assert_mandatory_fields(h5file, verbose=False):
     """Assert that the basic mandatory fields are present."""
-    assert 'acquisition_duration' in root_group_or_dict
-    assert 'description' in root_group_or_dict
-    assert 'photon_data' in root_group_or_dict or \
-           'photon_data0' in root_group_or_dict
+    _assert_has_field('acquisition_duration', h5file.root, verbose=verbose)
+    _assert_has_field('description', h5file.root, verbose=verbose)
+    if not 'photon_data0' in h5file.root:
+        _assert_has_field('photon_data', h5file.root, verbose=verbose)
 
-def _check_valid_fields(h5file):
+
+def _assert_valid_fields(h5file, verbose=False):
+    """Assert field names, descriptions and data types in a Photon-HDF5 file.
+    """
     for node in h5file.root._f_walknodes():
         pathname = node._v_pathname
         title = node._v_title
-        #print(pathname)
+        if verbose:
+            print('- Checking name, description and type: "%s".' % pathname)
 
         ## Test non empty title string
-        assert len(title) > 0
+        msg = 'Empty TITLE attribute for "%s"' % pathname
+        _assert_valid(len(title) > 0, msg)
 
         ## Test description is a binary string
-        assert isinstance(title, bytes)
+        msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
+        _assert_valid(isinstance(title, bytes), msg)
 
         if pathname.endswith('/user') or '/user/' in pathname:
             pass
         else:
             # Check field names
-            assert pathname in official_fields_specs.keys()
+            msg = 'Wrong field name "%s".' % pathname
+            _assert_valid(pathname in official_fields_specs.keys(), msg)
 
             # Check fields use official description
-            assert title == official_fields_specs[pathname][0]
+            msg = 'Description (TITLE) for "%s" not compliant.' % pathname
+            _assert_valid(title == official_fields_specs[pathname][0], msg)
 
             # Check fields have correct type
             official_type = official_fields_specs[pathname][1]
 
             if official_type == 'group':
-                assert isinstance(node, tables.Group)
+                msg = '"%s" must be a group.' % pathname
+                _assert_valid(isinstance(node, tables.Group), msg)
             elif official_type == 'string':
-                assert node.ndim == 0
-                assert node.dtype.kind == 'S'
-                assert isinstance(node.read(), bytes)
+                msg = 'Data in "%s" is not a binary string.' % pathname
+                _assert_valid(node.ndim == 0, msg)
+                _assert_valid(node.dtype.kind == 'S', msg)
+                _assert_valid(isinstance(node.read(), bytes), msg)
             elif official_type == 'scalar':
-                assert node.ndim == 0
+                msg = '"%s" must be scalar.' % pathname
+                _assert_valid(node.ndim == 0, msg)
             elif official_type == 'array':
-                assert node.ndim >= 0
+                msg = '"%s" must be an array.' % pathname
+                _assert_valid(node.ndim >= 0, msg)
+                # NOTE: some fields saved as numpy "scalar" arrays have
+                #       ndim == 0, still they are numpy arrays.
             else:
                 raise ValueError('Wrong type in JSON specs.')
 
-def _assert_has_field(name, group, msg=None, msg_add=None):
-    if msg is None:
-        msg = 'Missing field "%s/%s".' % (name, group._v_pathname)
-    if msg_add is not None:
-        msg += msg_add
-    if name not in group:
-        raise Invalid_PhotonHDF5(msg)
+def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
+                              verbose=False):
 
-def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None):
+    _assert_has_field('timestamps', ph_data, verbose=verbose)
+    _assert_has_field('timestamps_specs', ph_data, verbose=verbose)
+    _assert_has_field('timestamps_unit', ph_data.timestamps_specs,
+                      verbose=verbose)
 
-    _assert_has_field('timestamps', ph_data)
-    _assert_has_field('timestamps_specs', ph_data)
-    _assert_has_field('timestamps_unit', ph_data.timestamps_specs)
-
-    if 'measurement_specs' not in ph_data:
-        _raise_invalid_file('Missing measurement_specs in %s.' % \
-                            ph_data._v_pathname, False, norepeat, pool)
+    if not _assert_has_field('measurement_specs', ph_data, mandatory=False,
+                             verbose=verbose, norepeat=norepeat, pool=pool):
         return
 
     spectral_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
                            'smFRET-nsALEX']
     meas_specs = ph_data.measurement_specs
     msg = 'Missing "measurement_type" in "%s".' % meas_specs._v_pathname
-    _assert_has_field('measurement_type', meas_specs, msg)
+    _assert_has_field('measurement_type', meas_specs, msg, verbose=verbose)
 
     meas_type = meas_specs.measurement_type.read().decode()
-    if meas_type not in spectral_meas_types:
-        raise Invalid_PhotonHDF5('Unkwnown measurement type "%s"' % meas_type)
+    if verbose:
+        print('* Measurement type: "%s"' % meas_type)
+    _assert_valid(meas_type in spectral_meas_types,
+                  msg='Unkwnown measurement type "%s"' % meas_type)
 
     # At this point we have a valid measurement_type
     # Any missing field will raise an error (regardless of `strict`).
     msg = '\nThis field is mandatory for "%s" data.' % meas_type
-    _assert_has_field('spectral_ch1', meas_specs.detectors_specs, msg_add=msg)
-    _assert_has_field('spectral_ch2', meas_specs.detectors_specs, msg_add=msg)
+    kwargs = dict(msg_add=msg, verbose=verbose)
+    _assert_has_field('spectral_ch1', meas_specs.detectors_specs, **kwargs)
+    _assert_has_field('spectral_ch2', meas_specs.detectors_specs, **kwargs)
 
     if meas_type in ['smFRET-usALEX', 'smFRET-usALEX-3c']:
-        _assert_has_field('alex_period', meas_specs, msg_add=msg)
+        _assert_has_field('alex_period', meas_specs, **kwargs)
 
     if meas_type == 'smFRET-nsALEX':
-        _assert_has_field('laser_repetition_rate', meas_specs, msg_add=msg)
-        _assert_has_field('nanotimes', ph_data, msg_add=msg)
-        _assert_has_field('nanotimes_specs', ph_data, msg_add=msg)
+        _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
+        _assert_has_field('nanotimes', ph_data, **kwargs)
+        _assert_has_field('nanotimes_specs', ph_data, **kwargs)
         for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins']:
-             _assert_has_field(name, ph_data.nanotimes_specs, msg_add=msg)
+             _assert_has_field(name, ph_data.nanotimes_specs, **kwargs)
 
 
 def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
