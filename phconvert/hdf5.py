@@ -587,6 +587,88 @@ def _check_mandatory_fields(root_group_or_dict):
     assert 'photon_data' in root_group_or_dict or \
            'photon_data0' in root_group_or_dict
 
+def _check_valid_fields(h5file):
+    for node in h5file.root._f_walknodes():
+        pathname = node._v_pathname
+        title = node._v_title
+        #print(pathname)
+
+        ## Test non empty title string
+        assert len(title) > 0
+
+        ## Test description is a binary string
+        assert isinstance(title, bytes)
+
+        if pathname.endswith('/user') or '/user/' in pathname:
+            pass
+        else:
+            # Check field names
+            assert pathname in official_fields_specs.keys()
+
+            # Check fields use official description
+            assert title == official_fields_specs[pathname][0]
+
+            # Check fields have correct type
+            official_type = official_fields_specs[pathname][1]
+
+            if official_type == 'group':
+                assert isinstance(node, tables.Group)
+            elif official_type == 'string':
+                assert node.ndim == 0
+                assert node.dtype.kind == 'S'
+                assert isinstance(node.read(), bytes)
+            elif official_type == 'scalar':
+                assert node.ndim == 0
+            elif official_type == 'array':
+                assert node.ndim >= 0
+            else:
+                raise ValueError('Wrong type in JSON specs.')
+
+def _assert_has_field(name, group, msg=None, msg_add=None):
+    if msg is None:
+        msg = 'Missing field "%s/%s".' % (name, group._v_pathname)
+    if msg_add is not None:
+        msg += msg_add
+    if name not in group:
+        raise Invalid_PhotonHDF5(msg)
+
+def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None):
+
+    _assert_has_field('timestamps', ph_data)
+    _assert_has_field('timestamps_specs', ph_data)
+    _assert_has_field('timestamps_unit', ph_data.timestamps_specs)
+
+    if 'measurement_specs' not in ph_data:
+        _raise_invalid_file('Missing measurement_specs in %s.' % \
+                            ph_data._v_pathname, False, norepeat, pool)
+        return
+
+    spectral_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
+                           'smFRET-nsALEX']
+    meas_specs = ph_data.measurement_specs
+    msg = 'Missing "measurement_type" in "%s".' % meas_specs._v_pathname
+    _assert_has_field('measurement_type', meas_specs, msg)
+
+    meas_type = meas_specs.measurement_type.read().decode()
+    if meas_type not in spectral_meas_types:
+        raise Invalid_PhotonHDF5('Unkwnown measurement type "%s"' % meas_type)
+
+    # At this point we have a valid measurement_type
+    # Any missing field will raise an error (regardless of `strict`).
+    msg = '\nThis field is mandatory for "%s" data.' % meas_type
+    _assert_has_field('spectral_ch1', meas_specs.detectors_specs, msg_add=msg)
+    _assert_has_field('spectral_ch2', meas_specs.detectors_specs, msg_add=msg)
+
+    if meas_type in ['smFRET-usALEX', 'smFRET-usALEX-3c']:
+        _assert_has_field('alex_period', meas_specs, msg_add=msg)
+
+    if meas_type == 'smFRET-nsALEX':
+        _assert_has_field('laser_repetition_rate', meas_specs, msg_add=msg)
+        _assert_has_field('nanotimes', ph_data, msg_add=msg)
+        _assert_has_field('nanotimes_specs', ph_data, msg_add=msg)
+        for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins']:
+             _assert_has_field(name, ph_data.nanotimes_specs, msg_add=msg)
+
 
 def _check_photon_data(ph_data, strict=True, norepeat=False, pool=None,
                        ch=None):
