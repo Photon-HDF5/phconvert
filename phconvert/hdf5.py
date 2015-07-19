@@ -270,7 +270,7 @@ def save_photon_hdf5(data_dict,
     identity = get_identity(data_file)
     identity.update(software='phconvert',
                     software_version=__version__)
-    data_dict['identity'] = identity
+    data_dict['identity'].update(identity)
 
     ## Save everything to disk
     fields_descr = {k: v[0] for k, v in official_fields_specs.items()}
