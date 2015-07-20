@@ -235,14 +235,14 @@ def save_photon_hdf5(data_dict,
 
     print('Saving: %s' % h5_fname)
     title = official_fields_specs['/'][0].encode()
-    data_file = tables.open_file(h5_fname, mode="w", title=title,
-                                 filters=comp_filter)
+    h5file = tables.open_file(h5_fname, mode="w", title=title,
+                              filters=comp_filter)
     # Saving a file reference is useful in case of error
-    data_dict.update(_data_file=data_file)
+    data_dict.update(_data_file=h5file)
 
     ## Add root attributes
     for name, value in root_attributes.items():
-        data_file.root._f_setattr(name, value)
+        h5file.root._f_setattr(name, value)
 
     ## Add provenance metadata
     if 'provenance' in data_dict:
@@ -265,7 +265,7 @@ def save_photon_hdf5(data_dict,
                 provenance['creation_time'] = orig_creation_time
 
     ## Add identity metadata
-    identity = get_identity(data_file)
+    identity = get_identity(h5file)
     identity.update(software='phconvert',
                     software_version=__version__)
     data_dict['identity'].update(identity)
@@ -274,11 +274,12 @@ def save_photon_hdf5(data_dict,
     fields_descr = {k: v[0] for k, v in official_fields_specs.items()}
     if user_descr is not None:
         fields_descr.update(user_descr)
-    _save_photon_hdf5_dict(data_file.root, data_dict,
+    _save_photon_hdf5_dict(h5file.root, data_dict,
                            fields_descr=fields_descr, debug=debug)
-    data_file.flush()
+    h5file.flush()
+    assert_valid_photon_hdf5_tables(h5file, strict=strict)
     if close:
-        data_file.close()
+        h5file.close()
 
 
 def get_identity(h5file):
@@ -356,8 +357,8 @@ def dict_to_group(group, dictionary):
 
 def load_photon_hdf5(filename, strict=True):
     assert os.path.isfile(filename)
-    assert_valid_photon_hdf5_tables(filename, strict=strict)
     h5file = tables.open_file(filename)
+    assert_valid_photon_hdf5_tables(h5file, strict=strict)
     return h5file.root
 
 ##
