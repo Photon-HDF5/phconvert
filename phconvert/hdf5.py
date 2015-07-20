@@ -39,6 +39,17 @@ __version__ = get_versions()['version']
 _EMPTY = ' '
 
 
+def _metapath(fullpath):
+    """Normalize a HDF5 path by removing trailing digits after "photon_data".
+    """
+    metapath = fullpath
+    if fullpath.startswith('/photon_data'):
+        # Remove eventual digits after /photon_data
+        pattern = '/photon_data[0-9]*(.*)'
+        metapath = '/photon_data' + \
+                    re.match(pattern, fullpath).group(1)
+    return metapath
+
 def _analyze_path(name, prefix_list):
     """
     Analyze an HDF5 path.
@@ -72,15 +83,11 @@ def _analyze_path(name, prefix_list):
 
     is_user = 'user' in chunks
 
-    meta_path = full_path
+    meta_path = _metapath(full_path)
     is_phdata = False
     if full_path.startswith('/photon_data'):
         if len(chunks) == 3 and not name.endswith('_specs'):
             is_phdata = True
-        # Remove eventual digits after /photon_data
-        pattern = '/photon_data[0-9]*(.*)'
-        meta_path = '/photon_data' + \
-                    re.match(pattern, full_path).group(1)
 
     return dict(full_path=full_path, group_path=group_path,
                 meta_path=meta_path, is_phdata=is_phdata, is_user=is_user)
@@ -631,9 +638,8 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
     data types are compliant with the Photon-HDF5 specs.
     """
     for node in h5file.root._f_walknodes():
-        metaname = pathname = node._v_pathname
-        if metaname.startswith('/photon_data'):
-            metaname = pathname[:len('/photon_data')]
+        pathname = node._v_pathname
+        metaname = _metapath(pathname)
         title = node._v_title
         if verbose:
             print('- Checking name, description and type: "%s".' % pathname)
