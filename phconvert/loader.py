@@ -136,7 +136,7 @@ def nsalex_bh(filename_spc,
         print('Ignoring arguments `timestamps_units` and `tcspc_range`.')
         print('These values were retrived from .SET file.')
         sys_params = metadata['sys_params']
-        tcspc_unit = sys_params['SP_TAC_TC']
+        tcspc_unit = float(sys_params['SP_TAC_TC'])
         #tcspc_range = sys_params['SP_TAC_R']
         tcspc_range = tcspc_num_bins*tcspc_unit
         timestamps_unit = tcspc_range
@@ -201,12 +201,12 @@ def nsalex_ht3(filename,
     function to save the data in Photon-HDF5 format.
     """
     timestamps, detectors, nanotimes, metadata = pqreader.load_ht3(filename)
-    timestamps_unit = metadata.pop('timestamps_unit')
-    tcspc_unit = metadata.pop('nanotimes_unit')
+    timestamps_unit = float(metadata.pop('timestamps_unit'))
+    tcspc_unit = float(metadata.pop('nanotimes_unit'))
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins*tcspc_unit
-    laser_repetition_rate = metadata['ttmode']['SyncRate']
-    acquisition_duration = metadata['header']['Tacq'][0]*1e-3
+    laser_repetition_rate = float(metadata['ttmode']['SyncRate'])
+    acquisition_duration = float(metadata['header']['Tacq'][0]*1e-3)
     software = str(metadata['header']['CreatorName'][0])
     software_version = str(metadata['header']['CreatorVersion'][0])
 
