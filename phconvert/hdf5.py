@@ -187,7 +187,8 @@ def save_photon_hdf5(data_dict,
                      user_descr = None,
                      debug = False,
                      close = True,
-                     overwrite = False):
+                     overwrite = False,
+                     validate = True):
     """
     Saves the dict `d` in the Photon-HDF5 format.
 
@@ -277,7 +278,8 @@ def save_photon_hdf5(data_dict,
     _save_photon_hdf5_dict(h5file.root, data_dict,
                            fields_descr=fields_descr, debug=debug)
     h5file.flush()
-    assert_valid_photon_hdf5_tables(h5file, strict=strict)
+    if validate:
+        assert_valid_photon_hdf5_tables(h5file, strict=strict)
     if close:
         h5file.close()
 
@@ -547,7 +549,8 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
 
 
-def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False):
+def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False,
+                                    strict_description=True):
     """
     Assert the an HDF5 file follows the Photon-HDF5 specs.
 
@@ -571,7 +574,8 @@ def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False):
         msg = 'datafile must be a path (string) or a pytables File.'
         raise ValueError(msg)
 
-    _assert_valid_fields(h5file, verbose=verbose)
+    _assert_valid_fields(h5file, strict_description=strict_description,
+                         verbose=verbose)
     _assert_mandatory_fields(h5file, verbose=verbose)
 
     pool = []
@@ -620,7 +624,7 @@ def _assert_mandatory_fields(h5file, verbose=False):
         _assert_has_field('photon_data', h5file.root, verbose=verbose)
 
 
-def _assert_valid_fields(h5file, verbose=False):
+def _assert_valid_fields(h5file, strict_description=True, verbose=False):
     """Assert compliance of field names, descriptions and data types.
 
     Test that all the field names, the descriptions (TITLE attribute) and
@@ -634,11 +638,14 @@ def _assert_valid_fields(h5file, verbose=False):
 
         ## Test non empty title string
         msg = 'Empty TITLE attribute for "%s"' % pathname
-        _assert_valid(len(title) > 0, msg)
+        _assert_valid(len(title) > 0, msg, strict=strict_description)
 
         ## Test description is a binary string
-        msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
-        _assert_valid(isinstance(title, bytes), msg)
+        # This depends on how pytbales loads the string and fails for some
+        # fields (e.g. user fields in BH file) under python 3.
+        # The test is disable for the time being.
+        #msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
+        #_assert_valid(isinstance(title, bytes), msg, strict=strict_description)
 
         if pathname.endswith('/user') or '/user/' in pathname:
             pass
