@@ -489,6 +489,20 @@ class Invalid_PhotonHDF5(Exception):
 
 def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
     """Assert `condition` and raise Invalid_PhotonHDF5(msg) on fail.
+
+    Arguments:
+        condition (bool): must evaluate to True for a valid Photon-HDF5 file.
+        msg (string): meassage to be printed in case `condition` is False.
+        strict (bool): if True, raise Invalid_PhotonHDF5 when `condition` is
+            False. Else, print only a warning.
+        norepeat (bool): if True, do not repeat the same message more than
+            once. The message is considered printed if present in `pool`.
+        pool (list): stores the message that have been printed (to avoid
+            repetition). The first time pass an empty list, then keep passing
+            the same list to avoid repetitions.
+
+    Returns:
+        Boolean, pass-through the input argument `condition`.
     """
     if norepeat:
         if msg in pool:
@@ -505,6 +519,26 @@ def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
 
 def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
                       norepeat=False, pool=None, verbose=False):
+    """Assert that field `name` is in `group`.
+
+    Arguments:
+        name (string): field name whose existence is being tested.
+        group (tables.Group): group which should contain `name`.
+        msg (string or None): optional message to be printed in case of
+            missing field. When None a default meassage is printed.
+        msg_add (string or None): an optional message to be added to the
+            default message in case of missing field.
+        mandatory (bool): if True, raise and Invalid_PhotonHDF5 error when
+            the field is missing. If False, print only a warning message.
+        norepeat (bool): if True, do not repeat the same message more than
+            once. The message is considered printed if present in `pool`.
+        pool (list): stores the message that have been printed (to avoid
+            repetition). The first time pass an empty list, then keep passing
+            the same list to avoid repetitions.
+
+    Returns:
+        Boolean, True if `name` exists otherwise False.
+    """
     if verbose:
         print('Checking "%s" in %s.' % (name, group._v_pathname))
     if msg is None:
@@ -523,7 +557,7 @@ def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False):
 
     Arguments:
         strict (bool): if True, raise an error optional groups (i.e. setup
-            and identity are missing or lack mandatory fields). If False,
+            and identity) are missing or lack mandatory fields. If False,
             print only a warning.
         verbose (bool): if True print details about the performed tests.
     """
@@ -550,7 +584,8 @@ def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False):
     _assert_identity(h5file, strict=strict, verbose=verbose)
 
 def _assert_setup(h5file, strict=True, verbose=False):
-    """Assert that setup contains all the mandatory fields."""
+    """Assert that setup exists and contains the mandatory fields.
+    """
     if _assert_has_field('setup', h5file.root, mandatory=strict,
                          verbose=verbose):
         mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
@@ -561,7 +596,8 @@ def _assert_setup(h5file, strict=True, verbose=False):
                               verbose=verbose)
 
 def _assert_identity(h5file, strict=True, verbose=False):
-    """Assert that identity contains all the mandatory fields."""
+    """Assert that identity group exists and contains the mandatory fields.
+    """
     if _assert_has_field('identity', h5file.root, mandatory=strict,
                          verbose=verbose):
         mantatory_fields = ['format_name', 'format_version', 'format_url',
@@ -577,7 +613,8 @@ def _assert_identity(h5file, strict=True, verbose=False):
 
 
 def _assert_mandatory_fields(h5file, verbose=False):
-    """Assert that the basic mandatory fields are present."""
+    """Assert that the basic mandatory fields are present.
+    """
     _assert_has_field('acquisition_duration', h5file.root, verbose=verbose)
     _assert_has_field('description', h5file.root, verbose=verbose)
     if not 'photon_data0' in h5file.root:
@@ -585,7 +622,10 @@ def _assert_mandatory_fields(h5file, verbose=False):
 
 
 def _assert_valid_fields(h5file, verbose=False):
-    """Assert field names, descriptions and data types in a Photon-HDF5 file.
+    """Assert compliance of field names, descriptions and data types.
+
+    Test that all the field names, the descriptions (TITLE attribute) and
+    data types are compliant with the Photon-HDF5 specs.
     """
     for node in h5file.root._f_walknodes():
         pathname = node._v_pathname
@@ -636,7 +676,8 @@ def _assert_valid_fields(h5file, verbose=False):
 
 def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
                               verbose=False):
-
+    """Assert that the photon_data group follows the Photon-HDF5 specs.
+    """
     _assert_has_field('timestamps', ph_data, verbose=verbose)
     _assert_has_field('timestamps_specs', ph_data, verbose=verbose)
     _assert_has_field('timestamps_unit', ph_data.timestamps_specs,
