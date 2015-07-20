@@ -631,7 +631,9 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
     data types are compliant with the Photon-HDF5 specs.
     """
     for node in h5file.root._f_walknodes():
-        pathname = node._v_pathname
+        metaname = pathname = node._v_pathname
+        if metaname.startswith('/photon_data'):
+            metaname = pathname[:len('/photon_data')]
         title = node._v_title
         if verbose:
             print('- Checking name, description and type: "%s".' % pathname)
@@ -651,16 +653,16 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
             pass
         else:
             # Check field names
-            msg = 'Wrong field name "%s".' % pathname
-            _assert_valid(pathname in official_fields_specs.keys(), msg)
+            msg = 'Wrong field name "%s".' % metaname
+            _assert_valid(metaname in official_fields_specs.keys(), msg)
 
             # Check fields use official description
-            msg = 'Description (TITLE) for "%s" not compliant.' % pathname
-            _assert_valid(title.decode() == official_fields_specs[pathname][0],
+            msg = 'Description (TITLE) for "%s" not compliant.' % metaname
+            _assert_valid(title.decode() == official_fields_specs[metaname][0],
                           msg)
 
             # Check fields have correct type
-            official_type = official_fields_specs[pathname][1]
+            official_type = official_fields_specs[metaname][1]
 
             if official_type == 'group':
                 msg = '"%s" must be a group.' % pathname
