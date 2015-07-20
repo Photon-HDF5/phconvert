@@ -54,8 +54,8 @@ def usalex_sm(
             alex_offset = alex_offset,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
-            detectors_specs = dict(spectral_ch1 = np.asarray(donor),
-                                   spectral_ch2 = np.asarray(acceptor)))
+            detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
+                                   spectral_ch2 = np.atleast_1d(acceptor)))
     )
 
     setup = dict(
@@ -160,8 +160,8 @@ def nsalex_bh(filename_spc,
             laser_repetition_rate = laser_repetition_rate,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
-            detectors_specs = dict(spectral_ch1 = np.asarray(donor),
-                                   spectral_ch2 = np.asarray(acceptor)))
+            detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
+                                   spectral_ch2 = np.atleast_1d(acceptor)))
         )
 
     setup = dict(
@@ -239,8 +239,8 @@ def nsalex_ht3(filename,
             laser_repetition_rate = laser_repetition_rate,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
-            detectors_specs = dict(spectral_ch1 = np.asarray(donor),
-                                   spectral_ch2 = np.asarray(acceptor)))
+            detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
+                                   spectral_ch2 = np.atleast_1d(acceptor)))
         )
 
     setup = dict(
