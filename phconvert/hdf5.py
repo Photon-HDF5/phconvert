@@ -414,10 +414,7 @@ def _sorted_photon_data_tables(h5file):
     ph_datas = [n for n in h5file.root._f_iter_nodes()
                 if n._v_name.startswith(prefix)]
 
-    def _cmp(a, b):
-        return cmp(a._v_name[len(prefix):], b._v_name[len(prefix):])
-
-    ph_datas.sort(_cmp)
+    ph_datas.sort(key=lambda x: x._v_name[len(prefix):])
     return ph_datas
 
 def _sorted_photon_data(data_dict):
@@ -652,7 +649,8 @@ def _assert_valid_fields(h5file, verbose=False):
 
             # Check fields use official description
             msg = 'Description (TITLE) for "%s" not compliant.' % pathname
-            _assert_valid(title == official_fields_specs[pathname][0], msg)
+            _assert_valid(title.decode() == official_fields_specs[pathname][0],
+                          msg)
 
             # Check fields have correct type
             official_type = official_fields_specs[pathname][1]
