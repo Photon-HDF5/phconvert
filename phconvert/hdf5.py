@@ -433,16 +433,18 @@ def _sorted_photon_data(data_dict):
         keys = ['%s%d' % (prefix, ch) for ch in sorted_channels]
     return keys
 
-def photon_data_mapping(group, name='timestamps'):
-    """Return a mapping ch -> photon data array.
+def photon_data_mapping(h5file, name='timestamps'):
+    """Return a mapping (OrderedDict) between ch and photon_data array.
     """
     from collections import OrderedDict
-    data_dict = dict_from_group(group, read=False)
-    ph_data_keys = _sorted_photon_data(data_dict)
-    names_list = [k + '/' + name for k in ph_data_keys]
-    ph_data_list = [group._f_get_child(name_) for name_ in names_list]
-    return OrderedDict((ch, ph) for ch, ph in enumerate(ph_data_list)
-                       if ph.shape[-1] > 0)
+    mapping = OrderedDict()
+    prefix = 'photon_data'
+    for ph_data in _sorted_photon_data_tables(h5file):
+        ph = ph_data._f_get_child(name)
+        if ph.shape[-1] > 0:
+            ch = int(ph_data._v_name[len(prefix):])
+            mapping[ch] = ph
+    return mapping
 
 def _sanitize_data(data_dict):
     """Perform type conversions to strictly conform to Photon-HDF5 specs.
