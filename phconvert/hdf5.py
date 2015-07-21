@@ -273,7 +273,7 @@ def save_photon_hdf5(data_dict,
                 provenance['creation_time'] = orig_creation_time
 
     ## Add identity metadata
-    identity = get_identity(h5file)
+    identity = _get_identity(h5file)
     identity.update(software='phconvert',
                     software_version=__version__)
     data_dict['identity'].update(identity)
@@ -291,7 +291,9 @@ def save_photon_hdf5(data_dict,
         h5file.close()
 
 
-def get_identity(h5file):
+def _get_identity(h5file):
+    """Return a dict with identity information for `h5file`.
+    """
     full_h5filename = os.path.abspath(h5file.filename)
     h5filename = os.path.basename(full_h5filename)
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S")
