@@ -685,9 +685,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
                 _assert_valid(node.ndim == 0, msg)
             elif official_type == 'array':
                 msg = '"%s" must be an array.' % pathname
-                _assert_valid(node.ndim >= 0, msg)
-                # NOTE: some fields saved as numpy "scalar" arrays have
-                #       ndim == 0, still they are numpy arrays.
+                _assert_valid(node.ndim >= 1, msg)
             else:
                 raise ValueError('Wrong type in JSON specs.')
 
