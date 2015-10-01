@@ -1,6 +1,6 @@
 # phconvert
 
-*phconvert* is a python 2 & 3 library for writing and reading
+*phconvert* is a python 2 & 3 library that helps writing valid
 <a href="http://photon-hdf5.org/" target="_blank">Photon-HDF5</a>
 files, a file format for time stamp-based single-molecule spectroscopy.
 Additionally, *phconvert* can convert a few common binary formats
@@ -15,14 +15,15 @@ or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
 
 Converting one of the supported files formats to Photon-HDF5 does not require 
 being able to program in python. All you need is running the appropriate "notebook"
-corresponding to the source format and follow the instructions therein.
+corresponding to the file format you want to convert from, and follow the instructions therein.
 
-To run a notebook on your machine, you need to install the *Jupyter Notebook App*. 
+To run a notebook on your machine, you need to install the *Jupyter Notebook App* first. 
 A quick-start guide on installing and running the *Jupyter Notebook App* is available here:
 
 - <a href="http://jupyter-notebook-beginner-guide.readthedocs.org/" target="_blank">Jupyter/IPython Notebook Quick Start Guide</a>
 
-Next, you need to install the *phconvert* library with the command (typed in a Terminal window for Mac and Linux, or in the cmd prompt on Windows):
+Next, you need to install the *phconvert* library with the following command 
+(type it in a Terminal window on OSX or Linux, or in a `cmd` prompt on Windows):
 
     conda install -c tritemio phconvert
     
@@ -39,41 +40,48 @@ which contains all the notebooks in the `notebooks` subfolder.
 
 ## Project details
 
+### What does it contain?
+
 *phconvert* repository contains a python package (library) and a set of
 [notebooks](https://github.com/Photon-HDF5/phconvert/tree/master/notebooks) 
-([online viewer](http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/)) 
-which show how to convert other file formats to Photon-HDF5.
+([online viewer](http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/)).
+Each notebook can convert a different format to Photon-HDF5 using the phconvert library.
 
-*phconvert* tests the compliance to the Photon-HDF5 specifications
-before saving a new files and automatically adds description 
-attributes for each field.
+### Why phconvert is needed?
+
+In principle, Photon-HDF5 files can be written directly using only pytables 
+or other HDF5 libraries.
+In practice, the process of manually creating each field is tedious and error prone:
+it's easy to make spelling errors in field names or to forget a mandatory field.
+To help this task, we provide a 
+[JSON file](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json) 
+which contains the list Photon-HDF5 field names, types, and descriptions.
+*phconvert*, uses this JSON file to make sure that the input field names (and types) 
+are valid. Additionally, phconver adds a description to each field, 
+extracting it from the JSON file.
 
 ## Read Photon-HDF5 files
 
-In case you just want to read Photon-HDF5 files, phconvert is not
-necessary (although it provides some helper functions).
-Photon-HDF5 files can be opened with a standard HDF5 viewer
+In case you just want to read Photon-HDF5 files you don't need to use phconvert.
+Photon-HDF5 files can be directly opened with a standard HDF5 viewer
 [HDFView](https://www.hdfgroup.org/products/java/hdfview/).
-Moreover, we provide code examples on reading Photon-HDF5 files
+Moreover, we provide code examples of reading Photon-HDF5 files
 in multiple languages in 
 [this repository](https://github.com/Photon-HDF5/photon_hdf5_reading_examples).
 
 ## Installation
 
-The recommended way to install *phconvert* is by using conda (which first requires installing the python distribution [Anaconda](https://store.continuum.io/cshop/anaconda/) from Continuum):
+The recommended way to install *phconvert* is by using conda (which first 
+requires installing the free python distribution 
+[Anaconda](https://store.continuum.io/cshop/anaconda/) from Continuum):
 
     conda install -c tritemio phconvert
 
-You can also install *phconvert* through PIP (which first requires installing python, and the numpy and pytables libraries):
+Alternatively, you can install *phconvert* in any python installation using PIP:
 
     pip install phconvert
 
-Finally, another way consists in downloading the sources and executing:
-
-    python setup.py build
-    python setup.py install
-
-Note: all dependencies need to be installed first.
+In this latter case, make sure that numpy and pytables are installed.
 
 ## Dependencies
 
@@ -97,14 +105,14 @@ The data needs to have the hierarchical structure of a Photon-HDF5 file.
 In practice, we use a standard python dictionary: each keys is a Photon-HDF5 field name and
 each value contains data (e.g. array, string, etc..) or another dictionary
 (in which case, it represents an HDF5 sub-group). Similarly, sub-dictionaries 
-contain data or other dictionaries, as needed to represent the hierachy of Photon-HDF5 files.
+contain data or other dictionaries, as needed to represent the hierarchy of Photon-HDF5 files.
 
 The `loader` module contains loader functions which load data from disk and return a dictionary
 to be passed to `save_photon_hdf5()`. These functions can be used as examples
 when converting a new unsupported file format.
 
 The `loader` module contains high-level functions which "fill" the dictionary
-with the appropriate arrays. The actual decoding of the input binary files is perfomed
+with the appropriate arrays. The actual decoding of the input binary files is performed
 by low-level functions in other modules (`smreader.py`, `pqreader.py`, `bhreader.py`).
 When trying to decode a new file format, these modules can provide useful examples.
 
