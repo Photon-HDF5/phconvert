@@ -34,7 +34,7 @@
         <h1>
 <a id="phconvert" class="anchor" href="#phconvert" aria-hidden="true"><span class="octicon octicon-link"></span></a>phconvert</h1>
 
-<p><em>phconvert</em> is a python 2 &amp; 3 library for writing and reading
+<p><em>phconvert</em> is a python 2 &amp; 3 library that helps writing valid
 <a href="http://photon-hdf5.org/" target="_blank">Photon-HDF5</a>
 files, a file format for time stamp-based single-molecule spectroscopy.
 Additionally, <em>phconvert</em> can convert a few common binary formats
@@ -50,16 +50,17 @@ or open an <a href="https://github.com/Photon-HDF5/phconvert/issues">issue on Gi
 
 <p>Converting one of the supported files formats to Photon-HDF5 does not require 
 being able to program in python. All you need is running the appropriate "notebook"
-corresponding to the source format and follow the instructions therein.</p>
+corresponding to the file format you want to convert from, and follow the instructions therein.</p>
 
-<p>To run a notebook on your machine, you need to install the <em>Jupyter Notebook App</em>. 
+<p>To run a notebook on your machine, you need to install the <em>Jupyter Notebook App</em> first. 
 A quick-start guide on installing and running the <em>Jupyter Notebook App</em> is available here:</p>
 
 <ul>
 <li><a href="http://jupyter-notebook-beginner-guide.readthedocs.org/" target="_blank">Jupyter/IPython Notebook Quick Start Guide</a></li>
 </ul>
 
-<p>Next, you need to install the <em>phconvert</em> library with the command (typed in a Terminal window for Mac and Linux, or in the cmd prompt on Windows):</p>
+<p>Next, you need to install the <em>phconvert</em> library with the following command 
+(type it in a Terminal window on OSX or Linux, or in a <code>cmd</code> prompt on Windows):</p>
 
 <pre><code>conda install -c tritemio phconvert
 </code></pre>
@@ -81,46 +82,61 @@ which contains all the notebooks in the <code>notebooks</code> subfolder.</p>
 <h2>
 <a id="project-details" class="anchor" href="#project-details" aria-hidden="true"><span class="octicon octicon-link"></span></a>Project details</h2>
 
+<h3>
+<a id="whats-inside" class="anchor" href="#whats-inside" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's inside?</h3>
+
 <p><em>phconvert</em> repository contains a python package (library) and a set of
 <a href="https://github.com/Photon-HDF5/phconvert/tree/master/notebooks">notebooks</a> 
-(<a href="http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/">online viewer</a>) 
-which show how to convert other file formats to Photon-HDF5.</p>
+(<a href="http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/">online viewer</a>).
+Each notebook can convert a different format to Photon-HDF5 using the phconvert library.</p>
 
-<p><em>phconvert</em> tests the compliance to the Photon-HDF5 specifications
-before saving a new files and automatically adds description 
-attributes for each field.</p>
+<p>If you have a file format that is not yet supported, please <a href="https://github.com/Photon-HDF5/phconvert/issues">open an new Issue</a>.
+We are willing add support for as many file formats as possible!</p>
+
+<h3>
+<a id="why-phconvert" class="anchor" href="#why-phconvert" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why phconvert?</h3>
+
+<p>When wrtiting Photon-HDF5 files, phconvert saves you time 
+and protects you againsts common programming errors risk
+to make the file not a valid Photon-HDF5.</p>
+
+<p>In principle, Photon-HDF5 files can be written directly using only pytables 
+or other HDF5 libraries.
+In practice, the process of manually creating each field is tedious and error prone:
+it's easy to make spelling errors in field names or to forget a mandatory field.
+To help this task, we provide a 
+<a href="https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json">JSON file</a> 
+which contains the list Photon-HDF5 field names, types, and descriptions.
+<em>phconvert</em>, uses this JSON file to make sure that the input field names (and types) 
+are valid. Additionally, phconver adds a description to each field, 
+extracting it from the JSON file.</p>
 
 <h2>
 <a id="read-photon-hdf5-files" class="anchor" href="#read-photon-hdf5-files" aria-hidden="true"><span class="octicon octicon-link"></span></a>Read Photon-HDF5 files</h2>
 
-<p>In case you just want to read Photon-HDF5 files, phconvert is not
-necessary (although it provides some helper functions).
-Photon-HDF5 files can be opened with a standard HDF5 viewer
+<p>In case you just want to read Photon-HDF5 files you don't need to use phconvert.
+Photon-HDF5 files can be directly opened with a standard HDF5 viewer
 <a href="https://www.hdfgroup.org/products/java/hdfview/">HDFView</a>.
-Moreover, we provide code examples on reading Photon-HDF5 files
+Moreover, we provide code examples of reading Photon-HDF5 files
 in multiple languages in 
 <a href="https://github.com/Photon-HDF5/photon_hdf5_reading_examples">this repository</a>.</p>
 
 <h2>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
 
-<p>The recommended way to install <em>phconvert</em> is by using conda (which first requires installing the python distribution <a href="https://store.continuum.io/cshop/anaconda/">Anaconda</a> from Continuum):</p>
+<p>The recommended way to install <em>phconvert</em> is by using conda (which first 
+requires installing the free python distribution 
+<a href="https://store.continuum.io/cshop/anaconda/">Anaconda</a> from Continuum):</p>
 
 <pre><code>conda install -c tritemio phconvert
 </code></pre>
 
-<p>You can also install <em>phconvert</em> through PIP (which first requires installing python, and the numpy and pytables libraries):</p>
+<p>Alternatively, you can install <em>phconvert</em> in any python installation using PIP:</p>
 
 <pre><code>pip install phconvert
 </code></pre>
 
-<p>Finally, another way consists in downloading the sources and executing:</p>
-
-<pre><code>python setup.py build
-python setup.py install
-</code></pre>
-
-<p>Note: all dependencies need to be installed first.</p>
+<p>In this latter case, make sure that numpy and pytables are installed.</p>
 
 <h2>
 <a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h2>
@@ -150,14 +166,14 @@ The data needs to have the hierarchical structure of a Photon-HDF5 file.
 In practice, we use a standard python dictionary: each keys is a Photon-HDF5 field name and
 each value contains data (e.g. array, string, etc..) or another dictionary
 (in which case, it represents an HDF5 sub-group). Similarly, sub-dictionaries 
-contain data or other dictionaries, as needed to represent the hierachy of Photon-HDF5 files.</p>
+contain data or other dictionaries, as needed to represent the hierarchy of Photon-HDF5 files.</p>
 
 <p>The <code>loader</code> module contains loader functions which load data from disk and return a dictionary
 to be passed to <code>save_photon_hdf5()</code>. These functions can be used as examples
 when converting a new unsupported file format.</p>
 
 <p>The <code>loader</code> module contains high-level functions which "fill" the dictionary
-with the appropriate arrays. The actual decoding of the input binary files is perfomed
+with the appropriate arrays. The actual decoding of the input binary files is performed
 by low-level functions in other modules (<code>smreader.py</code>, <code>pqreader.py</code>, <code>bhreader.py</code>).
 When trying to decode a new file format, these modules can provide useful examples.</p>
 
@@ -171,6 +187,18 @@ When trying to decode a new file format, these modules can provide useful exampl
 <a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
 
 <p><em>phconvert</em> is released under the open source MIT license.</p>
+
+<h2>
+<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>As with other Photon-HDF5 subprojects, we encourage contributions 
+in any form, from simple suggestions, typo fix to the addition of new features. 
+Please use GitHub by opening Issues or sending Pull Requests.</p>
+
+<p>All the contributors will be acknowledged in this website, and will included 
+as authors in the next software-paper publication.</p>
+
+<p>For more details see our <a href="http://photon-hdf5.readthedocs.org/en/latest/contributing.html">contribution policy</a>.</p>
 
 <h2>
 <a id="acknowledgements" class="anchor" href="#acknowledgements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Acknowledgements</h2>
