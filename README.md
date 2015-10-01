@@ -40,14 +40,21 @@ which contains all the notebooks in the `notebooks` subfolder.
 
 ## Project details
 
-### What does it contain?
+### What's inside?
 
 *phconvert* repository contains a python package (library) and a set of
 [notebooks](https://github.com/Photon-HDF5/phconvert/tree/master/notebooks) 
 ([online viewer](http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/tree/master/notebooks/)).
 Each notebook can convert a different format to Photon-HDF5 using the phconvert library.
 
-### Why phconvert is needed?
+If you have a file format that is not yet supported, please [open an new Issue](https://github.com/Photon-HDF5/phconvert/issues).
+We are willing add support for as many file formats as possible!
+
+### Why phconvert?
+
+When wrtiting Photon-HDF5 files, phconvert saves you time 
+and protects you againsts common programming errors risk
+to make the file not a valid Photon-HDF5.
 
 In principle, Photon-HDF5 files can be written directly using only pytables 
 or other HDF5 libraries.
@@ -125,6 +132,16 @@ The phconvert repository also contains a JSON specification of the Photon-HDF5 f
 
 *phconvert* is released under the open source MIT license.
 
+## Contributing
+
+As with other Photon-HDF5 subprojects, we encourage contributions 
+in any form, from simple suggestions, typo fix to the addition of new features. 
+Please use GitHub by opening Issues or sending Pull Requests.
+
+All the contributors will be acknowledged in this website, and will included 
+as authors in the next software-paper publication.
+
+For more details see our [contribution policy](http://photon-hdf5.readthedocs.org/en/latest/contributing.html).
 
 ## Acknowledgements
 This work was supported by NIH Grant R01-GM95904.
