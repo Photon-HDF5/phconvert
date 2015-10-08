@@ -53,7 +53,7 @@ We are willing add support for as many file formats as possible!
 ### Why phconvert?
 
 When wrtiting Photon-HDF5 files, phconvert saves you time 
-and protects you againsts common programming errors risk
+and protects you againsts common programming errors that risk
 to make the file not a valid Photon-HDF5.
 
 In principle, Photon-HDF5 files can be written directly using only pytables 
@@ -64,7 +64,7 @@ To help this task, we provide a
 [JSON file](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json) 
 which contains the list Photon-HDF5 field names, types, and descriptions.
 *phconvert*, uses this JSON file to make sure that the input field names (and types) 
-are valid. Additionally, phconver adds a description to each field, 
+are valid. Additionally, phconvert adds a description to each field, 
 extracting it from the JSON file.
 
 ## Read Photon-HDF5 files
