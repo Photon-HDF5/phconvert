@@ -17,8 +17,8 @@ Converting one of the supported files formats to Photon-HDF5 does not require
 being able to program in python. All you need is running the "notebook"
 corresponding to the file format you want to convert from, and follow the instructions therein.
 
-For demonstration purposes, the notebooks can be executed online (courtesy [MyBinder.org](http://mybinder.org/)) 
-to convert data files (currently limited to 35MB) to Photon-HDF5 without any installation.
+For demonstration purposes, the notebooks can be executed online without any installation (courtesy [MyBinder.org](http://mybinder.org/)).
+With this online service, you can convert data files up to 35MB to Photon-HDF5.
 To launch the demo click on the following button:
 
 [![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/Photon-HDF5/Photon-HDF5-Converter)
