@@ -14,21 +14,27 @@ or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
 ## Quick-start: Converting files to Photon-HDF5
 
 Converting one of the supported files formats to Photon-HDF5 does not require 
-being able to program in python. All you need is running the appropriate "notebook"
+being able to program in python. All you need is running the "notebook"
 corresponding to the file format you want to convert from, and follow the instructions therein.
 
-To run a notebook on your machine, you need to install the *Jupyter Notebook App* first. 
+For demonstration purposes, the notebooks can be executed online (courtesy [MyBinder.org](http://mybinder.org/)) 
+to convert data files (currently limited to 35MB) to Photon-HDF5 without any installation.
+To launch the demo click on the following button:
+
+[![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/Photon-HDF5/Photon-HDF5-Converter)
+
+To execute the phconvert notebooks on your machine, you need to install the *Jupyter Notebook App* first. 
 A quick-start guide on installing and running the *Jupyter Notebook App* is available here:
 
 - <a href="http://jupyter-notebook-beginner-guide.readthedocs.org/" target="_blank">Jupyter/IPython Notebook Quick Start Guide</a>
 
 Next, you need to install the *phconvert* library with the following command 
-(type it in a Terminal window on OSX or Linux, or in a `cmd` prompt on Windows):
+(type it in *Terminal* on OS X or Linux, or in the `cmd` prompt on Windows):
 
     conda install -c tritemio phconvert
     
 Finally, you can download one of the provided notebooks and run it on your machine.
-To download all notebooks in one step, download the 
+Simply, download the 
 [phconvert zip](https://github.com/Photon-HDF5/phconvert/archive/master.zip), 
 which contains all the notebooks in the `notebooks` subfolder.
 
