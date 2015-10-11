@@ -19,7 +19,8 @@ corresponding to the file format you want to convert from, and follow the instru
 
 For demonstration purposes, the notebooks can be executed online without any installation (courtesy [MyBinder.org](http://mybinder.org/)).
 With this online service, you can convert data files up to 35MB to Photon-HDF5.
-To launch the demo click on the following button:
+To launch the demo click on the following button 
+(see also [instructions](http://photon-hdf5.github.io/Photon-HDF5-Converter/)):
 
 [![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/Photon-HDF5/Photon-HDF5-Converter)
 
