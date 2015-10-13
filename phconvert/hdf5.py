@@ -197,17 +197,21 @@ def save_photon_hdf5(data_dict,
                      overwrite = False,
                      validate = True):
     """
-    Saves the dict `d` in the Photon-HDF5 format.
+    Saves the dict `data_dict` in the Photon-HDF5 format.
 
-    As a side effect `d` is modified by adding the key '_data_file' that
-    contains a reference to the pytables file.
+    `data_dict` is a dictionary in which keys are Photon-HDF5 field names and
+    values are field data. If a field is a group, the value is a dictionary
+    containing the fields in that group. This structure of nested fields
+    needs to match the structure of the Photon-HDF5 files otherwise an error
+    is raised.
+
+    As a side effect `data_dict` is modified by adding the key
+    '_data_file' containing a reference to the pytables file.
 
     Arguments:
         data_dict (dict): the dictionary containing the photon data.
             The keys must strings matching valid Photon-HDF5 paths.
-            The values must be scalars, arrays or strings.
-        strict (bool): if True, raises an error when not following the specs.
-            If False, does not rais an error but print a warning.
+            The values must be scalars, arrays, strings or another dict.
         compression (dict): a dictionary containing the compression type
             and level. Passed to pytables `tables.Filters()`.
         h5_fname (string or None): if not None, contains the file name
@@ -218,13 +222,17 @@ def save_photon_hdf5(data_dict,
             user-defined fields. The keys must be strings representing
             the full HDF5 path of each field. The values must be
             binary (i.e. encoded) strings restricted to the ASCII set.
-        debug (bool): if True prints addition debug information.
+        debug (bool): if True prints additional debug information.
         close (bool): If True (default) the HDF5 file is closed before
             returning. If False the file is left open.
-        overwrite (bool): if True, when an HDF5 file with the same name is
-            found, overwrite it. If False, save the new file by adding the
+        overwrite (bool): if True, a pre-existing HDF5 file with same name is
+            overwritten. If False, save the new file by adding the
             suffix "new_copy" (and if a "_new_copy" file is already present
             overwrites it).
+        validate (bool): if True, after saving perform a validation step.
+        strict (bool): if True, the validation step raises an error when
+            the saved file does not follow the Photon-HDF5 specs.
+            If False, does not raise an error but print a warning.
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
@@ -571,6 +579,8 @@ def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False,
             and identity) are missing or lack mandatory fields. If False,
             print only a warning.
         verbose (bool): if True print details about the performed tests.
+        strict_description (bool): if True consider a non-conforming
+            description (TITLE) a specs violation.
     """
     if isinstance(datafile, tables.File):
         h5file = datafile
