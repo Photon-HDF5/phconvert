@@ -195,7 +195,8 @@ def save_photon_hdf5(data_dict,
                      debug = False,
                      close = True,
                      overwrite = False,
-                     validate = True):
+                     validate = True
+                     skip_measurement_specs = False):
     """
     Saves the dict `data_dict` in the Photon-HDF5 format.
 
@@ -233,6 +234,8 @@ def save_photon_hdf5(data_dict,
         strict (bool): if True, the validation step raises an error when
             the saved file does not follow the Photon-HDF5 specs.
             If False, does not raise an error but print a warning.
+        skip_measurement_specs (bool): if True don't print any warning for
+            missing measurement_specs group.
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
@@ -294,7 +297,9 @@ def save_photon_hdf5(data_dict,
                            fields_descr=fields_descr, debug=debug)
     h5file.flush()
     if validate:
-        assert_valid_photon_hdf5_tables(h5file, strict=strict)
+        kwargs = dict(skip_measurement_specs=skip_measurement_specs,
+                      strict=strict,)
+        assert_valid_photon_hdf5(h5file, **kwargs)
     if close:
         h5file.close()
 
@@ -377,7 +382,7 @@ def dict_to_group(group, dictionary):
 def load_photon_hdf5(filename, strict=True):
     assert os.path.isfile(filename)
     h5file = tables.open_file(filename)
-    assert_valid_photon_hdf5_tables(h5file, strict=strict)
+    assert_valid_photon_hdf5(h5file, strict=strict)
     return h5file.root
 
 ##
@@ -566,8 +571,9 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
 
 
-def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False,
-                                    strict_description=True):
+def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
+                                    strict_description=True,
+                                    skip_measurement_specs=False):
     """
     Assert the an HDF5 file follows the Photon-HDF5 specs.
 
@@ -581,6 +587,9 @@ def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False,
         verbose (bool): if True print details about the performed tests.
         strict_description (bool): if True consider a non-conforming
             description (TITLE) a specs violation.
+        skip_measurement_specs (bool): if True don't print any warning for
+            missing measurement_specs group.
+
     """
     if isinstance(datafile, tables.File):
         h5file = datafile
@@ -598,9 +607,11 @@ def assert_valid_photon_hdf5_tables(datafile, strict=True, verbose=False,
     _assert_mandatory_fields(h5file, verbose=verbose)
 
     pool = []
+    kwargs = dict(pool=pool, strict=strict, norepeat=True,
+                  skip_measurement_specs=skip_measurement_specs)
     for ph_data in _sorted_photon_data_tables(h5file):
-        _check_photon_data_tables(ph_data, strict=strict, norepeat=True,
-                                  pool=pool)
+
+        _check_photon_data_tables(ph_data, **kwargs)
 
     _assert_setup(h5file, strict=strict, verbose=verbose)
     _assert_identity(h5file, strict=strict, verbose=verbose)
