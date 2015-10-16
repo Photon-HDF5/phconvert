@@ -195,7 +195,7 @@ def save_photon_hdf5(data_dict,
                      debug = False,
                      close = True,
                      overwrite = False,
-                     validate = True
+                     validate = True,
                      skip_measurement_specs = False):
     """
     Saves the dict `data_dict` in the Photon-HDF5 format.
