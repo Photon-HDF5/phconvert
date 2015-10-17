@@ -572,8 +572,8 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
 
 
 def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
-                                    strict_description=True,
-                                    skip_measurement_specs=False):
+                             strict_description=True,
+                             skip_measurement_specs=False):
     """
     Assert the an HDF5 file follows the Photon-HDF5 specs.
 
@@ -711,7 +711,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
                 raise ValueError('Wrong type in JSON specs.')
 
 def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
-                              verbose=False):
+                              skip_measurement_specs=False, verbose=False):
     """Assert that the photon_data group follows the Photon-HDF5 specs.
     """
     _assert_has_field('timestamps', ph_data, verbose=verbose)
@@ -719,8 +719,11 @@ def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
     _assert_has_field('timestamps_unit', ph_data.timestamps_specs,
                       verbose=verbose)
 
-    if not _assert_has_field('measurement_specs', ph_data, mandatory=False,
-                             verbose=verbose, norepeat=norepeat, pool=pool):
+    if not 'measurement_specs' in ph_data:
+        if not skip_measurement_specs:
+            # Called to print a warning
+            _assert_has_field('measurement_specs', ph_data, mandatory=False,
+                              verbose=verbose, norepeat=norepeat, pool=pool)
         return
 
     spectral_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
