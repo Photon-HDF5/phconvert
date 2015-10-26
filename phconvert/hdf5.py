@@ -4,20 +4,19 @@
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
-The module `hdf5` defines functions to save and load Photon-HDF5 files
+The module `hdf5` defines functions to save and validate Photon-HDF5 files.
+The main two functions in this module are:
 
-:func:`save_photon_hdf5` saves data from a dictionary whose keys are
-Photon-HDF5 field names.
-
-:func:`load_photon_hdf5` opens a HDF5 file, verifies that is
-in a valid Photon-HDF5 format and return the root node.
+- :func:`save_photon_hdf5` to saves data from a dictionary to Photon-HDF5.
+- :func:`assert_valid_photon_hdf5` to validate if a HDF5 file is valid
+  Photon-HDF5.
 
 This module also provides functions to save free-form dict to HDF5
 (:func:`dict_to_group`) and read a HDF5 group into a dict
 (:func:`dict_from_group`).
-
 Finally there are utility functions to easily print HDF5 nodes and attributes
 (:func:`print_children`, :func:`print_attrs`).
+
 """
 
 from __future__ import print_function, absolute_import, division
@@ -380,6 +379,10 @@ def dict_to_group(group, dictionary):
     h5file.flush()
 
 def load_photon_hdf5(filename, strict=True):
+    """Open a Photon-HDF5 file in pytables, validate it.
+
+    Returns the root group of the file.
+    """
     assert os.path.isfile(filename)
     h5file = tables.open_file(filename)
     assert_valid_photon_hdf5(h5file, strict=strict)

@@ -5,13 +5,11 @@
 #
 """
 This module contains functions to load each supported data format.
+Each loader function loads data from a third-party formats into a python
+dictionary which has the structure of a Photon-HDF5 file.
+These dictionaries can be passed to :func:`phconvert.hdf5.save_photon_hdf5`
+to save the data in Photon-HDF5 format.
 
-The loader functions are used to load data from a specific format and
-return a dictionary with keys names corresponding to the Photon-HDF5
-data fields.
-
-These dictionaries can be used by the :func:`phconvert.hdf5.photon_hdf5`
-function to save the data in Photon-HDF5 format.
 
 """
 
@@ -35,7 +33,7 @@ def usalex_sm(
         software = 'LabVIEW Data Acquisition usALEX'):
     """Load a .sm us-ALEX file and returns a dictionary.
 
-    This dictionary can be passed to the :func:`phconvert.hdf5.photon_hdf5`
+    This dictionary can be passed to the :func:`phconvert.hdf5.save_photon_hdf5`
     function to save the data in Photon-HDF5 format.
     """
     print(" - Loading '%s' ... " % filename)
@@ -96,7 +94,7 @@ def nsalex_bh(filename_spc,
     """Load a .spc and (optionally) .set files for ns-ALEX and return 2 dict.
 
     The first dictionary can be passed to the
-    :func:`phconvert.hdf5.photon_hdf5` function to save the data in
+    :func:`phconvert.hdf5.save_photon_hdf5` function to save the data in
     Photon-HDF5 format.
 
     Returns:
@@ -197,7 +195,7 @@ def nsalex_ht3(filename,
                detection_wavelengths = (580e-9, 680e-9)):
     """Load a .ht3 file containing ns-ALEX data and return a dict.
 
-    This dictionary can be passed to the :func:`phconvert.hdf5.photon_hdf5`
+    This dictionary can be passed to the :func:`phconvert.hdf5.save_photon_hdf5`
     function to save the data in Photon-HDF5 format.
     """
     timestamps, detectors, nanotimes, metadata = pqreader.load_ht3(filename)
