@@ -18,6 +18,11 @@ import os
 import shlex
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if on_rtd:
+    # Mocking of the dependencies
+    sys.path.insert(0,'.')
+    from readthedocs import *
+    sys.path.pop(0)
 
 print("python exec: " + sys.executable)
 print("sys.path: " + ';'.join(sys.path))
