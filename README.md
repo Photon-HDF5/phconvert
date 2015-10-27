@@ -113,7 +113,7 @@ The *phconvert* API documentation can be found on ReadTheDocs:
 
 ## License
 
-*phconvert* is released under the open source MIT license.
+*phconvert* is released under the open source [MIT license](https://raw.githubusercontent.com/Photon-HDF5/phconvert/master/LICENSE.txt).
 
 ## Contributing
 
