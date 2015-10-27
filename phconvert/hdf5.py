@@ -261,6 +261,9 @@ def save_photon_hdf5(data_dict,
     for name, value in root_attributes.items():
         h5file.root._f_setattr(name, value)
 
+    ## Compute acquisition duration if not provided
+    _compute_acquisition_duration(data_dict)
+
     ## Add provenance metadata
     if 'provenance' in data_dict:
         provenance = data_dict['provenance']
@@ -303,6 +306,24 @@ def save_photon_hdf5(data_dict,
     if close:
         h5file.close()
 
+def _compute_acquisition_duration(data_dict):
+    """Compute acquisition_duration if not present. Single-spot only.
+    """
+    if 'acquisition_duration' in data_dict:
+        return
+    try:
+        ph_data = data_dict['photon_data']
+        timestamps = ph_data['timestamps']
+        ts_specs = ph_data['timestamps_specs']
+        timestamps_unit = ts_specs['timestamps_unit']
+    except KeyError:
+        # This happens in multi-spot or when some fields are missing
+        # Missing fields will later yield an error during validation.
+        pass
+    else:
+        acquisition_duration = ((timestamps.max() - timestamps.min())
+                                * timestamps_unit)
+        data_dict['acquisition_duration'] = np.round(acquisition_duration, 1)
 
 def _get_identity(h5file):
     """Return a dict with identity information for `h5file`.
