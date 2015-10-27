@@ -62,27 +62,22 @@ We are willing add support for as many file formats as possible!
 
 When writing Photon-HDF5 files, phconvert saves you time
 and protects you against common programming errors that risk
-to make the file not a valid Photon-HDF5.
-
-In principle, Photon-HDF5 files can be written directly using only pytables
-or other HDF5 libraries.
-In practice, the process of manually creating each field is tedious and error prone:
-it's easy to make spelling errors in field names or to forget a mandatory field.
-To help this task, we provide a
-[JSON file](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json)
+to make the file not a valid Photon-HDF5. Also a description
+is automatically added to each Photon-HDF5 field.
+The descriptions are extracted from a [JSON file](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json)
 which contains the list Photon-HDF5 field names, types, and descriptions.
-*phconvert*, uses this JSON file to make sure that the input field names (and types)
-are valid. Additionally, phconvert adds a description to each field,
-extracting it from the JSON file.
+
+See also [Writing Photon-HDF5 files](http://photon-hdf5.readthedocs.org/en/latest/writing.html)
+in the Photon-HDF5 reference documentation.
 
 ## Read Photon-HDF5 files
 
 In case you just want to read Photon-HDF5 files you don't need to use phconvert.
 Photon-HDF5 files can be directly opened with a standard HDF5 viewer
 [HDFView](https://www.hdfgroup.org/products/java/hdfview/).
-Moreover, we provide code examples of reading Photon-HDF5 files
-in multiple languages in
-[this repository](https://github.com/Photon-HDF5/photon_hdf5_reading_examples).
+
+See also [Reading Photon-HDF5 files](http://photon-hdf5.readthedocs.org/en/latest/reading.html)
+in the Photon-HDF5 reference documentation.
 
 ## Installation
 
