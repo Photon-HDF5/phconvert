@@ -265,11 +265,11 @@ def save_photon_hdf5(data_dict,
     if 'provenance' in data_dict:
         provenance = data_dict['provenance']
         orig_fname = None
-        if os.path.isfile(provenance['filename']):
-            orig_fname = provenance['filename']
-        elif os.path.isfile(provenance['filename_full']):
-            orig_fname = provenance['filename_full']
-        else:
+        for fn in ['filename', 'filename_full']:
+            if fn in provenance and os.path.isfile(provenance[fn]):
+                orig_fname = provenance[fn]
+                break
+        if orig_fname is None:
             print("WARNING: Could not locate original file '%s'" % \
                   provenance['filename'])
         if orig_fname is not None:
