@@ -11,6 +11,12 @@ These dictionaries can be passed to :func:`phconvert.hdf5.save_photon_hdf5`
 to save the data in Photon-HDF5 format.
 
 
+The loader module contains high-level functions which "fill" the dictionary
+with the appropriate arrays. The actual decoding of the input binary files
+is performed by low-level functions in other modules
+(smreader.py, pqreader.py, bhreader.py). When trying to
+decode a new file format, these modules can provide useful examples.
+
 """
 
 from __future__ import print_function, absolute_import, division

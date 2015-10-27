@@ -8,8 +8,19 @@ Welcome to phconvert's documentation!
 
 :Version: |version|
 
-Here you will find the documentation for functions provided by phconvert.
+phconvert is a python 2 & 3 library that helps writing valid
+`Photon-HDF5 <https://www.photon-hdf5.org>`_ files.
+This document contains the API documentation for phconvert.
 
+The phconvert library contains two main modules: `hdf5` and `loader`.
+The former contains functions to save and validate Photon-HDF5 files.
+The latter, contains functions to load other formats to be converted to
+Photon-HDF5.
+
+The phconvert repository also contains a
+`JSON specification <https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json>`_
+of the Photon-HDF5 format which list all the valid field names and respective
+data types and descriptions.
 
 Contents:
 

@@ -4,6 +4,7 @@
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
+
 The module `hdf5` defines functions to save and validate Photon-HDF5 files.
 The main two functions in this module are:
 
@@ -16,6 +17,9 @@ This module also provides functions to save free-form dict to HDF5
 (:func:`dict_from_group`).
 Finally there are utility functions to easily print HDF5 nodes and attributes
 (:func:`print_children`, :func:`print_attrs`).
+
+For info see:
+`Writing Photon-HDF5 files <http://photon-hdf5.readthedocs.org/en/latest/writing.html>`_.
 
 """
 
@@ -206,11 +210,14 @@ def save_photon_hdf5(data_dict,
     """
     Saves the dict `data_dict` in the Photon-HDF5 format.
 
-    `data_dict` is a dictionary in which keys are Photon-HDF5 field names and
-    values are field data. If a field is a group, the value is a dictionary
-    containing the fields in that group. This structure of nested fields
-    needs to match the structure of the Photon-HDF5 files otherwise an error
-    is raised.
+    This function requires the data to be saved as ``data_dict`` argument.
+    The data needs to have the hierarchical structure of a Photon-HDF5 file.
+    For the purpose, we use a standard python dictionary: each keys is
+    a Photon-HDF5 field name and each value contains data (e.g. array,
+    string, etc..) or another dictionary (in which case, it represents an
+    HDF5 sub-group). Similarly, sub-dictionaries contain data or
+    other dictionaries, as needed to represent the hierarchy
+    of Photon-HDF5 files.
 
     As a side effect `data_dict` is modified by adding the key
     '_data_file' containing a reference to the pytables file.

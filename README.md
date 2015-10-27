@@ -17,10 +17,10 @@ Converting one of the supported files formats to Photon-HDF5 does not require
 being able to program in python. All you need is running the "notebook"
 corresponding to the file format you want to convert from, and follow the instructions therein.
 
-For demonstration purposes, we provide [a demo service](http://photon-hdf5.github.io/Photon-HDF5-Converter) 
+For demonstration purposes, we provide [a demo service](http://photon-hdf5.github.io/Photon-HDF5-Converter)
 to run the notebooks online without any installation.
 With this online service, you can convert data files up to 35MB to Photon-HDF5.
-To launch the demo click on the following button 
+To launch the demo click on the following button
 (see also [instructions](http://photon-hdf5.github.io/Photon-HDF5-Converter/)):
 
 [![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/Photon-HDF5/Photon-HDF5-Converter)
@@ -105,31 +105,11 @@ In this latter case, make sure that numpy and pytables are installed.
 > when installing via `conda` all the dependencies are automatically installed.
 
 
-## The phconvert library (for developers)
+## The phconvert library documentation (for developers)
 
-The *phconvert* library contains two main modules: `hdf5` and `loader`. The former contains
-the function `save_photon_hdf5()` which is used to create Photon-HDF5 files.
+The *phconvert* API documentation can be found on ReadTheDocs:
 
-The `save_photon_hdf5()` function requires the data to be saved as argument.
-The data needs to have the hierarchical structure of a Photon-HDF5 file.
-In practice, we use a standard python dictionary: each keys is a Photon-HDF5 field name and
-each value contains data (e.g. array, string, etc..) or another dictionary
-(in which case, it represents an HDF5 sub-group). Similarly, sub-dictionaries
-contain data or other dictionaries, as needed to represent the hierarchy of Photon-HDF5 files.
-
-The `loader` module contains loader functions which load data from disk and return a dictionary
-to be passed to `save_photon_hdf5()`. These functions can be used as examples
-when converting a new unsupported file format.
-
-The `loader` module contains high-level functions which "fill" the dictionary
-with the appropriate arrays. The actual decoding of the input binary files is performed
-by low-level functions in other modules (`smreader.py`, `pqreader.py`, `bhreader.py`).
-When trying to decode a new file format, these modules can provide useful examples.
-
-The phconvert repository also contains a JSON specification of the Photon-HDF5 format:
-
-- [photon-hdf5_specs.json](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json)
-
+- `phconvert's documentation <http://phconvert.readthedocs.org/>`_
 
 ## License
 
