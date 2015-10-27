@@ -187,15 +187,15 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                             chunked=item['is_phdata'], h5file=group._v_file)
 
 def save_photon_hdf5(data_dict,
-                     strict = True,
                      h5_fname = None,
-                     compression = dict(complevel=6, complib='zlib'),
                      user_descr = None,
-                     debug = False,
-                     close = True,
                      overwrite = False,
+                     compression = dict(complevel=6, complib='zlib'),
+                     close = True,
                      validate = True,
-                     skip_measurement_specs = False):
+                     strict = True,
+                     skip_measurement_specs = False,
+                     debug = False):
     """
     Saves the dict `data_dict` in the Photon-HDF5 format.
 
@@ -212,29 +212,28 @@ def save_photon_hdf5(data_dict,
         data_dict (dict): the dictionary containing the photon data.
             The keys must strings matching valid Photon-HDF5 paths.
             The values must be scalars, arrays, strings or another dict.
-        compression (dict): a dictionary containing the compression type
-            and level. Passed to pytables `tables.Filters()`.
-        h5_fname (string or None): if not None, contains the file name
-            to be used for the HDF5 file. If None, the file name is
-            generated from d['filename'], by replacing the original
-            extension with '.hdf5'.
-        user_descr (dict or None): dictionary of field descriptions for
+        h5_fname (string or None): file name for the output Photon-HDF5 file.
+            If None, the file name is taken from ``data_dict['_filename']``
+            with extension changed to '.hdf5'.
+        user_descr (dict or None): dictionary of descriptions (strings) for
             user-defined fields. The keys must be strings representing
             the full HDF5 path of each field. The values must be
             binary (i.e. encoded) strings restricted to the ASCII set.
-        debug (bool): if True prints additional debug information.
-        close (bool): If True (default) the HDF5 file is closed before
-            returning. If False the file is left open.
         overwrite (bool): if True, a pre-existing HDF5 file with same name is
             overwritten. If False, save the new file by adding the
             suffix "new_copy" (and if a "_new_copy" file is already present
             overwrites it).
+        compression (dict): a dictionary containing the compression type
+            and level. Passed to pytables `tables.Filters()`.
+        close (bool): If True (default) the HDF5 file is closed before
+            returning. If False the file is left open.
         validate (bool): if True, after saving perform a validation step.
         strict (bool): if True, the validation step raises an error when
             the saved file does not follow the Photon-HDF5 specs.
             If False, does not raise an error but print a warning.
         skip_measurement_specs (bool): if True don't print any warning for
             missing measurement_specs group.
+        debug (bool): if True prints additional debug information.
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
