@@ -35,7 +35,14 @@ from ._version import get_versions
 
 __version__ = get_versions()['version']
 
+# Empty description string (workaround for h5labview)
 _EMPTY = ' '
+
+
+# Names of mandatory fields in the setup group
+_setup_mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
+                           'num_polarization_ch', 'num_split_ch',
+                           'modulated_excitation', 'lifetime']
 
 
 def _metapath(fullpath):
@@ -646,10 +653,7 @@ def _assert_setup(h5file, strict=True, verbose=False):
     """
     if _assert_has_field('setup', h5file.root, mandatory=strict,
                          verbose=verbose):
-        mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
-                            'num_polarization_ch', 'num_split_ch',
-                            'modulated_excitation', 'lifetime']
-        for name in mantatory_fields:
+        for name in _setup_mantatory_fields:
             _assert_has_field(name, h5file.root.setup, mandatory=strict,
                               verbose=verbose)
 
