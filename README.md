@@ -109,7 +109,7 @@ In this latter case, make sure that numpy and pytables are installed.
 
 The *phconvert* API documentation can be found on ReadTheDocs:
 
-- `phconvert's documentation <http://phconvert.readthedocs.org/>`_
+- [phconvert's documentation](http://phconvert.readthedocs.org/)
 
 ## License
 
