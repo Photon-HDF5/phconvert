@@ -18,7 +18,7 @@ This module also provides functions to save free-form dict to HDF5
 Finally there are utility functions to easily print HDF5 nodes and attributes
 (:func:`print_children`, :func:`print_attrs`).
 
-For info see:
+For more info see:
 `Writing Photon-HDF5 files <http://photon-hdf5.readthedocs.org/en/latest/writing.html>`_.
 
 """

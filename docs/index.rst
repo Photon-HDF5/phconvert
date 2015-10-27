@@ -8,7 +8,7 @@ Welcome to phconvert's documentation!
 
 :Version: |version|
 
-phconvert is a python 2 & 3 library that helps writing valid
+**phconvert** is a python 2 & 3 library that helps writing valid
 `Photon-HDF5 <https://www.photon-hdf5.org>`_ files.
 This document contains the API documentation for phconvert.
 
@@ -17,10 +17,20 @@ The former contains functions to save and validate Photon-HDF5 files.
 The latter, contains functions to load other formats to be converted to
 Photon-HDF5.
 
-The phconvert repository also contains a
+The phconvert repository contains a set the notebooks to convert
+existing formats to Photon-HDF5 or to write Photon-HDF5 from scratch:
+
+- `phconvert notebooks <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/>`_
+  (`view online <http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/blob/master/notebooks/>`_).
+
+In particular see notebook `Writing Photon-HDF5 files <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/Writing%20Photon-HDF5%20files.ipynb>`_
+(`view online <http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/blob/master/notebooks/Writing%20Photon-HDF5%20files.ipynb>`_)
+as an example of writing Photon-HDF5 files from scratch.
+
+Finally, phconvert repository contains a
 `JSON specification <https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json>`_
-of the Photon-HDF5 format which list all the valid field names and respective
-data types and descriptions.
+of the Photon-HDF5 format which lists all the valid field names and
+corresponding data types and descriptions.
 
 Contents:
 

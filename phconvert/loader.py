@@ -10,7 +10,6 @@ dictionary which has the structure of a Photon-HDF5 file.
 These dictionaries can be passed to :func:`phconvert.hdf5.save_photon_hdf5`
 to save the data in Photon-HDF5 format.
 
-
 The loader module contains high-level functions which "fill" the dictionary
 with the appropriate arrays. The actual decoding of the input binary files
 is performed by low-level functions in other modules
