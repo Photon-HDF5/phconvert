@@ -285,6 +285,8 @@ def save_photon_hdf5(data_dict,
     identity = _get_identity(h5file)
     identity.update(software='phconvert',
                     software_version=__version__)
+    if 'identity' not in data_dict:
+        data_dict['identity'] = {}
     data_dict['identity'].update(identity)
 
     ## Save everything to disk
