@@ -8,7 +8,8 @@ Welcome to phconvert's documentation!
 
 :Version: |version|
 
-**phconvert** is a python 2 & 3 library that helps writing valid
+`phconvert <http://photon-hdf5.github.io/phconvert/>`__ is a python 2 & 3 library 
+which helps writing valid
 `Photon-HDF5 <https://www.photon-hdf5.org>`_ files.
 This document contains the API documentation for phconvert.
 
