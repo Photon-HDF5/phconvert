@@ -28,6 +28,7 @@ from __future__ import print_function, absolute_import, division
 import os
 import time
 import re
+from textwrap import dedent
 import tables
 import numpy as np
 
@@ -354,8 +355,12 @@ def _populate_provenance(data_dict):
             break
 
     if orig_fname is None:
-        print("WARNING: Could not locate original file '%s'" %
-              provenance['filename'])
+
+        msg = """\
+            WARNING: Could not locate original file '%s'.\
+                     File info in provenance group will not be added.
+            """ % provenance['filename']
+        print(dedent(msg))
     else:
         # Use metadata from the file except for creation time if
         # already present in `provenance`. i.e. the user-provided
