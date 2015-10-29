@@ -56,8 +56,8 @@ def _metapath(fullpath):
     if fullpath.startswith('/photon_data'):
         # Remove eventual digits after /photon_data
         pattern = '/photon_data[0-9]*(.*)'
-        metapath = '/photon_data' + \
-                    re.match(pattern, fullpath).group(1)
+        metapath = ('/photon_data' +
+                    re.match(pattern, fullpath).group(1))
     return metapath
 
 def _analyze_path(name, prefix_list):
@@ -186,7 +186,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
     for item in _iter_hdf5_dict(data_dict, prefix_list, fields_descr, debug):
         if not item['is_user']:
             if item['description'] == _EMPTY:
-                print('WARNING: missing description for "%s"' % \
+                print('WARNING: missing description for "%s"' %
                       item['meta_path'])
 
         if isinstance(item['value'], dict):
@@ -364,8 +364,8 @@ def _compute_acquisition_duration(data_dict):
         # Missing fields will later yield an error during validation.
         pass
     else:
-        acquisition_duration = ((timestamps.max() - timestamps.min())
-                                * timestamps_unit)
+        acquisition_duration = ((timestamps.max() - timestamps.min()) *
+                                timestamps_unit)
         data_dict['acquisition_duration'] = np.round(acquisition_duration, 1)
 
 def _get_identity(h5file):
@@ -558,14 +558,15 @@ def _sanitize_data(data_dict):
 
     ## scalar fields conversions
     for item in _iter_hdf5_dict(data_dict):
-        if item['is_user']: continue
+        if item['is_user']:
+            continue
         if official_fields_specs[item['meta_path']][1] == 'scalar':
             if not np.isscalar(item['value']):
                 try:
                     # sequences are converted to array then to scalar
                     scalar_value = np.asscalar(np.asarray(item['value']))
                 except ValueError:
-                    raise Invalid_PhotonHDF5('Cannot convert "%s" to scalar.'\
+                    raise Invalid_PhotonHDF5('Cannot convert "%s" to scalar.'
                                              % item['meta_path'])
                 cdict = item['curr_dict']
                 cdict[item['name']] = scalar_value
@@ -715,7 +716,7 @@ def _assert_mandatory_fields(h5file, verbose=False):
     """
     _assert_has_field('acquisition_duration', h5file.root, verbose=verbose)
     _assert_has_field('description', h5file.root, verbose=verbose)
-    if not 'photon_data0' in h5file.root:
+    if 'photon_data0' not in h5file.root:
         _assert_has_field('photon_data', h5file.root, verbose=verbose)
 
 
@@ -784,7 +785,7 @@ def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
     _assert_has_field('timestamps_unit', ph_data.timestamps_specs,
                       verbose=verbose)
 
-    if not 'measurement_specs' in ph_data:
+    if 'measurement_specs' not in ph_data:
         if not skip_measurement_specs:
             # Called to print a warning
             _assert_has_field('measurement_specs', ph_data, mandatory=False,
@@ -818,7 +819,7 @@ def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
         _assert_has_field('nanotimes', ph_data, **kwargs)
         _assert_has_field('nanotimes_specs', ph_data, **kwargs)
         for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins']:
-             _assert_has_field(name, ph_data.nanotimes_specs, **kwargs)
+            _assert_has_field(name, ph_data.nanotimes_specs, **kwargs)
 
 
 def print_attrs(node, which='user'):

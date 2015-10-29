@@ -74,7 +74,7 @@ def usalex_sm(
         detection_wavelengths = detection_wavelengths)
 
     provenance = dict(filename=filename, software=software)
-    acquisition_duration = (timestamps[-1] - timestamps[0])*12.5e-9
+    acquisition_duration = (timestamps[-1] - timestamps[0]) * 12.5e-9
     data = dict(
         _filename = filename,
         acquisition_duration = round(acquisition_duration),
@@ -109,8 +109,8 @@ def nsalex_bh(filename_spc,
     """
     software = 'Becker & Hickl SPCM'
     # Load .SPC file
-    assert os.path.isfile(filename_spc), \
-           "File '%s' not found." % filename_spc
+    assert (os.path.isfile(filename_spc),
+            "File '%s' not found." % filename_spc)
     print(" - Loading '%s' ... " % filename_spc)
     timestamps, detectors, nanotimes = bhreader.load_spc(filename_spc)
     print(" [DONE]\n")
@@ -141,11 +141,11 @@ def nsalex_bh(filename_spc,
         sys_params = metadata['sys_params']
         tcspc_unit = float(sys_params['SP_TAC_TC'])
         #tcspc_range = sys_params['SP_TAC_R']
-        tcspc_range = tcspc_num_bins*tcspc_unit
+        tcspc_range = tcspc_num_bins * tcspc_unit
         timestamps_unit = tcspc_range
     else:
         print('Using timestamps_units and tcspc_range from function arguments.')
-        tcspc_unit = tcspc_range/tcspc_num_bins
+        tcspc_unit = tcspc_range / tcspc_num_bins
 
     photon_data = dict(
         timestamps = timestamps,
@@ -165,7 +165,7 @@ def nsalex_bh(filename_spc,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
                                    spectral_ch2 = np.atleast_1d(acceptor)))
-        )
+    )
 
     setup = dict(
         num_pixels = 2,
@@ -179,7 +179,8 @@ def nsalex_bh(filename_spc,
         excitation_cw = [False, False],
         detection_wavelengths = detection_wavelengths)
 
-    acquisition_duration = (timestamps.max() - timestamps.min())*timestamps_unit
+    acquisition_duration = ((timestamps.max() - timestamps.min()) *
+                            timestamps_unit)
 
     data = dict(
         _filename = filename_spc,
