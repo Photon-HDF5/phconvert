@@ -109,8 +109,7 @@ def nsalex_bh(filename_spc,
     """
     software = 'Becker & Hickl SPCM'
     # Load .SPC file
-    assert (os.path.isfile(filename_spc),
-            "File '%s' not found." % filename_spc)
+    assert os.path.isfile(filename_spc), "File '%s' not found." % filename_spc
     print(" - Loading '%s' ... " % filename_spc)
     timestamps, detectors, nanotimes = bhreader.load_spc(filename_spc)
     print(" [DONE]\n")
@@ -208,9 +207,9 @@ def nsalex_ht3(filename,
     timestamps_unit = float(metadata.pop('timestamps_unit'))
     tcspc_unit = float(metadata.pop('nanotimes_unit'))
     tcspc_num_bins = 4096
-    tcspc_range = tcspc_num_bins*tcspc_unit
+    tcspc_range = tcspc_num_bins * tcspc_unit
     laser_repetition_rate = float(metadata['ttmode']['SyncRate'])
-    acquisition_duration = float(metadata['header']['Tacq'][0]*1e-3)
+    acquisition_duration = float(metadata['header']['Tacq'][0] * 1e-3)
     software = str(metadata['header']['CreatorName'][0])
     software_version = str(metadata['header']['CreatorVersion'][0])
 
@@ -225,7 +224,7 @@ def nsalex_ht3(filename,
         creation_time = creation_time,
         software = software,
         software_version = software_version,
-        )
+    )
 
     photon_data = dict(
         timestamps = timestamps,
@@ -245,7 +244,7 @@ def nsalex_ht3(filename,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
                                    spectral_ch2 = np.atleast_1d(acceptor)))
-        )
+    )
 
     setup = dict(
         num_pixels = 2,
