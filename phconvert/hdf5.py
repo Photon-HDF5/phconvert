@@ -283,6 +283,7 @@ def save_photon_hdf5(data_dict,
     """
     comp_filter = tables.Filters(**compression)
 
+    ## Compute file names
     if h5_fname is None:
         basename, extension = os.path.splitext(data_dict['_filename'])
         if compression['complib'] == 'blosc':
@@ -293,19 +294,9 @@ def save_photon_hdf5(data_dict,
         basename, extension = os.path.splitext(h5_fname)
         h5_fname = basename + '_new_copy.hdf5'
 
-    print('Saving: %s' % h5_fname)
-    title = official_fields_specs['/'][0].encode()
-    h5file = tables.open_file(h5_fname, mode="w", title=title,
-                              filters=comp_filter)
-    # Saving a file reference is useful in case of error
-    data_dict.update(_data_file=h5file)
-
-    ## Add root attributes
-    for name, value in root_attributes.items():
-        h5file.root._f_setattr(name, value)
-
     ## Compute acquisition duration if not provided
     _compute_acquisition_duration(data_dict)
+    _sanitize_data(data_dict)
 
     ## Add provenance metadata
     if 'provenance' in data_dict:
@@ -326,6 +317,17 @@ def save_photon_hdf5(data_dict,
             provenance.update(_get_file_metadata(orig_fname))
             if orig_creation_time is not None:
                 provenance['creation_time'] = orig_creation_time
+
+    print('Saving: %s' % h5_fname)
+    title = official_fields_specs['/'][0].encode()
+    h5file = tables.open_file(h5_fname, mode="w", title=title,
+                              filters=comp_filter)
+    # Saving a file reference is useful in case of error
+    data_dict.update(_data_file=h5file)
+
+    ## Add root attributes
+    for name, value in root_attributes.items():
+        h5file.root._f_setattr(name, value)
 
     ## Add identity metadata
     identity = _get_identity(h5file)
