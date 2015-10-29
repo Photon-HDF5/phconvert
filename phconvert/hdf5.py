@@ -294,30 +294,12 @@ def save_photon_hdf5(data_dict,
         basename, extension = os.path.splitext(h5_fname)
         h5_fname = basename + '_new_copy.hdf5'
 
-    ## Compute acquisition duration if not provided
+    ## Prefill and fix user-provided data_dict
     _compute_acquisition_duration(data_dict)
+    _populate_provenance(data_dict)
     _sanitize_data(data_dict)
 
-    ## Add provenance metadata
-    if 'provenance' in data_dict:
-        provenance = data_dict['provenance']
-        orig_fname = None
-        for fn in ['filename', 'filename_full']:
-            if fn in provenance and os.path.isfile(provenance[fn]):
-                orig_fname = provenance[fn]
-                break
-        if orig_fname is None:
-            print("WARNING: Could not locate original file '%s'" %
-                  provenance['filename'])
-        if orig_fname is not None:
-            # Use metadata from the file except for creation time if
-            # already present in `provenance`. i.e. the user-provided
-            # creation time has priority over the filesystem one.
-            orig_creation_time = provenance.get('creation_time', None)
-            provenance.update(_get_file_metadata(orig_fname))
-            if orig_creation_time is not None:
-                provenance['creation_time'] = orig_creation_time
-
+    ## Create the HDF5 file
     print('Saving: %s' % h5_fname)
     title = official_fields_specs['/'][0].encode()
     h5file = tables.open_file(h5_fname, mode="w", title=title,
@@ -325,11 +307,32 @@ def save_photon_hdf5(data_dict,
     # Saving a file reference is useful in case of error
     data_dict.update(_data_file=h5file)
 
-    ## Add root attributes
+    ## Identity info needs to be added after the file is created
+    _populate_identity(data_dict, h5file)
+
+    ## Save root attributes
     for name, value in root_attributes.items():
         h5file.root._f_setattr(name, value)
 
-    ## Add identity metadata
+    ## Save everything else to disk
+    fields_descr = {k: v[0] for k, v in official_fields_specs.items()}
+    if user_descr is not None:
+        fields_descr.update(user_descr)
+    _save_photon_hdf5_dict(h5file.root, data_dict,
+                           fields_descr=fields_descr, debug=debug)
+    h5file.flush()
+
+    ## Validation
+    if validate:
+        kwargs = dict(skip_measurement_specs=skip_measurement_specs,
+                      strict=strict,)
+        assert_valid_photon_hdf5(h5file, **kwargs)
+    if close:
+        h5file.close()
+
+def _populate_identity(data_dict, h5file):
+    """Populate identity metadata adding info from the newly created file.
+    """
     identity = _get_identity(h5file)
     identity.update(software='phconvert',
                     software_version=__version__)
@@ -337,19 +340,30 @@ def save_photon_hdf5(data_dict,
         data_dict['identity'] = {}
     data_dict['identity'].update(identity)
 
-    ## Save everything to disk
-    fields_descr = {k: v[0] for k, v in official_fields_specs.items()}
-    if user_descr is not None:
-        fields_descr.update(user_descr)
-    _save_photon_hdf5_dict(h5file.root, data_dict,
-                           fields_descr=fields_descr, debug=debug)
-    h5file.flush()
-    if validate:
-        kwargs = dict(skip_measurement_specs=skip_measurement_specs,
-                      strict=strict,)
-        assert_valid_photon_hdf5(h5file, **kwargs)
-    if close:
-        h5file.close()
+def _populate_provenance(data_dict):
+    """Try to find the original data file to fill provenance fields.
+    """
+    if 'provenance' not in data_dict:
+        return
+
+    provenance = data_dict['provenance']
+    orig_fname = None
+    for fn in ['filename', 'filename_full']:
+        if fn in provenance and os.path.isfile(provenance[fn]):
+            orig_fname = provenance[fn]
+            break
+
+    if orig_fname is None:
+        print("WARNING: Could not locate original file '%s'" %
+              provenance['filename'])
+    else:
+        # Use metadata from the file except for creation time if
+        # already present in `provenance`. i.e. the user-provided
+        # creation time has priority over the filesystem one.
+        orig_creation_time = provenance.get('creation_time', None)
+        provenance.update(_get_file_metadata(orig_fname))
+        if orig_creation_time is not None:
+            provenance['creation_time'] = orig_creation_time
 
 def _compute_acquisition_duration(data_dict):
     """Compute acquisition_duration if not present. Single-spot only.
@@ -383,7 +397,6 @@ def _get_identity(h5file):
                     format_version=LATEST_FORMAT_VERSION,
                     format_url=root_attributes['format_url'])
     return identity
-
 
 def _get_file_metadata(fname):
     """Return a dict with file metadata.
@@ -491,7 +504,7 @@ def _check_version(filename):
     """Return file format version string (unicode on both py2 and py3).
 
     Arguments:
-        filename (string): path of the data file.s
+        filename (string): path of the data file.
     """
     assert os.path.isfile(filename)
     with tables.open_file(filename) as h5file:
