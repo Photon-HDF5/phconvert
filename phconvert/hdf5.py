@@ -550,6 +550,24 @@ def photon_data_mapping(h5file, name='timestamps'):
             mapping[ch] = ph
     return mapping
 
+def _is_sequence(obj):
+    is_sequence = False
+    if (isinstance(obj, tuple) or isinstance(obj, list) or
+            isinstance(obj, np.ndarray)):
+        is_sequence = True
+    return is_sequence
+
+def _normalize_bools(data_dict):
+    """Cast bools (both scalars or in sequences) to integers."""
+    for name, value in data_dict.items():
+        if isinstance(value, dict):
+            _normalize_bools(value)
+        else:
+            if isinstance(value, bool):
+                data_dict[name] = int(value)
+            elif _is_sequence(value) and isinstance(value[0], bool):
+                data_dict[name] = np.asarray(value, dtype='uint8')
+
 def _sanitize_data(data_dict):
     """Perform type conversions to strictly conform to Photon-HDF5 specs.
 
@@ -557,7 +575,11 @@ def _sanitize_data(data_dict):
 
     - assure that fields in detectors_specs have same dtype as detectors
     - convert scalar fields that are array of size == 1 to scalars
+    - cast bools or sequences of bools to integers
     """
+    ## Cast bools to ints
+    _normalize_bools(data_dict)
+
     ## detectors_specs conversions
     ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
     dtype = ph_data['detectors'].dtype
