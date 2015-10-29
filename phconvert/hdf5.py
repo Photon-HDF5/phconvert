@@ -219,6 +219,35 @@ def save_photon_hdf5(data_dict,
     other dictionaries, as needed to represent the hierarchy
     of Photon-HDF5 files.
 
+    Features of this function:
+
+    - Checks that all field names are valid Photon-HDF5 field names.
+    - Checks that all field type match the Photon-HDF5 specs (scalar, array,
+      or string).
+    - Populates automatically the identity group with filename, software,
+      version and file creation date.
+    - Populates automatically the provenance group with info on the original
+      data file (if it can be found on disk): creation and modification date,
+      path.
+    - Computes field `acquisition_duration` when not provided
+      (single-spot data only).
+
+    Minimal fields required to create a Photon-HDF5 file:
+
+    - `/description` (string)
+    - `/photon_data/timestamps` (array)
+    - `/photon_data/timestamps_specs/timestamps_unit` (scalar float)
+    - `/setup/num_pixels` (int): number of detectors
+    - `/setup/num_spots` (int): number of excitation/detection spots
+    - `/setup/num_spectral_ch` (int): number of detection spectral bands
+    - `/setup/num_polarization_ch` (int): number of detected polarization states
+    - `/setup/num_split_ch` (int): number of beam splitted channels
+    - `/setup/modulated_excitation` (bool): True if excitation is alternated.
+    - `/setup/lifetime` (bool): True if dataset contains TCSPC data.
+
+    See also
+    `Writing Photon-HDF5 files <http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/blob/master/notebooks/Writing%20Photon-HDF5%20files.ipynb>`__.
+
     As a side effect `data_dict` is modified by adding the key
     '_data_file' containing a reference to the pytables file.
 
@@ -287,7 +316,7 @@ def save_photon_hdf5(data_dict,
                 orig_fname = provenance[fn]
                 break
         if orig_fname is None:
-            print("WARNING: Could not locate original file '%s'" % \
+            print("WARNING: Could not locate original file '%s'" %
                   provenance['filename'])
         if orig_fname is not None:
             # Use metadata from the file except for creation time if
