@@ -8,3 +8,4 @@ dist/
 build/
 docs/docs_html
 *.bz2
+notebooks/out
