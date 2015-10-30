@@ -357,7 +357,7 @@ def _populate_provenance(data_dict):
     if orig_fname is None:
 
         msg = """\
-            WARNING: Could not locate original file '%s'.\
+            WARNING: Could not locate original file '%s'.
                      File info in provenance group will not be added.
             """ % provenance['filename']
         print(dedent(msg))
