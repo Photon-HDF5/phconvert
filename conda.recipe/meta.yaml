@@ -13,11 +13,8 @@ requirements:
   build:
     - python
     - setuptools
-    - mock
-    - nose
     - numpy >=1.9
     - pytables
-    - matplotlib
     - future
 
   run:
@@ -25,7 +22,6 @@ requirements:
     - setuptools
     - numpy >=1.9
     - pytables
-    - matplotlib
     - future
 
 test:

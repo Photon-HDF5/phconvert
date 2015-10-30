@@ -27,7 +27,7 @@ setup(name = project_name,
       author_email = 'tritemio@gmail.com',
       url          = 'http://photon-hdf5.github.io/phconvert/',
       download_url = 'http://photon-hdf5.github.io/phconvert/',
-      install_requires = ['numpy', 'setuptools', 'tables', 'matplotlib', 'future'],
+      install_requires = ['numpy', 'setuptools', 'tables', 'future'],
       license = 'MIT',
       description = ("Convert and write Photon-HDF5 files."),
       long_description = long_description,
@@ -44,4 +44,3 @@ setup(name = project_name,
       keywords = ('single-molecule FRET smFRET biophysics file-format HDF5 '
                   'Photon-HDF5'),
       )
-

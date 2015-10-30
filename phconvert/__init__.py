@@ -5,8 +5,15 @@
 #
 
 from . import loader
-from . import plotter
 from . import hdf5
+
+has_matplotlib = True
+try:
+    import matplotlib
+except ImportError:
+    has_matplotlib = False
+if has_matplotlib:
+    from . import plotter
 
 from ._version import get_versions
 __version__ = get_versions()['version']
