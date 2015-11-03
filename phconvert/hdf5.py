@@ -734,8 +734,7 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
 
 
-def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
-                             strict_description=True,
+def assert_valid_photon_hdf5(datafile, verbose=False, strict_description=True,
                              skip_measurement_specs=False):
     """
     Assert the an HDF5 file follows the Photon-HDF5 specs.
@@ -744,15 +743,13 @@ def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
     timestamps_unit.
 
     Arguments:
-        strict (bool): if True, raise an error when optional groups (i.e.
-            provenance and identity) are missing or lack mandatory fields.
-            If False, print only a warning.
+        warnings (bool): if True, print warnings for important optional fields
+            that are missing. If False, don't print warnings.
         verbose (bool): if True print details about the performed tests.
         strict_description (bool): if True consider a non-conforming
             description (TITLE) a specs violation.
         skip_measurement_specs (bool): if True don't print any warning for
             missing measurement_specs group.
-
     """
     if isinstance(datafile, tables.File):
         h5file = datafile
@@ -769,12 +766,12 @@ def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
                          verbose=verbose)
     _assert_has_field('acquisition_duration', h5file.root, verbose=verbose)
     _assert_has_field('description', h5file.root, verbose=verbose)
-    _assert_setup(h5file, strict=strict, verbose=verbose)
-    _assert_identity(h5file, strict=strict, verbose=verbose)
+    _assert_setup(h5file, warnings=warnings, verbose=verbose)
+    _assert_identity(h5file, warnings=warnings, verbose=verbose)
 
     pool = []
     setup = h5file.root.setup
-    kwargs = dict(pool=pool, strict=strict, norepeat=True,
+    kwargs = dict(pool=pool, norepeat=True,
                   skip_measurement_specs=skip_measurement_specs)
     for ph_data_name in _sorted_photon_data_tables(h5file):
         _check_photon_data_tables(ph_data_name, **kwargs)
@@ -786,7 +783,7 @@ def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
             _assert_has_field('tcspc_unit', nt_specs, verbose=verbose)
             _assert_has_field('tcspc_num_bins', nt_specs, verbose=verbose)
 
-def _assert_setup(h5file, strict=True, verbose=False):
+def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
     """Assert that setup exists and contains the mandatory fields.
     """
     if _assert_has_field('setup', h5file.root, mandatory=strict,
@@ -794,8 +791,14 @@ def _assert_setup(h5file, strict=True, verbose=False):
         for name in _setup_mantatory_fields:
             _assert_has_field(name, h5file.root.setup, mandatory=strict,
                               verbose=verbose)
+        if not warnings:
+            return
+        optional_fields = ['excitation_wavelengths', 'detection_wavelengths']
+        for name in optional_fields:
+            _assert_has_field(name, h5file.root.setup, mandatory=False,
+                              verbose=verbose)
 
-def _assert_identity(h5file, strict=True, verbose=False):
+def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
     """Assert that identity group exists and contains the mandatory fields.
     """
     if _assert_has_field('identity', h5file.root, mandatory=strict,
@@ -803,7 +806,8 @@ def _assert_identity(h5file, strict=True, verbose=False):
         for name in _identity_mantatory_fields:
             _assert_has_field(name, h5file.root.identity, mandatory=strict,
                               verbose=verbose)
-
+        if not warnings:
+            return
         optional_fields = ['author', 'author_affiliation']
         for name in optional_fields:
             _assert_has_field(name, h5file.root.identity, mandatory=False,
@@ -865,7 +869,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
             else:
                 raise ValueError('Wrong type in JSON specs.')
 
-def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
+def _check_photon_data_tables(ph_data, norepeat=False, pool=None,
                               skip_measurement_specs=False, verbose=False):
     """Assert that the photon_data group follows the Photon-HDF5 specs.
     """
@@ -894,7 +898,7 @@ def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
                   msg='Unkwnown measurement type "%s"' % meas_type)
 
     # At this point we have a valid measurement_type
-    # Any missing field will raise an error (regardless of `strict`).
+    # Any missing field will raise an error.
     msg = '\nThis field is mandatory for "%s" data.' % meas_type
     kwargs = dict(msg_add=msg, verbose=verbose)
     _assert_has_field('spectral_ch1', meas_specs.detectors_specs, **kwargs)
