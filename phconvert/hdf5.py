@@ -467,14 +467,14 @@ def dict_to_group(group, dictionary):
             node.title = _EMPTY.encode()  # saved as binary both on py2 and py3
     h5file.flush()
 
-def load_photon_hdf5(filename, strict=True):
+def load_photon_hdf5(filename, warnings=True):
     """Open a Photon-HDF5 file in pytables, validate it.
 
     Returns the root group of the file.
     """
     assert os.path.isfile(filename)
     h5file = tables.open_file(filename)
-    assert_valid_photon_hdf5(h5file, strict=strict)
+    assert_valid_photon_hdf5(h5file, warnings=warnings)
     return h5file.root
 
 ##
@@ -795,10 +795,9 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
     setup = h5file.root.setup
     kwargs = dict(pool=pool, norepeat=True,
                   skip_measurement_specs=skip_measurement_specs)
-    for ph_data_name in _sorted_photon_data_tables(h5file):
-        _check_photon_data_tables(ph_data_name, **kwargs)
+    for ph_data in _sorted_photon_data_tables(h5file):
+        _check_photon_data_tables(ph_data, **kwargs)
         if setup.lifetime.read():
-            ph_data = h5file.root._f_get_child(ph_data_name)
             _assert_has_field('nanotimes', ph_data, verbose=verbose)
             _assert_has_field('nanotimes_specs', ph_data, verbose=verbose)
             nt_specs = ph_data.nanotimes_specs
