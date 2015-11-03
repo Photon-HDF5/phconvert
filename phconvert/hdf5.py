@@ -296,9 +296,9 @@ def save_photon_hdf5(data_dict,
         h5_fname = basename + '_new_copy.hdf5'
 
     ## Prefill and fix user-provided data_dict
-    _compute_acquisition_duration(data_dict)
     _populate_provenance(data_dict)
     _sanitize_data(data_dict)
+    _compute_acquisition_duration(data_dict)
 
     ## Create the HDF5 file
     print('Saving: %s' % h5_fname)
@@ -385,6 +385,7 @@ def _compute_acquisition_duration(data_dict):
         # Missing fields will later yield an error during validation.
         pass
     else:
+        assert np.isreal(timestamps_unit)
         acquisition_duration = ((timestamps.max() - timestamps.min()) *
                                 timestamps_unit)
         data_dict['acquisition_duration'] = np.round(acquisition_duration, 1)
@@ -573,19 +574,7 @@ def _normalize_bools(data_dict):
             elif _is_sequence(value) and isinstance(value[0], bool):
                 data_dict[name] = np.asarray(value, dtype='uint8')
 
-def _sanitize_data(data_dict):
-    """Perform type conversions to strictly conform to Photon-HDF5 specs.
-
-    Conversions implemented:
-
-    - assure that fields in detectors_specs have same dtype as detectors
-    - convert scalar fields that are array of size == 1 to scalars
-    - cast bools or sequences of bools to integers
-    """
-    ## Cast bools to ints
-    _normalize_bools(data_dict)
-
-    ## detectors_specs conversions
+def _normalize_detectors_specs(data_dict):
     ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
     dtype = ph_data['detectors'].dtype
 
@@ -598,20 +587,80 @@ def _sanitize_data(data_dict):
             cdict = item['curr_dict']
             cdict[item['name']] = np.array(item['value'], dtype=dtype)
 
+def _normalize_setup_arrays(data_dict):
+    """Make sure arrays of float in setup are arrays of floats."""
+    # Convert sequences of strings in 'setup' in arrays of floats
+    # Useful when input is from YAML whose parser retrives floats a strings
+    setup = data_dict['setup']
+    # Arrays of float fields in setup group
+    names_aof = ['detection_wavelengths', 'excitation_wavelengths',
+                 'excitation_input_powers', 'detection_polarizations',
+                 'excitation_intensity', 'detection_split_ch_ratios']
+    for name in names_aof:
+        if name in setup:
+            setup[name] = np.array([float(v) for v in setup[name]], dtype=float)
+
+def _convert_scalar_item(item):
+    """Cast a scalar item (from _iter_hdf5_dict) to scalar."""
+    # Special case for scalar fields which are string in data_dict.
+    # thus requiring a conversion. This happens when the YAML parser
+    # fails to detect floats in exponential form.
+    scalar_value = item['value']
+    if isinstance(item['value'], str):
+        msg = """\
+        Wrong data type: field `%s` must be a scalar.
+                         Instead it is the string %s
+                         which I'm unable to convert to int or float.\
+        """ % (item['meta_path'], repr(item['value']))
+        try:
+            scalar_value = int(item['value'])
+        except ValueError:
+            pass
+            try:
+                scalar_value = float(item['value'])
+            except ValueError:
+                raise Invalid_PhotonHDF5(dedent(msg))
+
+    # If a scalar field is 1-element sequence, convert it to scalar
+    if not np.isscalar(item['value']):
+        try:
+            # sequences are converted to array then to scalar
+            scalar_value = np.asscalar(np.asarray(item['value']))
+        except ValueError:
+            raise Invalid_PhotonHDF5('Cannot convert "%s" to scalar.'
+                                     % item['meta_path'])
+    return scalar_value
+
+def _normalize_scalars(data_dict):
+    """Make sure all scalar fields are scalars."""
     ## scalar fields conversions
     for item in _iter_hdf5_dict(data_dict):
         if item['is_user']:
             continue
         if official_fields_specs[item['meta_path']][1] == 'scalar':
-            if not np.isscalar(item['value']):
-                try:
-                    # sequences are converted to array then to scalar
-                    scalar_value = np.asscalar(np.asarray(item['value']))
-                except ValueError:
-                    raise Invalid_PhotonHDF5('Cannot convert "%s" to scalar.'
-                                             % item['meta_path'])
-                cdict = item['curr_dict']
-                cdict[item['name']] = scalar_value
+            scalar_value = _convert_scalar_item(item)
+            curr_dict = item['curr_dict']
+            curr_dict[item['name']] = scalar_value
+
+def _sanitize_data(data_dict):
+    """Perform type conversions to strictly conform to Photon-HDF5 specs.
+
+    Conversions implemented:
+
+    - assure that fields in detectors_specs have same dtype as detectors
+    - convert scalar fields that are array of size == 1 to scalars
+    - cast bools or sequences of bools to integers
+    - convert scalar fields which are strings to numbers
+    - convert sequences of strings in arrays of floats for selected setup fields
+    """
+    # Cast booleans to integers
+    _normalize_bools(data_dict)
+    # Cast fields in detectors_specs
+    _normalize_detectors_specs(data_dict)
+    # Cast arrays-of-floats fields in setup group
+    _normalize_setup_arrays(data_dict)
+    # Cast scalar fields to scalar
+    _normalize_scalars(data_dict)
 
 ##
 # Validation functions
