@@ -578,13 +578,15 @@ def _normalize_bools(data_dict):
                 data_dict[name] = np.asarray(value, dtype='uint8')
 
 def _normalize_detectors_specs(data_dict):
-    ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
-    dtype = ph_data['detectors'].dtype
-
     base = '/photon_data/measurement_specs/detectors_specs/'
     names = ['spectral_ch1', 'spectral_ch2', 'split_ch1', 'split_ch2',
              'polarization_ch1', 'polarization_ch2']
     cast_fields = [base + name for name in names]
+
+    # Retrive the detectors' dtype (from first photon_data group in multi-spot)
+    ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
+    dtype = ph_data['detectors'].dtype
+
     for item in _iter_hdf5_dict(data_dict):
         if item['meta_path'] in cast_fields:
             cdict = item['curr_dict']
@@ -656,6 +658,25 @@ def _sanitize_data(data_dict):
     - convert scalar fields which are strings to numbers
     - convert sequences of strings in arrays of floats for selected setup fields
     """
+    def _assert_has_key(dict_, key, dict_name):
+        if key not in dict_:
+            raise Invalid_PhotonHDF5('missing %s in %s.' % (key, dict_name))
+
+    for ph_data_name in _sorted_photon_data(data_dict):
+        ph_data = data_dict[ph_data_name]
+        for name in ['timestamps', 'timestamps_specs']:
+            _assert_has_key(ph_data, name, ph_data_name)
+
+        ts_specs = ph_data['timestamps_specs']
+        _assert_has_key(ts_specs, 'timestamps_unit', 'timestamps_specs')
+
+    if 'setup' not in data_dict:
+        raise Invalid_PhotonHDF5('missing setup group.')
+    setup = data_dict['setup']
+    for name in _setup_mantatory_fields:
+        if name not in setup:
+            raise Invalid_PhotonHDF5('missing "%s" in setup group.' % name)
+
     # Cast booleans to integers
     _normalize_bools(data_dict)
     # Cast fields in detectors_specs
