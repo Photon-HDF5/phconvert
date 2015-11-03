@@ -208,7 +208,7 @@ def save_photon_hdf5(data_dict,
                      compression = dict(complevel=6, complib='zlib'),
                      close = True,
                      validate = True,
-                     strict = True,
+                     warnings = True,
                      skip_measurement_specs = False,
                      debug = False):
     """
@@ -274,10 +274,10 @@ def save_photon_hdf5(data_dict,
             and level. Passed to pytables `tables.Filters()`.
         close (bool): If True (default) the HDF5 file is closed before
             returning. If False the file is left open.
-        validate (bool): if True, after saving perform a validation step.
-        strict (bool): if True, the validation step raises an error when
-            the saved file does not follow the Photon-HDF5 specs.
-            If False, does not raise an error but print a warning.
+        validate (bool): if True, after saving perform a validation step
+            raising an error if the specs are not followed.
+        warnings (bool): if True, print warnings for important optional fields
+            that are missing. If False, don't print warnings.
         skip_measurement_specs (bool): if True don't print any warning for
             missing measurement_specs group.
         debug (bool): if True prints additional debug information.
@@ -329,7 +329,7 @@ def save_photon_hdf5(data_dict,
     ## Validation
     if validate:
         kwargs = dict(skip_measurement_specs=skip_measurement_specs,
-                      strict=strict)
+                      warnings=warnings)
         assert_valid_photon_hdf5(h5file, **kwargs)
     if close:
         h5file.close()
