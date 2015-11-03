@@ -741,9 +741,9 @@ def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
     timestamps_unit.
 
     Arguments:
-        strict (bool): if True, raise an error optional groups (i.e. setup
-            and identity) are missing or lack mandatory fields. If False,
-            print only a warning.
+        strict (bool): if True, raise an error when optional groups (i.e.
+            provenance and identity) are missing or lack mandatory fields.
+            If False, print only a warning.
         verbose (bool): if True print details about the performed tests.
         strict_description (bool): if True consider a non-conforming
             description (TITLE) a specs violation.
@@ -770,10 +770,18 @@ def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
     _assert_identity(h5file, strict=strict, verbose=verbose)
 
     pool = []
+    setup = h5file.root.setup
     kwargs = dict(pool=pool, strict=strict, norepeat=True,
                   skip_measurement_specs=skip_measurement_specs)
-    for ph_data in _sorted_photon_data_tables(h5file):
-        _check_photon_data_tables(ph_data, **kwargs)
+    for ph_data_name in _sorted_photon_data_tables(h5file):
+        _check_photon_data_tables(ph_data_name, **kwargs)
+        if setup.lifetime.read():
+            ph_data = h5file.root._f_get_child(ph_data_name)
+            _assert_has_field('nanotimes', ph_data, verbose=verbose)
+            _assert_has_field('nanotimes_specs', ph_data, verbose=verbose)
+            nt_specs = ph_data.nanotimes_specs
+            _assert_has_field('tcspc_unit', nt_specs, verbose=verbose)
+            _assert_has_field('tcspc_num_bins', nt_specs, verbose=verbose)
 
 def _assert_setup(h5file, strict=True, verbose=False):
     """Assert that setup exists and contains the mandatory fields.
