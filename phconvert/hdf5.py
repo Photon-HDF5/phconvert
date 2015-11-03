@@ -49,6 +49,9 @@ _setup_mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
                            'num_polarization_ch', 'num_split_ch',
                            'modulated_excitation', 'lifetime']
 
+# Names of mandatory fields in the identity group
+_identity_mantatory_fields = ['format_name', 'format_version', 'format_url',
+                              'software', 'software_version', 'creation_time']
 
 def _metapath(fullpath):
     """Normalize a HDF5 path by removing trailing digits after "photon_data".
@@ -326,7 +329,7 @@ def save_photon_hdf5(data_dict,
     ## Validation
     if validate:
         kwargs = dict(skip_measurement_specs=skip_measurement_specs,
-                      strict=strict,)
+                      strict=strict)
         assert_valid_photon_hdf5(h5file, **kwargs)
     if close:
         h5file.close()
@@ -797,9 +800,7 @@ def _assert_identity(h5file, strict=True, verbose=False):
     """
     if _assert_has_field('identity', h5file.root, mandatory=strict,
                          verbose=verbose):
-        mantatory_fields = ['format_name', 'format_version', 'format_url',
-                            'software', 'software_version', 'creation_time']
-        for name in mantatory_fields:
+        for name in _identity_mantatory_fields:
             _assert_has_field(name, h5file.root.identity, mandatory=strict,
                               verbose=verbose)
 
