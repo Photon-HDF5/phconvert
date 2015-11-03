@@ -755,7 +755,8 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
 
 
-def assert_valid_photon_hdf5(datafile, verbose=False, strict_description=True,
+def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
+                             strict_description=True,
                              skip_measurement_specs=False):
     """
     Assert the an HDF5 file follows the Photon-HDF5 specs.
