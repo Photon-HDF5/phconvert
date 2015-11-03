@@ -764,17 +764,16 @@ def assert_valid_photon_hdf5(datafile, strict=True, verbose=False,
 
     _assert_valid_fields(h5file, strict_description=strict_description,
                          verbose=verbose)
-    _assert_mandatory_fields(h5file, verbose=verbose)
+    _assert_has_field('acquisition_duration', h5file.root, verbose=verbose)
+    _assert_has_field('description', h5file.root, verbose=verbose)
+    _assert_setup(h5file, strict=strict, verbose=verbose)
+    _assert_identity(h5file, strict=strict, verbose=verbose)
 
     pool = []
     kwargs = dict(pool=pool, strict=strict, norepeat=True,
                   skip_measurement_specs=skip_measurement_specs)
     for ph_data in _sorted_photon_data_tables(h5file):
-
         _check_photon_data_tables(ph_data, **kwargs)
-
-    _assert_setup(h5file, strict=strict, verbose=verbose)
-    _assert_identity(h5file, strict=strict, verbose=verbose)
 
 def _assert_setup(h5file, strict=True, verbose=False):
     """Assert that setup exists and contains the mandatory fields.
@@ -800,16 +799,6 @@ def _assert_identity(h5file, strict=True, verbose=False):
         for name in optional_fields:
             _assert_has_field(name, h5file.root.identity, mandatory=False,
                               verbose=verbose)
-
-
-def _assert_mandatory_fields(h5file, verbose=False):
-    """Assert that the basic mandatory fields are present.
-    """
-    _assert_has_field('acquisition_duration', h5file.root, verbose=verbose)
-    _assert_has_field('description', h5file.root, verbose=verbose)
-    if 'photon_data0' not in h5file.root:
-        _assert_has_field('photon_data', h5file.root, verbose=verbose)
-
 
 def _assert_valid_fields(h5file, strict_description=True, verbose=False):
     """Assert compliance of field names, descriptions and data types.
