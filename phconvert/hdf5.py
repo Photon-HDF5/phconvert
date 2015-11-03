@@ -909,7 +909,7 @@ def _check_photon_data_tables(ph_data, strict=True, norepeat=False, pool=None,
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
         _assert_has_field('nanotimes', ph_data, **kwargs)
         _assert_has_field('nanotimes_specs', ph_data, **kwargs)
-        for name in ['tcspc_unit', 'tcspc_range', 'tcspc_num_bins']:
+        for name in ['tcspc_unit', 'tcspc_num_bins']:
             _assert_has_field(name, ph_data.nanotimes_specs, **kwargs)
 
 
