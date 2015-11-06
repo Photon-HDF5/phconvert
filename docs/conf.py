@@ -41,7 +41,7 @@ version = phconvert._version.get_versions()['version']
 if on_rtd:
     # RTD modifies conf.py so the git repo becomes dirty
     # We strip the '-dirty' that would generate a wrong verion string
-    version = version.replace('-dirty', '')
+    version = version.replace('.dirty', '')
 release = version
 
 
