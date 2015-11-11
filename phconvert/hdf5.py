@@ -591,7 +591,7 @@ def _normalize_detectors_specs(data_dict):
     for item in _iter_hdf5_dict(data_dict):
         if item['meta_path'] in cast_fields:
             cdict = item['curr_dict']
-            cdict[item['name']] = np.array(item['value'], dtype=dtype)
+            cdict[item['name']] = np.array(item['value'], dtype=dtype, ndmin=1)
 
 def _normalize_setup_arrays(data_dict):
     """Make sure arrays of float in setup are arrays of floats."""
