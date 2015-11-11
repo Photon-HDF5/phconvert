@@ -759,12 +759,22 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
                              strict_description=True,
                              skip_measurement_specs=False):
     """
-    Assert the an HDF5 file follows the Photon-HDF5 specs.
-
-    Raise an error when missing photon_data group, timestamps array and
-    timestamps_unit.
+    Asserts that ``datafile`` follows the Photon-HDF5 specs.
+    
+    If the input datafile does not follow the specifications, it raises the
+    ``Invalid_PhotonHDF5`` exception, with a message indicating the cause of
+    the error.
+    
+    This function checks that:
+    
+    - all fields are valid Photon-HDF5 names
+    - all fields have valid descriptions
+    - all mandatory fields are present
+    - if /setup/lifetime is True (i.e. 1), assures
+      that nanotimes and nanotimes_specs are present
 
     Arguments:
+        datafile (string or tables.File): input data file to be validated
         warnings (bool): if True, print warnings for important optional fields
             that are missing. If False, don't print warnings.
         verbose (bool): if True print details about the performed tests.
