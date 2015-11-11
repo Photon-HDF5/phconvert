@@ -210,6 +210,7 @@ def save_photon_hdf5(data_dict,
                      validate = True,
                      warnings = True,
                      skip_measurement_specs = False,
+                     require_setup = True,
                      debug = False):
     """
     Saves the dict `data_dict` in the Photon-HDF5 format.
@@ -280,6 +281,10 @@ def save_photon_hdf5(data_dict,
             that are missing. If False, don't print warnings.
         skip_measurement_specs (bool): if True don't print any warning for
             missing measurement_specs group.
+        require_setup (bool): if True, raises an error if some mandatory
+            fields in /setup are missing. If False, allows missing setup
+            fields (or missing setup altogether). Use False when saving
+            only detectors' dark counts.
         debug (bool): if True prints additional debug information.
 
     For description and specs of the Photon-HDF5 format see:
@@ -300,7 +305,7 @@ def save_photon_hdf5(data_dict,
 
     ## Prefill and fix user-provided data_dict
     _populate_provenance(data_dict)
-    _sanitize_data(data_dict)
+    _sanitize_data(data_dict, require_setup)
     _compute_acquisition_duration(data_dict)
 
     ## Create the HDF5 file
@@ -329,7 +334,7 @@ def save_photon_hdf5(data_dict,
     ## Validation
     if validate:
         kwargs = dict(skip_measurement_specs=skip_measurement_specs,
-                      warnings=warnings)
+                      warnings=warnings, require_setup=require_setup)
         assert_valid_photon_hdf5(h5file, **kwargs)
     if close:
         h5file.close()
@@ -648,7 +653,7 @@ def _normalize_scalars(data_dict):
             curr_dict = item['curr_dict']
             curr_dict[item['name']] = scalar_value
 
-def _sanitize_data(data_dict):
+def _sanitize_data(data_dict, require_setup=True):
     """Perform type conversions to strictly conform to Photon-HDF5 specs.
 
     Conversions implemented:
@@ -671,12 +676,13 @@ def _sanitize_data(data_dict):
         ts_specs = ph_data['timestamps_specs']
         _assert_has_key(ts_specs, 'timestamps_unit', 'timestamps_specs')
 
-    if 'setup' not in data_dict:
-        raise Invalid_PhotonHDF5('missing setup group.')
-    setup = data_dict['setup']
-    for name in _setup_mantatory_fields:
-        if name not in setup:
-            raise Invalid_PhotonHDF5('missing "%s" in setup group.' % name)
+    if require_setup:
+        if 'setup' not in data_dict:
+            raise Invalid_PhotonHDF5('missing setup group.')
+        setup = data_dict['setup']
+        for name in _setup_mantatory_fields:
+            if name not in setup:
+                raise Invalid_PhotonHDF5('missing "%s" in setup group.' % name)
 
     # Cast booleans to integers
     _normalize_bools(data_dict)
@@ -757,17 +763,17 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
 
 
 def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
-                             strict_description=True,
+                             strict_description=True, require_setup=True,
                              skip_measurement_specs=False):
     """
     Asserts that ``datafile`` follows the Photon-HDF5 specs.
-    
+
     If the input datafile does not follow the specifications, it raises the
     ``Invalid_PhotonHDF5`` exception, with a message indicating the cause of
     the error.
-    
+
     This function checks that:
-    
+
     - all fields are valid Photon-HDF5 names
     - all fields have valid descriptions
     - all mandatory fields are present
@@ -781,6 +787,9 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
         verbose (bool): if True print details about the performed tests.
         strict_description (bool): if True consider a non-conforming
             description (TITLE) a specs violation.
+        require_setup (bool): if True, raises an error if some mandatory
+            fields in /setup are missing. If False, allows missing setup
+            fields (or missing setup altogether).
         skip_measurement_specs (bool): if True don't print any warning for
             missing measurement_specs group.
     """
@@ -799,7 +808,8 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
                          verbose=verbose)
     _assert_has_field('acquisition_duration', h5file.root, verbose=verbose)
     _assert_has_field('description', h5file.root, verbose=verbose)
-    _assert_setup(h5file, warnings=warnings, verbose=verbose)
+    if require_setup:
+        _assert_setup(h5file, warnings=warnings, verbose=verbose)
     _assert_identity(h5file, warnings=warnings, verbose=verbose)
 
     pool = []
