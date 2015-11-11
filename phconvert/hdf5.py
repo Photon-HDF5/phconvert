@@ -472,14 +472,17 @@ def dict_to_group(group, dictionary):
             node.title = _EMPTY.encode()  # saved as binary both on py2 and py3
     h5file.flush()
 
-def load_photon_hdf5(filename, warnings=True):
-    """Open a Photon-HDF5 file in pytables, validate it.
+def load_photon_hdf5(filename, **kwargs):
+    """Open a Photon-HDF5 file in pytables, validating it.
 
-    Returns the root group of the file.
+    Additional arguments are passed to :func:`assert_valid_photon_hdf5`.
+
+    Returns:
+        The root group of the HDF5 file.
     """
     assert os.path.isfile(filename)
     h5file = tables.open_file(filename)
-    assert_valid_photon_hdf5(h5file, warnings=warnings)
+    assert_valid_photon_hdf5(h5file, **kwargs)
     return h5file.root
 
 ##
