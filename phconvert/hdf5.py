@@ -561,9 +561,10 @@ def photon_data_mapping(h5file, name='timestamps'):
 
 def _is_sequence(obj):
     is_sequence = False
-    if (isinstance(obj, tuple) or isinstance(obj, list) or
-            isinstance(obj, np.ndarray)):
+    if isinstance(obj, tuple) or isinstance(obj, list):
         is_sequence = True
+    elif isinstance(obj, np.ndarray):
+        is_sequence = obj.ndim > 0
     return is_sequence
 
 def _normalize_bools(data_dict):
