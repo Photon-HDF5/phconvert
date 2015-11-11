@@ -813,12 +813,11 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
     _assert_identity(h5file, warnings=warnings, verbose=verbose)
 
     pool = []
-    setup = h5file.root.setup
     kwargs = dict(pool=pool, norepeat=True,
                   skip_measurement_specs=skip_measurement_specs)
     for ph_data in _sorted_photon_data_tables(h5file):
         _check_photon_data_tables(ph_data, **kwargs)
-        if setup.lifetime.read():
+        if '/setup/lifetime' in h5file and h5file.root.setup.lifetime.read():
             _assert_has_field('nanotimes', ph_data, verbose=verbose)
             _assert_has_field('nanotimes_specs', ph_data, verbose=verbose)
             nt_specs = ph_data.nanotimes_specs
