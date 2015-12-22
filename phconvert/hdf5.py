@@ -38,7 +38,7 @@ from .metadata import (official_fields_specs, root_attributes,
 from ._version import get_versions
 
 
-__version__ = get_versions()['version']
+__version__ = str(get_versions()['version'])
 
 # Empty description string (workaround for h5labview)
 _EMPTY = ' '
