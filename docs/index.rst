@@ -22,7 +22,7 @@ The phconvert repository contains a set the notebooks to convert
 existing formats to Photon-HDF5 or to write Photon-HDF5 from scratch:
 
 - `phconvert notebooks <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/>`_
-  (`view online <http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/blob/master/notebooks/>`_).
+  (`read online <http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/blob/master/notebooks/>`_).
 
 In particular see notebook `Writing Photon-HDF5 files <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/Writing%20Photon-HDF5%20files.ipynb>`_
 (`read online <http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/blob/master/notebooks/Writing%20Photon-HDF5%20files.ipynb>`_)
