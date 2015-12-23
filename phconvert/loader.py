@@ -20,7 +20,6 @@ decode a new file format, these modules can provide useful examples.
 
 from __future__ import print_function, absolute_import, division
 
-del print_function, absolute_import, division
 import os
 import time
 import numpy as np
@@ -34,8 +33,8 @@ def usalex_sm(
         filename, donor=0, acceptor=1, alex_period=4000, alex_offset=750,
         alex_period_donor=(2850, 580), alex_period_acceptor=(930, 2580),
         excitation_wavelengths=(532e-9, 635e-9),
-        detection_wavelengths = (580e-9, 680e-9),
-        software = 'LabVIEW Data Acquisition usALEX'):
+        detection_wavelengths=(580e-9, 680e-9),
+        software='LabVIEW Data Acquisition usALEX'):
     """Load a .sm us-ALEX file and returns a dictionary.
 
     This dictionary can be passed to the :func:`phconvert.hdf5.save_photon_hdf5`
@@ -79,8 +78,8 @@ def usalex_sm(
         _filename = filename,
         acquisition_duration = round(acquisition_duration),
         photon_data = photon_data,
-        setup=setup,
-        provenance=provenance)
+        setup = setup,
+        provenance = provenance)
 
     return data
 
@@ -185,8 +184,8 @@ def nsalex_bh(filename_spc,
         _filename = filename_spc,
         acquisition_duration = round(acquisition_duration),
         photon_data = photon_data,
-        setup=setup,
-        provenance=provenance)
+        setup = setup,
+        provenance = provenance)
 
     return data, metadata
 
@@ -263,7 +262,10 @@ def nsalex_ht3(filename,
         acquisition_duration = acquisition_duration,
 
         photon_data = photon_data,
-        setup=setup,
-        provenance=provenance)
+        setup = setup,
+        provenance = provenance)
 
     return data, metadata
+
+
+del print_function, absolute_import, division  # cleanup namespace
