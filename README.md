@@ -81,11 +81,14 @@ in the Photon-HDF5 reference documentation.
 
 ## Installation
 
-The recommended way to install *phconvert* is by using conda (which first
-requires installing the free python distribution
-[Anaconda](https://store.continuum.io/cshop/anaconda/) from Continuum):
+The recommended way to install *phconvert* is by using conda:
 
     conda install -c tritemio phconvert
+
+If you don't have conda installed, please install the free python distribution
+[Anaconda](https://store.continuum.io/cshop/anaconda/) choosing the python 3
+version. The legacy python 2.7 is also supported, but if you can choose
+pick the latest python 3.
 
 Alternatively, you can install *phconvert* in any python installation using PIP:
 
@@ -95,7 +98,7 @@ In this latter case, make sure that numpy and pytables are installed.
 
 ## Dependencies
 
-- python 2.7, 3.3 or greater
+- python 2.7 (legacy), 3.3 or greater (recommended)
 - future
 - numpy >=1.9
 - pytables >=3.1
