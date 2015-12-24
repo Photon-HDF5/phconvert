@@ -202,7 +202,11 @@ def nsalex_ht3(filename,
     This dictionary can be passed to the :func:`phconvert.hdf5.save_photon_hdf5`
     function to save the data in Photon-HDF5 format.
     """
+    assert os.path.isfile(filename), "File '%s' not found." % filename
+    print(" - Loading '%s' ... " % filename)
     timestamps, detectors, nanotimes, metadata = pqreader.load_ht3(filename)
+    print(" [DONE]\n")
+
     timestamps_unit = float(metadata.pop('timestamps_unit'))
     tcspc_unit = float(metadata.pop('nanotimes_unit'))
     tcspc_num_bins = 4096

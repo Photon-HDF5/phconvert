@@ -25,7 +25,7 @@ def load_ht3(filename, ovcfunc=None):
         dictionary with meatadata conaining at least the keys
         'timestamps_unit' and 'nanotimes_unit'.
     """
-    assert os.path.isfile(filename), "File '%s' not found."
+    assert os.path.isfile(filename), "File '%s' not found." % filename
 
     t3records, timestamps_unit, nanotimes_unit, meta = ht3_reader(filename)
     detectors, timestamps, nanotimes = process_t3records_ht3(
