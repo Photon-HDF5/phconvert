@@ -127,12 +127,15 @@ in the Photon-HDF5 reference documentation.</p>
 <h2>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
 
-<p>The recommended way to install <em>phconvert</em> is by using conda (which first
-requires installing the free python distribution
-<a href="https://store.continuum.io/cshop/anaconda/">Anaconda</a> from Continuum):</p>
+<p>The recommended way to install <em>phconvert</em> is by using conda:</p>
 
 <pre><code>conda install -c tritemio phconvert
 </code></pre>
+
+<p>If you don't have conda installed, please install the free python distribution
+<a href="https://store.continuum.io/cshop/anaconda/">Anaconda</a> choosing the python 3
+version. The legacy python 2.7 is also supported, but if you can choose
+pick the latest python 3.</p>
 
 <p>Alternatively, you can install <em>phconvert</em> in any python installation using PIP:</p>
 
@@ -141,11 +144,18 @@ requires installing the free python distribution
 
 <p>In this latter case, make sure that numpy and pytables are installed.</p>
 
+<p>See also:</p>
+
+<ul>
+<li>
+<a href="https://github.com/Photon-HDF5/phconvert/releases/">phconvert Release Notes</a>.</li>
+</ul>
+
 <h2>
 <a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h2>
 
 <ul>
-<li>python 2.7, 3.3 or greater</li>
+<li>python 2.7 (legacy), 3.3 or greater (recommended)</li>
 <li>future</li>
 <li>numpy &gt;=1.9</li>
 <li>pytables &gt;=3.1</li>
