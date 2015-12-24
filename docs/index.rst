@@ -6,9 +6,9 @@
 Welcome to phconvert's documentation!
 =====================================
 
-:Version: |version|
+:Version: |version| (`release notes <https://github.com/Photon-HDF5/phconvert/releases/>`__)
 
-`phconvert <http://photon-hdf5.github.io/phconvert/>`__ is a python 2 & 3 library 
+`phconvert <http://photon-hdf5.github.io/phconvert/>`__ is a python 2 & 3 library
 which helps writing valid
 `Photon-HDF5 <https://www.photon-hdf5.org>`_ files.
 This document contains the API documentation for phconvert.

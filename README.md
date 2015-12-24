@@ -96,6 +96,10 @@ Alternatively, you can install *phconvert* in any python installation using PIP:
 
 In this latter case, make sure that numpy and pytables are installed.
 
+See also:
+
+- [phconvert Release Notes](https://github.com/Photon-HDF5/phconvert/releases/).
+
 ## Dependencies
 
 - python 2.7 (legacy), 3.3 or greater (recommended)
