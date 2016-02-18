@@ -40,6 +40,7 @@ Contents:
 
    hdf5
    loader
+   pqreader
 
 
 

@@ -3,6 +3,22 @@
 #
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
+"""
+This module contains functions to load and decode files from PicoQuant
+hardware.
+
+The primary exported function is :func:`load_ht3` which returns decoded
+timestamps, detectors, nanotimes and metadata from an HT3 file.
+
+Other lower level functions are:
+
+- :func:`ht3_reader` which loads metadata and raw t3 records from HT3 files
+- :func:`process_t3records_ht3` which decodes the t3 records returning
+  timestamps (after overflow correction), detectors and TCSPC nantimes.
+
+The overflow/rollover correction uses numba, if installed, to speed-up
+the processing.
+"""
 
 from past.builtins import xrange
 from builtins import zip
@@ -19,6 +35,12 @@ except ImportError:
 
 def load_ht3(filename, ovcfunc=None):
     """Load data from a PicoQuant .ht3 file.
+
+    Arguments:
+        filename (string): the path of the HT3 file to be loaded.
+        ovcfunc (function or None): function to use for overflow/rollover
+            correction of timestamps. If None, it defaults to the
+            fastest available implementation for the current machine.
 
     Returns:
         A tuple of timestamps, detectors, nanotimes (integer arrays) and a
@@ -37,6 +59,8 @@ def load_ht3(filename, ovcfunc=None):
     return timestamps, detectors, nanotimes, meta
 
 def ht3_reader(filename):
+    """Load raw t3 records and metadata from an HT3 file.
+    """
     with open(filename, 'rb') as f:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Binary file header
