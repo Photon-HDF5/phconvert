@@ -8,6 +8,7 @@ This module contains functions to load and decode files from PicoQuant
 hardware.
 
 The primary exported functions are:
+
 - :func:`load_ht3` which returns decoded
   timestamps, detectors, nanotimes and metadata from an HT3 file.
 - :func:`load_pt3` whcih returns decoded
@@ -56,6 +57,31 @@ def load_ht3(filename, ovcfunc=None):
     t3records, timestamps_unit, nanotimes_unit, meta = ht3_reader(filename)
     detectors, timestamps, nanotimes = process_t3records_ht3(
         t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
+        ovcfunc=ovcfunc)
+    meta.update({'timestamps_unit': timestamps_unit,
+                 'nanotimes_unit': nanotimes_unit})
+
+    return timestamps, detectors, nanotimes, meta
+
+def load_pt3(filename, ovcfunc=None):
+    """Load data from a PicoQuant .pt3 file.
+
+    Arguments:
+        filename (string): the path of the PT3 file to be loaded.
+        ovcfunc (function or None): function to use for overflow/rollover
+            correction of timestamps. If None, it defaults to the
+            fastest available implementation for the current machine.
+
+    Returns:
+        A tuple of timestamps, detectors, nanotimes (integer arrays) and a
+        dictionary with metadata containing at least the keys
+        'timestamps_unit' and 'nanotimes_unit'.
+    """
+    assert os.path.isfile(filename), "File '%s' not found." % filename
+
+    t3records, timestamps_unit, nanotimes_unit, meta = pt3_reader(filename)
+    detectors, timestamps, nanotimes = process_t3records_ht3(
+        t3records, time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
         ovcfunc=ovcfunc)
     meta.update({'timestamps_unit': timestamps_unit,
                  'nanotimes_unit': nanotimes_unit})
@@ -183,82 +209,6 @@ def ht3_reader(filename):
                         inputs=inputs, ttmode=ttmode, imghdr=ImgHdr)
         return t3records, timestamps_unit, nanotimes_unit, metadata
 
-def process_t3records_ht3(t3records, time_bit=10, dtime_bit=15,
-                          ch_bit=6, special_bit=True, ovcfunc=None):
-    """Extract the different fields from the raw t3records array (.ht3).
-
-    Returns:
-        3 arrays representing detectors, timestamps and nanotimes.
-    """
-    if special_bit:
-        ch_bit += 1
-    assert ch_bit <= 8
-    assert dtime_bit <= 16
-
-    detectors = np.bitwise_and(
-        np.right_shift(t3records, time_bit + dtime_bit), 2**ch_bit - 1).astype('uint8')
-    nanotimes = np.bitwise_and(
-        np.right_shift(t3records, time_bit), 2**dtime_bit - 1).astype('uint16')
-
-    assert time_bit <= 16
-    dt = np.dtype([('low16', 'uint16'), ('high16', 'uint16')])
-
-    t3records_low16 = np.frombuffer(t3records, dt)['low16']     # View
-    timestamps = t3records_low16.astype(np.int64)               # Copy
-    np.bitwise_and(timestamps, 2**time_bit - 1, out=timestamps)
-
-    overflow_ch = 2**ch_bit - 1
-    overflow = 2**time_bit
-    if ovcfunc is None:
-        ovcfunc = _correct_overflow
-    ovcfunc(timestamps, detectors, overflow_ch, overflow)
-    return detectors, timestamps, nanotimes
-
-def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
-    overflow_correction = 0
-    for i in xrange(detectors.size):
-        if detectors[i] == overflow_ch:
-            overflow_correction += overflow
-        timestamps[i] += overflow_correction
-
-def _correct_overflow2(timestamps, detectors, overflow_ch, overflow):
-    print('NOTE: You can speed-up the loading time by installing numba.')
-    index_overflows = np.where((detectors == overflow_ch))[0]
-    for n, (idx1, idx2) in enumerate(zip(index_overflows[:-1],
-                                         index_overflows[1:])):
-        timestamps[idx1:idx2] += (n + 1)*overflow
-    timestamps[idx2:] += (n + 2)*overflow
-
-if has_numba:
-    _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
-        _correct_overflow1)
-else:
-    _correct_overflow = _correct_overflow2
-
-def load_pt3(filename, ovcfunc=None):
-    """Load data from a PicoQuant .pt3 file.
-
-    Arguments:
-        filename (string): the path of the PT3 file to be loaded.
-        ovcfunc (function or None): function to use for overflow/rollover
-            correction of timestamps. If None, it defaults to the
-            fastest available implementation for the current machine.
-
-    Returns:
-        A tuple of timestamps, detectors, nanotimes (integer arrays) and a
-        dictionary with meatadata containing at least the keys
-        'timestamps_unit' and 'nanotimes_unit'.
-    """
-    assert os.path.isfile(filename), "File '%s' not found." % filename
-
-    t3records, timestamps_unit, nanotimes_unit, meta = pt3_reader(filename)
-    detectors, timestamps, nanotimes = process_t3records_ht3(
-        t3records, time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
-        ovcfunc=ovcfunc)
-    meta.update({'timestamps_unit': timestamps_unit,
-                 'nanotimes_unit': nanotimes_unit})
-
-    return timestamps, detectors, nanotimes, meta
 
 def pt3_reader(filename):
     """Load raw t3 records and metadata from a PT3 file.
@@ -372,3 +322,56 @@ def pt3_reader(filename):
                         repeatgroup=repeatgroup, hardware=hardware,
                         router=router, ttmode=ttmode, imghdr=ImgHdr)
         return t3records, timestamps_unit, nanotimes_unit, metadata
+
+
+def process_t3records_ht3(t3records, time_bit=10, dtime_bit=15,
+                          ch_bit=6, special_bit=True, ovcfunc=None):
+    """Extract the different fields from the raw t3records array (.ht3).
+
+    Returns:
+        3 arrays representing detectors, timestamps and nanotimes.
+    """
+    if special_bit:
+        ch_bit += 1
+    assert ch_bit <= 8
+    assert dtime_bit <= 16
+
+    detectors = np.bitwise_and(
+        np.right_shift(t3records, time_bit + dtime_bit), 2**ch_bit - 1).astype('uint8')
+    nanotimes = np.bitwise_and(
+        np.right_shift(t3records, time_bit), 2**dtime_bit - 1).astype('uint16')
+
+    assert time_bit <= 16
+    dt = np.dtype([('low16', 'uint16'), ('high16', 'uint16')])
+
+    t3records_low16 = np.frombuffer(t3records, dt)['low16']     # View
+    timestamps = t3records_low16.astype(np.int64)               # Copy
+    np.bitwise_and(timestamps, 2**time_bit - 1, out=timestamps)
+
+    overflow_ch = 2**ch_bit - 1
+    overflow = 2**time_bit
+    if ovcfunc is None:
+        ovcfunc = _correct_overflow
+    ovcfunc(timestamps, detectors, overflow_ch, overflow)
+    return detectors, timestamps, nanotimes
+
+def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
+    overflow_correction = 0
+    for i in xrange(detectors.size):
+        if detectors[i] == overflow_ch:
+            overflow_correction += overflow
+        timestamps[i] += overflow_correction
+
+def _correct_overflow2(timestamps, detectors, overflow_ch, overflow):
+    print('NOTE: You can speed-up the loading time by installing numba.')
+    index_overflows = np.where((detectors == overflow_ch))[0]
+    for n, (idx1, idx2) in enumerate(zip(index_overflows[:-1],
+                                         index_overflows[1:])):
+        timestamps[idx1:idx2] += (n + 1)*overflow
+    timestamps[idx2:] += (n + 2)*overflow
+
+if has_numba:
+    _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
+        _correct_overflow1)
+else:
+    _correct_overflow = _correct_overflow2
