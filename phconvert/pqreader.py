@@ -48,7 +48,7 @@ def load_ht3(filename, ovcfunc=None):
 
     Returns:
         A tuple of timestamps, detectors, nanotimes (integer arrays) and a
-        dictionary with metadata conaining at least the keys
+        dictionary with metadata containing at least the keys
         'timestamps_unit' and 'nanotimes_unit'.
     """
     assert os.path.isfile(filename), "File '%s' not found." % filename
@@ -115,7 +115,7 @@ def ht3_reader(filename):
         repeat_dtype = np.dtype([
             ('RepeatMode',      'int32'),
             ('RepeatsPerCurve', 'int32'),
-            ('RepeatTime',       'int32'),
+            ('RepeatTime',      'int32'),
             ('RepeatWaitTime',  'int32'),
             ('ScriptName',      'S20'  )])
         repeatgroup = np.fromfile(f, repeat_dtype, count=1)
@@ -177,9 +177,9 @@ def ht3_reader(filename):
         timestamps_unit = 1./ttmode['SyncRate']
         nanotimes_unit = 1e-12*header['Resolution']
 
-        metadata = dict(header=header, dispcurve=dispcurve, params=params, 
-                        repeatgroup=repeatgroup, hardware=hardware, 
-                        hardware2=hardware2, hardware3=hardware3, 
+        metadata = dict(header=header, dispcurve=dispcurve, params=params,
+                        repeatgroup=repeatgroup, hardware=hardware,
+                        hardware2=hardware2, hardware3=hardware3,
                         inputs=inputs, ttmode=ttmode, imghdr=ImgHdr)
         return t3records, timestamps_unit, nanotimes_unit, metadata
 
@@ -246,7 +246,7 @@ def load_pt3(filename, ovcfunc=None):
 
     Returns:
         A tuple of timestamps, detectors, nanotimes (integer arrays) and a
-        dictionary with meatadata conaining at least the keys
+        dictionary with meatadata containing at least the keys
         'timestamps_unit' and 'nanotimes_unit'.
     """
     assert os.path.isfile(filename), "File '%s' not found." % filename
@@ -369,8 +369,6 @@ def pt3_reader(filename):
         nanotimes_unit = 1e-9*hardware['Resolution']
 
         metadata = dict(header=header, dispcurve=dispcurve, params=params,
-                        repeatgroup=repeatgroup, hardware=hardware, 
+                        repeatgroup=repeatgroup, hardware=hardware,
                         router=router, ttmode=ttmode, imghdr=ImgHdr)
         return t3records, timestamps_unit, nanotimes_unit, metadata
-
-
