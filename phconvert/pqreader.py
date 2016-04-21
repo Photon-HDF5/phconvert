@@ -17,9 +17,9 @@ The primary exported functions are:
 Other lower level functions are:
 
 - :func:`ht3_reader` which loads metadata and raw t3 records from HT3 files
-- :func:`process_t3records_ht3` which decodes the t3 records returning
-  timestamps (after overflow correction), detectors and TCSPC nanotimes.
 - :func:`pt3_reader` which loads metadata and raw t3 records from PT3 files
+- :func:`process_t3records` which decodes the t3 records returning
+  timestamps (after overflow correction), detectors and TCSPC nanotimes.
 
 The overflow/rollover correction uses numba, if installed, to speed-up
 the processing.
@@ -55,7 +55,7 @@ def load_ht3(filename, ovcfunc=None):
     assert os.path.isfile(filename), "File '%s' not found." % filename
 
     t3records, timestamps_unit, nanotimes_unit, meta = ht3_reader(filename)
-    detectors, timestamps, nanotimes = process_t3records_ht3(
+    detectors, timestamps, nanotimes = process_t3records(
         t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
         ovcfunc=ovcfunc)
     meta.update({'timestamps_unit': timestamps_unit,
@@ -80,7 +80,7 @@ def load_pt3(filename, ovcfunc=None):
     assert os.path.isfile(filename), "File '%s' not found." % filename
 
     t3records, timestamps_unit, nanotimes_unit, meta = pt3_reader(filename)
-    detectors, timestamps, nanotimes = process_t3records_ht3(
+    detectors, timestamps, nanotimes = process_t3records(
         t3records, time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
         ovcfunc=ovcfunc)
     meta.update({'timestamps_unit': timestamps_unit,
@@ -324,8 +324,8 @@ def pt3_reader(filename):
         return t3records, timestamps_unit, nanotimes_unit, metadata
 
 
-def process_t3records_ht3(t3records, time_bit=10, dtime_bit=15,
-                          ch_bit=6, special_bit=True, ovcfunc=None):
+def process_t3records(t3records, time_bit=10, dtime_bit=15,
+                      ch_bit=6, special_bit=True, ovcfunc=None):
     """Extract the different fields from the raw t3records array (.ht3).
 
     Returns:
