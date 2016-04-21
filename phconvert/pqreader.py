@@ -11,14 +11,14 @@ The primary exported functions are:
 
 - :func:`load_ht3` which returns decoded
   timestamps, detectors, nanotimes and metadata from an HT3 file.
-- :func:`load_pt3` whcih returns decoded
+- :func:`load_pt3` which returns decoded
   timestamps, detectors, nanotimes and metadata from a PT3 file.
 
 Other lower level functions are:
 
 - :func:`ht3_reader` which loads metadata and raw t3 records from HT3 files
 - :func:`process_t3records_ht3` which decodes the t3 records returning
-  timestamps (after overflow correction), detectors and TCSPC nantimes.
+  timestamps (after overflow correction), detectors and TCSPC nanotimes.
 - :func:`pt3_reader` which loads metadata and raw t3 records from PT3 files
 
 The overflow/rollover correction uses numba, if installed, to speed-up
