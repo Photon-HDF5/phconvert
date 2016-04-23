@@ -39,8 +39,8 @@ install:
 
 before_test:
   - cd %APPVEYOR_BUILD_FOLDER%\notebooks
-  - mkdir data
-  - cd data
+  #- mkdir data
+  #- cd data
   - dir
   - ps: wget https://ndownloader.figshare.com/files/3350666 -OutFile dsdna_d7d17_50_50_1.set
   - ps: wget https://ndownloader.figshare.com/files/3350669 -OutFile dsdna_d7d17_50_50_1.spc
