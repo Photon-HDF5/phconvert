@@ -61,4 +61,5 @@ after_test:
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
   - path: dist\*
-  - path: notebooks\*
+  - path: notebooks\*-out.ipynb
+  - path: notebooks\*.hdf5
