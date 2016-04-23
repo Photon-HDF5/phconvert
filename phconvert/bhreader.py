@@ -89,13 +89,13 @@ def bh_set_identification(fname_set):
         line = str(f.readline().strip().decode('utf8'))
         while not line.startswith('*END'):
             item = [s.strip() for s in line.split(':')]
-            if len(item) == 1:
-                # no ':'  ->  it's a new line continuing the previous key
-                value = ' '.join([identification[key], item[0]])
-            else:
+            if len(item) > 1:
                 # found ':'  ->  retrive key and value
                 key = item[0]
                 value = ':'.join(item[1:])
+            else:
+                # no ':' found ->  it's a new line continuing the previous key
+                value = ' '.join([identification[key], item[0]])
             identification[key] = value
             line = str(f.readline().strip().decode('utf8'))
     return identification
@@ -163,4 +163,3 @@ def bh_print_sys_params(sys_params):
     print()
     for k, v in sys_params.iteritems():
         if 'SYN' in k: print('%s\t %f' % (bh_decode(k), v))
-
