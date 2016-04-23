@@ -16,7 +16,7 @@ High-level functions to load and decode Becker & Hickl SPC/SET pair of files:
 Low-level functions
 '''''''''''''''''''
 
-These functions are the building blocks decoding Becker & Hickl files:
+These functions are the building blocks for decoding Becker & Hickl files:
 
 .. autofunction:: phconvert.bhreader.bh_set_identification
 

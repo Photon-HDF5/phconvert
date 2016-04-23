@@ -4,10 +4,20 @@
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
-SPC Format (Beker & Hickl)
---------------------------
+This module contains functions to load and decode files from Becker & Hickl
+hardware.
 
-48-bit element in little endian (<) format
+The high-level function in this module are:
+
+- :func:`load_spc` which loads and decoded the photon data from SPC files.
+- :func:`load_set` which returns a dictionary of metadata from SET files.
+
+
+Becker & Hickl SPC Format
+-------------------------
+
+The structure of the SPC format is here described.
+Each record is a 6-bytes element in little endian (<) format.
 
 Drawing (note: each char represents 2 bits)::
 
@@ -26,8 +36,8 @@ Drawing (note: each char represents 2 bits)::
 
     overflow bit: 13, bit_mask = 2^(13-1) = 4096
 
-The first 48 bits of a SPC file are an header containing the timestamps_unit
-(in 0.1ns units) in the 2 central bytes.
+The first 6 bytes of a SPC file are an header containing the timestamps_unit
+(in 0.1ns units) in the two central bytes (i.e. bytes 2 and 3).
 """
 
 from __future__ import print_function, division
@@ -38,7 +48,8 @@ def load_spc(fname):
     """Load data from Becker & Hickl SPC files.
 
     Returns:
-        3 numpy arrays: timestamps, detector, nanotime
+        3 numpy arrays (timestamps, detector, nanotime) and a float
+        (timestamps_unit).
     """
 
     f = open(fname, 'rb')
