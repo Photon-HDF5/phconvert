@@ -33,7 +33,7 @@ install:
   - python --version
   - cd %APPVEYOR_BUILD_FOLDER%
   - dir
-  - build.cmd python setup.py build
+  - python setup.py build
   - pip install .
   - python setup.py clean --all
 
