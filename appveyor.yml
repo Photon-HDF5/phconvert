@@ -49,8 +49,8 @@ before_test:
   #- ps: wget http://files.figshare.com/2182601/0023uLRpitc_NTP_20dT_0.5GndCl.hdf5 -OutFile 0023uLRpitc_NTP_20dT_0.5GndCl.hdf5
 
 test_script:
-  - cd %APPVEYOR_BUILD_FOLDER%
-  - py.test -v
+  #- cd %APPVEYOR_BUILD_FOLDER%
+  #- py.test -v
   - cd %APPVEYOR_BUILD_FOLDER%\notebooks
   - python %APPVEYOR_BUILD_FOLDER%/tests/nbrun.py
 
