@@ -25,6 +25,9 @@ Drawing (note: each char represents 2 bits)::
     nanotime  = [  d  ]               (12 bit)
 
     overflow bit: 13, bit_mask = 2^(13-1) = 4096
+
+The first 48 bits of a SPC file are an header containing the timestamps_unit
+(in 0.1ns units) in the 2 central bytes.
 """
 
 from __future__ import print_function, division
@@ -138,7 +141,8 @@ def bh_set_sys_params(fname_set):
     return sys_params
 
 def bh_decode(s):
-    """Decode strings from Becker & Hickl system parameters (.SET file)."""
+    """Replace code strings from .SET files with human readble label strings.
+    """
     s = s.replace('SP_', '')
     s = s.replace('_ZC', ' ZC Thresh.')
     s = s.replace('_LL', ' Limit Low')
@@ -154,7 +158,8 @@ def bh_decode(s):
     return s
 
 def bh_print_sys_params(sys_params):
-    """Print a summary of the Becker & Hickl system parameters (.SET file)."""
+    """Print a summary of the Becker & Hickl system parameters (.SET file).
+    """
     for k, v in sys_params.iteritems():
         if 'TAC' in k: print('%s\t %f' % (bh_decode(k), v))
     print()

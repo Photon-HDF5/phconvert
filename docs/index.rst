@@ -41,7 +41,7 @@ Contents:
    hdf5
    loader
    pqreader
-
+   bhreader
 
 
 Indices and tables
