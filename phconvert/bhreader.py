@@ -37,9 +37,17 @@ def load_spc(fname):
     Returns:
         3 numpy arrays: timestamps, detector, nanotime
     """
+
+    f = open(fname, 'rb')
+    # We first decode the first 6 bytes which is a header...
+    header = np.fromfile(f, dtype='u2', count=3)
+    timestamps_unit = header[1] * 0.1e-9
+    num_routing_bits = np.bitwise_and(header[0], 0x000F)  # unused
+
+    # ...and then the remaining records containing the photon data
     spc_dtype = np.dtype([('field0', '<u2'), ('b', '<u1'), ('c', '<u1'),
                           ('a', '<u2')])
-    data = np.fromfile(fname, dtype=spc_dtype)
+    data = np.fromfile(f, dtype=spc_dtype)
 
     nanotime =  4095 - np.bitwise_and(data['field0'], 0x0FFF)
     detector = data['c']
@@ -56,8 +64,7 @@ def load_spc(fname):
     # Add the overflow bits
     timestamps += np.left_shift(overflow, 24)
 
-    return timestamps, detector, nanotime
-
+    return timestamps, detector, nanotime, timestamps_unit
 
 def load_set(fname_set):
     """Return a dict with data from the Becker & Hickl .SET file.
