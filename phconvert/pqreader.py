@@ -21,7 +21,8 @@ Other lower level functions are:
 - :func:`process_t3records` which decodes the t3 records returning
   timestamps (after overflow correction), detectors and TCSPC nanotimes.
 
-The overflow/rollover correction uses numba, if installed, to speed-up
+Note that the functions performing overflow/rollover correction
+can take advantage of numba, if installed, to significanly speed-up
 the processing.
 """
 
