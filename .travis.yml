@@ -1,0 +1,31 @@
+language: python
+
+python:
+    - "2.7"
+    - "3.4"
+    - "3.5"
+
+before_install:
+    - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b
+    - export PATH=/home/travis/miniconda3/bin:$PATH
+    - conda config --add channels tritemio
+
+install:
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy matplotlib pytables numba nbconvert ipykernel
+    - python setup.py build
+    - pip install .
+    - rm -rf build/
+
+before_script:
+    - cd notebooks
+    - wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
+    - wget https://ndownloader.figshare.com/files/3350669 -O dsdna_d7d17_50_50_1.spc
+    - wget https://ndownloader.figshare.com/files/3350672 -O Pre.ht3
+    - wget https://ndownloader.figshare.com/files/3350663 -O 0023uLRpitc_NTP_20dT_0.5GndCl.sm
+
+script:
+    - python $TRAVIS_BUILD_DIR/tests/nbrun.py
+
+sudo: false
