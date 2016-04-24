@@ -11,9 +11,12 @@ before_install:
     - ./miniconda.sh -b
     - export PATH=/home/travis/miniconda3/bin:$PATH
     - conda config --add channels tritemio
+    - conda config --set always_yes
 
 install:
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy matplotlib pytables numba nbconvert ipykernel
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy matplotlib pytables numba nbconvert ipykernel
+    - source activate test-environment
+    - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install pathlib ; fi
     - python setup.py build
     - pip install .
     - rm -rf build/
