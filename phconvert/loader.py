@@ -156,7 +156,7 @@ def nsalex_bh(filename_spc,
 
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
-            laser_repetition_rate = timestamps_unit,
+            laser_repetition_rate = 1 / timestamps_unit,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
