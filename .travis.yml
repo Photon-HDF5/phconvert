@@ -16,6 +16,7 @@ before_install:
 install:
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy matplotlib pytables numba nbconvert ipykernel
     - source activate test-environment
+    - python -V
     - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install pathlib ; fi
     - python setup.py build
     - pip install .
@@ -29,6 +30,7 @@ before_script:
     - wget https://ndownloader.figshare.com/files/3350663 -O 0023uLRpitc_NTP_20dT_0.5GndCl.sm
 
 script:
+    - python -V
     - python $TRAVIS_BUILD_DIR/tests/nbrun.py
 
 sudo: false
