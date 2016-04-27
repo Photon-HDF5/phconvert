@@ -23,12 +23,16 @@ init:
 
 install:
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - echo %PATH%
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
+  - conda install -q conda-build
   - conda info -a
   - conda config --add channels tritemio
   - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy matplotlib pytables pytest seaborn numba nbconvert ipykernel"
   - activate test-environment
+  - path
+  - python -m pip install --upgrade pip
   - ps: 'if($env:PYTHON_VERSION -eq "2.7"){pip install pathlib}'
   - python --version
   - cd %APPVEYOR_BUILD_FOLDER%
@@ -57,12 +61,16 @@ test_script:
 after_test:
   - cd %APPVEYOR_BUILD_FOLDER%
   - python setup.py bdist_wheel
+  - echo %PATH%
   - deactivate
-  - conda install conda-build
-  - conda build conda.recipe --python=%PYTHON_VERSION%  #--quiet
+  - path
+  - where python
+  - where git
+  - conda build conda.recipe --python=%PYTHON_VERSION%  --quiet
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
   - path: dist\*
   - path: notebooks\*-out.ipynb
   - path: notebooks\*.hdf5
+  - path: %MINICONDA%\conda-bld\win-64\phconvert-*
