@@ -57,6 +57,9 @@ test_script:
 after_test:
   - cd %APPVEYOR_BUILD_FOLDER%
   - python setup.py bdist_wheel
+  - deactivate
+  - conda install conda-build
+  - conda build conda.recipe --python=%PYTHON_VERSION%  #--quiet
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
