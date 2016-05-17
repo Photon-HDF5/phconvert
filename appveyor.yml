@@ -67,10 +67,10 @@ after_test:
   - where python
   - where git
   - conda build conda.recipe --python=%PYTHON_VERSION%  --quiet
+  - ps: cp $Env:MINICONDA\conda-bld\win-64\phconvert-*.tar.bz2 $Env:APPVEYOR_BUILD_FOLDER\dist
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
   - path: dist\*
   - path: notebooks\*-out.ipynb
   - path: notebooks\*.hdf5
-  - path: %MINICONDA%\conda-bld\win-64\phconvert-*
