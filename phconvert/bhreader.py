@@ -7,6 +7,7 @@
 SPC Format (Beker & Hickl)
 --------------------------
 
+SPC-600/630:
 48-bit element in little endian (<) format
 
 Drawing (note: each char represents 2 bits)::
@@ -25,36 +26,93 @@ Drawing (note: each char represents 2 bits)::
     nanotime  = [  d  ]               (12 bit)
 
     overflow bit: 13, bit_mask = 2^(13-1) = 4096
+
+SPC-134/144/154/830:
+
+    bit:                     32                0
+                             XXXX XXXX XXXX XXXX
+                             '''-----' '''-----'
+    field names:             a    b    c    d
+
+                             XXXX XXXX XXXX XXXX
+                             '-------' '-------'
+    numpy dtype:              field1    field0
+
+    macrotime = [ d ]       (12 bit)
+    detector  = [ c ]       (4 bit)
+    nanotime  = [ b ]       (12 bit)
+    aux       = [ a ]       (4 bit)
+
+    aux = [invalid, overflow, gap, mark]
+
+    If overflow == 1 and invalid == 1 --> number of overflows = [ b ][ c ][ d ]
 """
+
+# TODO: automatic board model identification (in a new function?)
 
 from __future__ import print_function, division
 import numpy as np
 
 
-def load_spc(fname):
+def load_spc(fname, spc_model='SPC-630'):
     """Load data from Becker & Hickl SPC files.
+
+    spc_model: name of the board model (ex. 'SPC-630')
 
     Returns:
         3 numpy arrays: timestamps, detector, nanotime
     """
-    spc_dtype = np.dtype([('field0', '<u2'), ('b', '<u1'), ('c', '<u1'),
-                          ('a', '<u2')])
-    data = np.fromfile(fname, dtype=spc_dtype)
 
-    nanotime =  4095 - np.bitwise_and(data['field0'], 0x0FFF)
-    detector = data['c']
+    if ('630' in spc_model) or ('600' in spc_model):
+        spc_dtype = np.dtype([('field0', '<u2'), ('b', '<u1'), ('c', '<u1'),
+                    ('a', '<u2')])
+        data = np.fromfile(fname, dtype=spc_dtype)
 
-    # Build the macrotime (timestamps) using in-place operation for efficiency
-    timestamps = data['b'].astype('int64')
-    np.left_shift(timestamps, 16, out=timestamps)
-    timestamps += data['a']
+        nanotime =  4095 - np.bitwise_and(data['field0'], 0x0FFF)
+        detector = data['c']
 
-    # extract the 13-th bit from data['field0']
-    overflow = np.bitwise_and(np.right_shift(data['field0'], 13), 1)
-    overflow = np.cumsum(overflow, dtype='int64')
+        # Build the macrotime (timestamps) using in-place operation for efficiency
+        timestamps = data['b'].astype('int64')
+        np.left_shift(timestamps, 16, out=timestamps)
+        timestamps += data['a']
 
-    # Add the overflow bits
-    timestamps += np.left_shift(overflow, 24)
+        # extract the 13-th bit from data['field0']
+        overflow = np.bitwise_and(np.right_shift(data['field0'], 13), 1)
+        overflow = np.cumsum(overflow, dtype='int64')
+
+        # Add the overflow bits
+        timestamps += np.left_shift(overflow, 24)
+
+    elif ('SPC-1' in spc_model) or ('SPC-830' in spc_model):
+        spc_dtype = np.dtype([('field0', '<u2'),('field1', '<u2')])
+        data = np.fromfile(fname, dtype=spc_dtype)
+
+        nanotime =  4095 - np.bitwise_and(data['field1'], 0x0FFF)
+        detector = np.bitwise_and(np.right_shift(data['field0'], 12), 0x0F)
+
+        # Build the macrotime
+        timestamps = np.bitwise_and(data['field0'], 0x0FFF).astype(dtype='int64')
+
+        # extract the 13-th bit from data['field0']
+        mark = np.bitwise_and(np.right_shift(data['field1'], 12), 0x01)
+        gap = np.bitwise_and(np.right_shift(data['field1'], 13), 0x01)
+        overflow = np.bitwise_and(np.right_shift(data['field1'], 14), 0x01).astype(dtype='int64')
+        invalid = np.bitwise_and(np.right_shift(data['field1'], 15), 0x01)
+
+        for i_ovf in np.nonzero(overflow)[0].tolist():
+            if invalid[i_ovf]:
+                overflow[i_ovf] = np.left_shift(np.bitwise_and(data['field1'][i_ovf], 0x0FFF), 16)\
+                    + data['field0'][i_ovf]
+
+        overflow = np.left_shift(np.cumsum(overflow), 12)
+
+        # Add the overflow bits
+        timestamps += overflow
+
+        # Delete invalid entries
+        nanotime = np.delete(nanotime, invalid.nonzero())
+        timestamps = np.delete(timestamps, invalid.nonzero())
+        detector = np.delete(detector, invalid.nonzero())
 
     return timestamps, detector, nanotime
 
