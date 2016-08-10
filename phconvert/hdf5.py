@@ -931,6 +931,11 @@ def _check_photon_data_tables(ph_data, norepeat=False, pool=None,
 
     spectral_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
                            'smFRET-nsALEX']
+    other_meas_types = ['cw_split', 'cw_polarization',
+                        'cw_split_polarization',
+                        'tcspc_split', 'tcspc_polarization',
+                        'tcspc_split_polarization']
+    all_meas_types = spectral_meas_types + other_meas_types
     meas_specs = ph_data.measurement_specs
     msg = 'Missing "measurement_type" in "%s".' % meas_specs._v_pathname
     _assert_has_field('measurement_type', meas_specs, msg, verbose=verbose)
@@ -938,22 +943,43 @@ def _check_photon_data_tables(ph_data, norepeat=False, pool=None,
     meas_type = meas_specs.measurement_type.read().decode()
     if verbose:
         print('* Measurement type: "%s"' % meas_type)
-    _assert_valid(meas_type in spectral_meas_types,
-                  msg='Unkwnown measurement type "%s"' % meas_type)
+    _assert_valid(meas_type in all_meas_types,
+                  msg='Unknown measurement type "%s"' % meas_type)
 
     # At this point we have a valid measurement_type
-    # Any missing field will raise an error.
+    # We will check (and raise an error) for any missing field.
     msg = '\nThis field is mandatory for "%s" data.' % meas_type
     kwargs = dict(msg_add=msg, verbose=verbose)
-    _assert_has_field('spectral_ch1', meas_specs.detectors_specs, **kwargs)
-    _assert_has_field('spectral_ch2', meas_specs.detectors_specs, **kwargs)
+    det_specs = meas_specs.detectors_specs
 
+    # Check for spectral channels
+    if meas_type in spectral_meas_types:
+        _assert_has_field('spectral_ch1', det_specs, **kwargs)
+        _assert_has_field('spectral_ch2', det_specs, **kwargs)
+    if meas_type == 'smFRET-usALEX-3c':
+        _assert_has_field('spectral_ch3', det_specs, **kwargs)
+
+    # Check for split/polarization channels
+    for feature in ('split', 'polarization'):
+        if feature in meas_type:
+            _assert_has_field('%s_ch1' % feature, det_specs, **kwargs)
+            _assert_has_field('%s_ch2' % feature, det_specs, **kwargs)
+
+    # us-ALEX fields
     if meas_type in ['smFRET-usALEX', 'smFRET-usALEX-3c']:
         _assert_has_field('alex_period', meas_specs, **kwargs)
 
+    # ns-ALEX / PIE fields
     if meas_type == 'smFRET-nsALEX':
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
+
+    # TCSPC fields
+    if meas_type == 'smFRET-nsALEX' or 'tcspc' in meas_type:
+        _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
         _assert_has_field('nanotimes', ph_data, **kwargs)
+        # TODO: implement valid case when nanotimes_specs is not present
+        #       but TCSPC data is stored in /setup/detectorN
+        #       See https://github.com/Photon-HDF5/photon-hdf5/issues/36
         _assert_has_field('nanotimes_specs', ph_data, **kwargs)
         for name in ['tcspc_unit', 'tcspc_num_bins']:
             _assert_has_field(name, ph_data.nanotimes_specs, **kwargs)
