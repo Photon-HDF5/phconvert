@@ -179,6 +179,42 @@
         "Power fraction detected by each \"beam-split\" channel (i.e. independent detection channels obtained through a non-polarizing beam splitter).",
         "array"
     ],
+    "/setup/detectors": [
+        "Metadata relative to each detector's pixel. Each field is an array with size equal to the number of the detectors.",
+        "group"
+    ],
+    "/setup/detectors/ids": [
+        "Array of original IDs assigned by the acquisition hardware to each detector.",
+        "array"
+    ],
+    "/setup/detectors/labels": [
+        "Array of labels (strings) describing each detector.",
+        "array"
+    ],
+    "/setup/detectors/counts": [
+        "Array of number photons detected by each detector.",
+        "array"
+    ],
+    "/setup/detectors/module": [
+        "Array of strings containing the module's name for each pixel.",
+        "array"
+    ],
+    "/setup/detectors/position": [
+        "2-D array of integers containing the X-Y coordinates of each pixel in the array.",
+        "array"
+    ],
+    "/setup/detectors/dcr": [
+        "Dark counts (cps) for each pixel.",
+        "array"
+    ],
+    "/setup/detectors/afterpulsing": [
+        "Afterpulsing probability for each pixel.",
+        "array"
+    ],
+    "/setup/detectors/spot": [
+        "Spot number where the pixel is used.",
+        "array"
+    ],
     "/identity": [
         "Information about the Photon-HDF5 data file.",
         "group"
