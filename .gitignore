@@ -9,3 +9,6 @@ build/
 docs/docs_html
 *.bz2
 notebooks/out
+docs/_*
+notebooks/_*
+notebooks/data
