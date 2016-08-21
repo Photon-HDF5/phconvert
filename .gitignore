@@ -3,6 +3,8 @@
 *.swp
 *.hdf5
 *.h5
+*.vscode
+
 *egg-info*
 dist/
 build/

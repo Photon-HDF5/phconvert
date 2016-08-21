@@ -93,18 +93,19 @@ def load_spc(fname, spc_model='SPC-630'):
         # Build the macrotime
         timestamps = np.bitwise_and(data['field0'], 0x0FFF).astype(dtype='int64')
 
-        # extract the 13-th bit from data['field0']
+        # Extract the various status bits
         mark = np.bitwise_and(np.right_shift(data['field1'], 12), 0x01)
         gap = np.bitwise_and(np.right_shift(data['field1'], 13), 0x01)
         overflow = np.bitwise_and(np.right_shift(data['field1'], 14), 0x01).astype(dtype='int64')
         invalid = np.bitwise_and(np.right_shift(data['field1'], 15), 0x01)
 
+        # Invalid bytes: number of overflows from the last detected photon
         for i_ovf in np.nonzero(overflow)[0].tolist():
             if invalid[i_ovf]:
                 overflow[i_ovf] = np.left_shift(np.bitwise_and(data['field1'][i_ovf], 0x0FFF), 16)\
                     + data['field0'][i_ovf]
 
-        overflow = np.left_shift(np.cumsum(overflow), 12)
+        overflow = np.left_shift(np.cumsum(overflow), 12)  # Each overflow occurs every 2^12 macrotimes
 
         # Add the overflow bits
         timestamps += overflow
