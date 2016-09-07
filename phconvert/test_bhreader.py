@@ -1,15 +1,16 @@
 import unittest
-import bhreader
+from phconvert import bhreader
 import numpy as np
 import pandas as pd
+import os.path
 
-# TODO: use a smaller file for test
+# Run all tests  with $ nosetests
 
 class TestBhReader(unittest.TestCase):
 
     def test_import_SPC_150_nanotime(self):
-        input_file = 'test_files/7od.spc'
-        check_file = 'test_files/7od.asc'
+        input_file = os.path.join(os.path.dirname(__file__), 'test_files/test_noise.spc')
+        check_file = os.path.join(os.path.dirname(__file__), 'test_files/test_noise.asc')
 
         data = bhreader.load_spc(input_file, 'SPC-150')
         check = pd.read_table(check_file, delimiter=' ', dtype='int64',
