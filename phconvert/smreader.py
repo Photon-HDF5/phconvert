@@ -46,7 +46,7 @@ class Decoder:
         buffer = self.buff[self.cursor:self.cursor + size]
         if not inplace:
             self.cursor += size
-        return np.frombuffer(buffer=buffer, dtype=dtype)
+        return np.frombuffer(buffer=buffer, dtype=dtype).squeeze()
 
     def readstring(self, size_max=256, inplace=False, **kwargs):
         orig_cursor = self.cursor
