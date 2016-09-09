@@ -13,7 +13,7 @@ import pkg_resources
 from collections import OrderedDict
 import json
 
-LATEST_FORMAT_VERSION = b'0.4'
+LATEST_FORMAT_VERSION = b'0.5.dev'
 
 _specs_file_fields = 'specs/photon-hdf5_specs.json'
 

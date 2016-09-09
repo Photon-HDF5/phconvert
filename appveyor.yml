@@ -1,0 +1,76 @@
+build: false
+
+environment:
+  matrix:
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "64"
+      MINICONDA: C:\Miniconda-x64
+
+    - PYTHON: "C:\\Python34-x64"
+      PYTHON_VERSION: "3.4"
+      PYTHON_ARCH: "64"
+      MINICONDA: C:\Miniconda3-x64
+      DISTUTILS_USE_SDK: "1"
+
+    - PYTHON: "C:\\Python35-x64"
+      PYTHON_VERSION: "3.5"
+      PYTHON_ARCH: "64"
+      MINICONDA: C:\Miniconda35-x64
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH% %MINICONDA%"
+
+install:
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - echo %PATH%
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda install -q conda-build
+  - conda info -a
+  - conda config --add channels tritemio
+  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy matplotlib pytables pytest seaborn numba nbconvert ipykernel"
+  - activate test-environment
+  - path
+  - python -m pip install --upgrade pip
+  - ps: 'if($env:PYTHON_VERSION -eq "2.7"){pip install pathlib}'
+  - python --version
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - dir
+  - python setup.py build
+  - pip install .
+  - python setup.py clean --all
+
+before_test:
+  - cd %APPVEYOR_BUILD_FOLDER%\notebooks
+  #- mkdir data
+  #- cd data
+  - dir
+  - ps: wget https://ndownloader.figshare.com/files/3350666 -OutFile dsdna_d7d17_50_50_1.set
+  - ps: wget https://ndownloader.figshare.com/files/3350669 -OutFile dsdna_d7d17_50_50_1.spc
+  - ps: wget https://ndownloader.figshare.com/files/3350672 -OutFile Pre.ht3
+  - ps: wget https://ndownloader.figshare.com/files/3350663 -OutFile 0023uLRpitc_NTP_20dT_0.5GndCl.sm
+  #- ps: wget http://files.figshare.com/2182601/0023uLRpitc_NTP_20dT_0.5GndCl.hdf5 -OutFile 0023uLRpitc_NTP_20dT_0.5GndCl.hdf5
+
+test_script:
+  #- cd %APPVEYOR_BUILD_FOLDER%
+  #- py.test -v
+  - cd %APPVEYOR_BUILD_FOLDER%\notebooks
+  - python %APPVEYOR_BUILD_FOLDER%/tests/nbrun.py
+
+after_test:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - python setup.py bdist_wheel
+  - echo %PATH%
+  - deactivate
+  - path
+  - where python
+  - where git
+  - conda build conda.recipe --python=%PYTHON_VERSION%  --quiet
+  - ps: cp $Env:MINICONDA\conda-bld\win-64\phconvert-*.tar.bz2 $Env:APPVEYOR_BUILD_FOLDER\dist
+
+artifacts:
+  # bdist_wheel puts your built wheel in the dist directory
+  - path: dist\*
+  - path: notebooks\*-out.ipynb
+  - path: notebooks\*.hdf5

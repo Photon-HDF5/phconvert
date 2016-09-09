@@ -87,14 +87,12 @@ def usalex_sm(
 def nsalex_bh(filename_spc,
               donor = 4,
               acceptor = 6,
-              laser_repetition_rate = 40e6,
-              tcspc_range = 60e-9,
-              timestamps_unit = 60e-9,
               alex_period_donor = (10, 1500),
               alex_period_acceptor = (2000, 3500),
               excitation_wavelengths = (532e-9, 635e-9),
               detection_wavelengths = (580e-9, 680e-9),
-              allow_missing_set = False):
+              allow_missing_set = False,
+              tcspc_num_bins=None, tcspc_unit=None):
     """Load a .spc and (optionally) .set files for ns-ALEX and return 2 dict.
 
     The first dictionary can be passed to the
@@ -110,7 +108,8 @@ def nsalex_bh(filename_spc,
     # Load .SPC file
     assert os.path.isfile(filename_spc), "File '%s' not found." % filename_spc
     print(" - Loading '%s' ... " % filename_spc)
-    timestamps, detectors, nanotimes = bhreader.load_spc(filename_spc)
+    timestamps, detectors, nanotimes, timestamps_unit = \
+        bhreader.load_spc(filename_spc)
     print(" [DONE]\n")
 
     # Load .SET file
@@ -119,6 +118,10 @@ def nsalex_bh(filename_spc,
         metadata = bhreader.load_set(filename_set)
     elif allow_missing_set:
         metadata = {}
+        msg = 'SET file not found. You need to pass "%s".'
+        assert tcspc_num_bins is not None, msg % 'tcspc_num_bins'
+        assert tcspc_unit is not None, msg % 'tcspc_unit'
+        print('SET file not found. Using passed TCSPC parameters.')
     else:
         raise IOError("File '%s' not found." % filename_set)
 
@@ -132,18 +135,13 @@ def nsalex_bh(filename_spc,
         creation_time = date_str + ' ' + time_str
         provenance.update({'creation_time': creation_time})
 
-    tcspc_num_bins = 4096
-    if metadata is not None:
-        print('Ignoring arguments `timestamps_units` and `tcspc_range`.')
-        print('These values were retrived from .SET file.')
+    if 'sys_params' in metadata:
+        print('TCSPC parameters retrived from the .SET file.')
         sys_params = metadata['sys_params']
+        tcspc_num_bins = int(sys_params['SP_ADC_RE'])
         tcspc_unit = float(sys_params['SP_TAC_TC'])
-        #tcspc_range = sys_params['SP_TAC_R']
-        tcspc_range = tcspc_num_bins * tcspc_unit
-        timestamps_unit = tcspc_range
-    else:
-        print('Using timestamps_units and tcspc_range from function arguments.')
-        tcspc_unit = tcspc_range / tcspc_num_bins
+        #tcspc_range = sys_params['SP_TAC_R']  # redundant info
+    tcspc_range = tcspc_num_bins * tcspc_unit
 
     photon_data = dict(
         timestamps = timestamps,
@@ -158,7 +156,7 @@ def nsalex_bh(filename_spc,
 
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
-            laser_repetition_rate = laser_repetition_rate,
+            laser_repetition_rate = 1 / timestamps_unit,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),

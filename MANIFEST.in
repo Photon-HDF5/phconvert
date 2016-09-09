@@ -1,2 +1,4 @@
 include versioneer.py
 include phconvert/_version.py
+include LICENSE.txt
+include README.md

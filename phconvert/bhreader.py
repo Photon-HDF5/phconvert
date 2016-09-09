@@ -4,11 +4,23 @@
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
-SPC Format (Beker & Hickl)
---------------------------
+This module contains functions to load and decode files from Becker & Hickl
+hardware.
 
 SPC-600/630:
 48-bit element in little endian (<) format
+=======
+The high-level function in this module are:
+
+- :func:`load_spc` which loads and decoded the photon data from SPC files.
+- :func:`load_set` which returns a dictionary of metadata from SET files.
+
+
+Becker & Hickl SPC Format
+-------------------------
+
+The structure of the SPC format is here described.
+Each record is a 6-bytes element in little endian (<) format.
 
 Drawing (note: each char represents 2 bits)::
 
@@ -46,6 +58,12 @@ SPC-134/144/154/830:
     aux = [invalid, overflow, gap, mark]
 
     If overflow == 1 and invalid == 1 --> number of overflows = [ b ][ c ][ d ]
+
+=======
+The first 6 (4) bytes of a SPC-600/630 (SPC-SPC-134/144/154/830) file are an
+header containing the timestamps_unit (in 0.1ns units) in the two central bytes
+(i.e. bytes 2 and 3).
+
 """
 
 # TODO: automatic board model identification (in a new function?)
@@ -60,10 +78,24 @@ def load_spc(fname, spc_model='SPC-630'):
     spc_model: name of the board model (ex. 'SPC-630')
 
     Returns:
-        3 numpy arrays: timestamps, detector, nanotime
+        3 numpy arrays (timestamps, detector, nanotime) and a float
+        (timestamps_unit).
     """
 
+    f = open(fname, 'rb')
+
     if ('630' in spc_model) or ('600' in spc_model):
+
+        # We first decode the first 6 bytes which is a header...
+        header = np.fromfile(f, dtype='u2', count=3)
+        timestamps_unit = header[1] * 0.1e-9
+        num_routing_bits = np.bitwise_and(header[0], 0x000F)  # unused
+
+        # ...and then the remaining records containing the photon data
+        spc_dtype = np.dtype([('field0', '<u2'), ('b', '<u1'), ('c', '<u1'),
+                            ('a', '<u2')])
+        data = np.fromfile(f, dtype=spc_dtype)
+
         spc_dtype = np.dtype([('field0', '<u2'), ('b', '<u1'), ('c', '<u1'),
                     ('a', '<u2')])
         data = np.fromfile(fname, dtype=spc_dtype)
@@ -84,6 +116,12 @@ def load_spc(fname, spc_model='SPC-630'):
         timestamps += np.left_shift(overflow, 24)
 
     elif ('SPC-1' in spc_model) or ('SPC-830' in spc_model):
+        # We first decode the first 4 bytes which is a header...
+        header = np.fromfile(f, dtype='u4', count=1)[0]
+        timestamps_unit = np.bitwise_and(header, 0x00FFFFFF) * 0.1e-9
+        num_routing_bits = np.bitwise_and(np.right_shift(header, 32), 0x78)  # unused
+
+        # ...and then the remaining records containing the photon data
         spc_dtype = np.dtype([('field0', '<u2'),('field1', '<u2')])
         data = np.fromfile(fname, dtype=spc_dtype)
 
@@ -96,16 +134,19 @@ def load_spc(fname, spc_model='SPC-630'):
         # Extract the various status bits
         mark = np.bitwise_and(np.right_shift(data['field1'], 12), 0x01)
         gap = np.bitwise_and(np.right_shift(data['field1'], 13), 0x01)
-        overflow = np.bitwise_and(np.right_shift(data['field1'], 14), 0x01).astype(dtype='int64')
+        overflow = np.bitwise_and(np.right_shift(data['field1'], 14), 0x01).\
+            astype(dtype='int64')
         invalid = np.bitwise_and(np.right_shift(data['field1'], 15), 0x01)
 
         # Invalid bytes: number of overflows from the last detected photon
         for i_ovf in np.nonzero(overflow)[0].tolist():
             if invalid[i_ovf]:
-                overflow[i_ovf] = np.left_shift(np.bitwise_and(data['field1'][i_ovf], 0x0FFF), 16)\
+                overflow[i_ovf] = np.left_shift(np.bitwise_and(
+                    data['field1'][i_ovf], 0x0FFF), 16)\
                     + data['field0'][i_ovf]
 
-        overflow = np.left_shift(np.cumsum(overflow), 12)  # Each overflow occurs every 2^12 macrotimes
+        # Each overflow occurs every 2^12 macrotimes
+        overflow = np.left_shift(np.cumsum(overflow), 12)
 
         # Add the overflow bits
         timestamps += overflow
@@ -115,8 +156,7 @@ def load_spc(fname, spc_model='SPC-630'):
         timestamps = np.delete(timestamps, invalid.nonzero())
         detector = np.delete(detector, invalid.nonzero())
 
-    return timestamps, detector, nanotime
-
+    return timestamps, detector, nanotime, timestamps_unit
 
 def load_set(fname_set):
     """Return a dict with data from the Becker & Hickl .SET file.
@@ -141,13 +181,13 @@ def bh_set_identification(fname_set):
         line = str(f.readline().strip().decode('utf8'))
         while not line.startswith('*END'):
             item = [s.strip() for s in line.split(':')]
-            if len(item) == 1:
-                # no ':'  ->  it's a new line continuing the previous key
-                value = ' '.join([identification[key], item[0]])
-            else:
+            if len(item) > 1:
                 # found ':'  ->  retrive key and value
                 key = item[0]
                 value = ':'.join(item[1:])
+            else:
+                # no ':' found ->  it's a new line continuing the previous key
+                value = ' '.join([identification[key], item[0]])
             identification[key] = value
             line = str(f.readline().strip().decode('utf8'))
     return identification
@@ -190,7 +230,8 @@ def bh_set_sys_params(fname_set):
     return sys_params
 
 def bh_decode(s):
-    """Decode strings from Becker & Hickl system parameters (.SET file)."""
+    """Replace code strings from .SET files with human readble label strings.
+    """
     s = s.replace('SP_', '')
     s = s.replace('_ZC', ' ZC Thresh.')
     s = s.replace('_LL', ' Limit Low')
@@ -206,7 +247,8 @@ def bh_decode(s):
     return s
 
 def bh_print_sys_params(sys_params):
-    """Print a summary of the Becker & Hickl system parameters (.SET file)."""
+    """Print a summary of the Becker & Hickl system parameters (.SET file).
+    """
     for k, v in sys_params.iteritems():
         if 'TAC' in k: print('%s\t %f' % (bh_decode(k), v))
     print()
@@ -215,4 +257,3 @@ def bh_print_sys_params(sys_params):
     print()
     for k, v in sys_params.iteritems():
         if 'SYN' in k: print('%s\t %f' % (bh_decode(k), v))
-
