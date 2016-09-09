@@ -31,11 +31,14 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h1>
-<a id="phconvert" class="anchor" href="#phconvert" aria-hidden="true"><span class="octicon octicon-link"></span></a>phconvert</h1>
+        <p><a href="https://ci.appveyor.com/project/tritemio/phconvert/branch/master"><img src="https://ci.appveyor.com/api/projects/status/l6ncuo9hwqiul36y/branch/master?svg=true" alt="Build status"></a>
+<a href="https://travis-ci.org/Photon-HDF5/phconvert"><img src="https://travis-ci.org/Photon-HDF5/phconvert.svg?branch=master" alt="Build Status"></a></p>
+
+<h1>
+<a id="phconvert" class="anchor" href="#phconvert" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>phconvert</h1>
 
 <p><em>phconvert</em> is a python 2 &amp; 3 library that helps writing valid
-<a href="http://photon-hdf5.org/" target="_blank">Photon-HDF5</a>
+<a href="http://photon-hdf5.org/">Photon-HDF5</a>
 files, a file format for time stamp-based single-molecule spectroscopy.
 Additionally, <em>phconvert</em> can convert a few common binary formats
 used in in single-molecule spectroscopy (PicoQuant .HT3,
@@ -46,7 +49,7 @@ Becker &amp; Hickl .SPC/.SET) to Photon-HDF5.</p>
 or open an <a href="https://github.com/Photon-HDF5/phconvert/issues">issue on GitHub</a>.</p>
 
 <h2>
-<a id="quick-start-converting-files-to-photon-hdf5" class="anchor" href="#quick-start-converting-files-to-photon-hdf5" aria-hidden="true"><span class="octicon octicon-link"></span></a>Quick-start: Converting files to Photon-HDF5</h2>
+<a id="quick-start-converting-files-to-photon-hdf5" class="anchor" href="#quick-start-converting-files-to-photon-hdf5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Quick-start: Converting files to Photon-HDF5</h2>
 
 <p>Converting one of the supported files formats to Photon-HDF5 does not require
 being able to program in python. All you need is running the "notebook"
@@ -64,13 +67,13 @@ To launch the demo click on the following button
 A quick-start guide on installing and running the <em>Jupyter Notebook App</em> is available here:</p>
 
 <ul>
-<li><a href="http://jupyter-notebook-beginner-guide.readthedocs.org/" target="_blank">Jupyter/IPython Notebook Quick Start Guide</a></li>
+<li><a href="http://jupyter-notebook-beginner-guide.readthedocs.org/">Jupyter/IPython Notebook Quick Start Guide</a></li>
 </ul>
 
 <p>Next, you need to install the <em>phconvert</em> library with the following command
 (type it in <em>Terminal</em> on OS X or Linux, or in the <code>cmd</code> prompt on Windows):</p>
 
-<pre><code>conda install -c tritemio phconvert
+<pre><code>conda install -c conda-forge phconvert
 </code></pre>
 
 <p>Finally, you can download one of the provided notebooks and run it on your machine.
@@ -79,7 +82,7 @@ Simply, download the
 which contains all the notebooks in the <code>notebooks</code> subfolder.</p>
 
 <h3>
-<a id="for-questions-or-issues" class="anchor" href="#for-questions-or-issues" aria-hidden="true"><span class="octicon octicon-link"></span></a>For questions or issues:</h3>
+<a id="for-questions-or-issues" class="anchor" href="#for-questions-or-issues" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>For questions or issues:</h3>
 
 <ul>
 <li>
@@ -88,10 +91,10 @@ which contains all the notebooks in the <code>notebooks</code> subfolder.</p>
 </ul>
 
 <h2>
-<a id="project-details" class="anchor" href="#project-details" aria-hidden="true"><span class="octicon octicon-link"></span></a>Project details</h2>
+<a id="project-details" class="anchor" href="#project-details" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Project details</h2>
 
 <h3>
-<a id="whats-inside" class="anchor" href="#whats-inside" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's inside?</h3>
+<a id="whats-inside" class="anchor" href="#whats-inside" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What's inside?</h3>
 
 <p><em>phconvert</em> repository contains a python package (library) and a set of
 <a href="https://github.com/Photon-HDF5/phconvert/tree/master/notebooks">notebooks</a>
@@ -102,7 +105,7 @@ Each notebook can convert a different format to Photon-HDF5 using the phconvert 
 We are willing add support for as many file formats as possible!</p>
 
 <h3>
-<a id="why-phconvert" class="anchor" href="#why-phconvert" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why phconvert?</h3>
+<a id="why-phconvert" class="anchor" href="#why-phconvert" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why phconvert?</h3>
 
 <p>When writing Photon-HDF5 files, phconvert saves you time
 and protects you against common programming errors that risk
@@ -115,7 +118,7 @@ which contains the list Photon-HDF5 field names, types, and descriptions.</p>
 in the Photon-HDF5 reference documentation.</p>
 
 <h2>
-<a id="read-photon-hdf5-files" class="anchor" href="#read-photon-hdf5-files" aria-hidden="true"><span class="octicon octicon-link"></span></a>Read Photon-HDF5 files</h2>
+<a id="read-photon-hdf5-files" class="anchor" href="#read-photon-hdf5-files" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Read Photon-HDF5 files</h2>
 
 <p>In case you just want to read Photon-HDF5 files you don't need to use phconvert.
 Photon-HDF5 files can be directly opened with a standard HDF5 viewer
@@ -125,11 +128,11 @@ Photon-HDF5 files can be directly opened with a standard HDF5 viewer
 in the Photon-HDF5 reference documentation.</p>
 
 <h2>
-<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
 
-<p>The recommended way to install <em>phconvert</em> is by using conda:</p>
+<p>The recommended way to install <em>phconvert</em> is using conda:</p>
 
-<pre><code>conda install -c tritemio phconvert
+<pre><code>conda install -c conda-forge phconvert
 </code></pre>
 
 <p>If you don't have conda installed, please install the free python distribution
@@ -152,10 +155,10 @@ pick the latest python 3.</p>
 </ul>
 
 <h2>
-<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h2>
+<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dependencies</h2>
 
 <ul>
-<li>python 2.7 (legacy), 3.3 or greater (recommended)</li>
+<li>python 2.7 (legacy), 3.4 or greater (recommended)</li>
 <li>future</li>
 <li>numpy &gt;=1.9</li>
 <li>pytables &gt;=3.1</li>
@@ -169,7 +172,7 @@ when installing via <code>conda</code> all the dependencies are automatically in
 </blockquote>
 
 <h2>
-<a id="the-phconvert-library-documentation-for-developers" class="anchor" href="#the-phconvert-library-documentation-for-developers" aria-hidden="true"><span class="octicon octicon-link"></span></a>The phconvert library documentation (for developers)</h2>
+<a id="the-phconvert-library-documentation-for-developers" class="anchor" href="#the-phconvert-library-documentation-for-developers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The phconvert library documentation (for developers)</h2>
 
 <p>The <em>phconvert</em> API documentation can be found on ReadTheDocs:</p>
 
@@ -178,12 +181,12 @@ when installing via <code>conda</code> all the dependencies are automatically in
 </ul>
 
 <h2>
-<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
 
 <p><em>phconvert</em> is released under the open source <a href="https://raw.githubusercontent.com/Photon-HDF5/phconvert/master/LICENSE.txt">MIT license</a>.</p>
 
 <h2>
-<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contributing</h2>
+<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing</h2>
 
 <p>As with other Photon-HDF5 subprojects, we encourage contributions
 in any form, from simple suggestions, typo fix to the addition of new features.
@@ -195,7 +198,20 @@ as authors in the next software-paper publication.</p>
 <p>For more details see our <a href="http://photon-hdf5.readthedocs.org/en/latest/contributing.html">contribution policy</a>.</p>
 
 <h2>
-<a id="acknowledgements" class="anchor" href="#acknowledgements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Acknowledgements</h2>
+<a id="authors" class="anchor" href="#authors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors</h2>
+
+<p>List of contributors (by lines of code):</p>
+
+<ul>
+<li>Antonino Ingargiola (<a href="https://github.com/tritemio" class="user-mention">@tritemio</a>) </li>
+<li>Ted Laurence (<a href="https://github.com/talaurence" class="user-mention">@talaurence</a>) </li>
+<li>Marco Lamperti (<a href="https://github.com/lampo808" class="user-mention">@lampo808</a>) </li>
+<li>Xavier Michalet (<a href="https://github.com/smXplorer" class="user-mention">@smXplorer</a>) </li>
+<li>Anders Barth (<a href="https://github.com/AndersBarth" class="user-mention">@AndersBarth</a>) </li>
+</ul>
+
+<h2>
+<a id="acknowledgements" class="anchor" href="#acknowledgements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Acknowledgements</h2>
 
 <p>This work was supported by NIH Grant R01-GM95904.</p>
       </section>
