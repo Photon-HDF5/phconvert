@@ -18,14 +18,16 @@ Becker & Hickl SPC Format
 
 The structure of the SPC format is here described.
 
-=======
 
-SPC-600/630:
-48-bit element in little endian (<) format
+SPC-600/630
+~~~~~~~~~~~
 
-Each record is a 6-bytes element in little endian (<) format.
-
-Drawing (note: each char represents 2 bits)::
+SPC-600/630 files have a record of 48-bit (6 bytes)
+in little endian (<) format.
+The first 6 bytes of the file are an header containing
+the `timestamps_unit` (in 0.1ns units) in the two central bytes
+(i.e. bytes 2 and 3).
+In the following drawing each char represents 2 bits::
 
     bit: 64        48                          0
          0000 0000 XXXX XXXX XXXX XXXX XXXX XXXX
@@ -42,7 +44,15 @@ Drawing (note: each char represents 2 bits)::
 
     overflow bit: 13, bit_mask = 2^(13-1) = 4096
 
-SPC-134/144/154/830:
+SPC-134/144/154/830
+~~~~~~~~~~~~~~~~~~~
+
+SPC-134/144/154/830 files have a record of 32-bits (4 bytes) in
+little endian (<) format.
+The first 4 bytes of the file are an header containing the
+`timestamps_unit` (in 0.1ns units) in first two bytes.
+In the following drawing each char represents 2 bits::
+
 
     bit:                     32                0
                              XXXX XXXX XXXX XXXX
@@ -62,11 +72,6 @@ SPC-134/144/154/830:
 
     If overflow == 1 and invalid == 1 --> number of overflows = [ b ][ c ][ d ]
 
-=======
-
-The first 6 (4) bytes of a SPC-600/630 (SPC-SPC-134/144/154/830) file are an
-header containing the timestamps_unit (in 0.1ns units) in the two central bytes
-(i.e. bytes 2 and 3).
 
 """
 
@@ -79,7 +84,9 @@ import numpy as np
 def load_spc(fname, spc_model='SPC-630'):
     """Load data from Becker & Hickl SPC files.
 
-    spc_model: name of the board model (ex. 'SPC-630')
+    Arguments:
+        spc_model (string): name of the board model. Valid values are
+            'SPC-630', 'SPC-134', 'SPC-144', 'SPC-154' and 'SPC-830'.
 
     Returns:
         3 numpy arrays (timestamps, detector, nanotime) and a float
@@ -97,10 +104,10 @@ def load_spc(fname, spc_model='SPC-630'):
 
         # ...and then the remaining records containing the photon data
         spc_dtype = np.dtype([('field0', '<u2'), ('b', '<u1'), ('c', '<u1'),
-                            ('a', '<u2')])
+                              ('a', '<u2')])
         data = np.fromfile(f, dtype=spc_dtype)
 
-        nanotime =  4095 - np.bitwise_and(data['field0'], 0x0FFF)
+        nanotime = 4095 - np.bitwise_and(data['field0'], 0x0FFF)
         detector = data['c']
 
         # Build the macrotime (timestamps) using in-place operation for efficiency
@@ -122,10 +129,10 @@ def load_spc(fname, spc_model='SPC-630'):
         num_routing_bits = np.bitwise_and(np.right_shift(header, 32), 0x78)  # unused
 
         # ...and then the remaining records containing the photon data
-        spc_dtype = np.dtype([('field0', '<u2'),('field1', '<u2')])
+        spc_dtype = np.dtype([('field0', '<u2'), ('field1', '<u2')])
         data = np.fromfile(f, dtype=spc_dtype)
 
-        nanotime =  4095 - np.bitwise_and(data['field1'], 0x0FFF)
+        nanotime = 4095 - np.bitwise_and(data['field1'], 0x0FFF)
         detector = np.bitwise_and(np.right_shift(data['field0'], 12), 0x0F)
 
         # Build the macrotime
@@ -157,6 +164,7 @@ def load_spc(fname, spc_model='SPC-630'):
         detector = np.delete(detector, invalid.nonzero())
 
     return timestamps, detector, nanotime, timestamps_unit
+
 
 def load_set(fname_set):
     """Return a dict with data from the Becker & Hickl .SET file.
