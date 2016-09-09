@@ -138,7 +138,7 @@ For more details see our [contribution policy](http://photon-hdf5.readthedocs.or
 
 ## Authors
 
-List of contributors (by line of code):
+List of contributors (by lines of code):
 
 - Antonino Ingargiola (@tritemio) <tritemio AT gmail.com>
 - Ted Laurence (@talaurence) <laurence2 AT llnl.gov>
