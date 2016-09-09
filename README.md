@@ -36,7 +36,7 @@ A quick-start guide on installing and running the *Jupyter Notebook App* is avai
 Next, you need to install the *phconvert* library with the following command
 (type it in *Terminal* on OS X or Linux, or in the `cmd` prompt on Windows):
 
-    conda install -c tritemio phconvert
+    conda install -c conda-forge phconvert
 
 Finally, you can download one of the provided notebooks and run it on your machine.
 Simply, download the
