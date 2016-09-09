@@ -17,6 +17,12 @@ Becker & Hickl SPC Format
 -------------------------
 
 The structure of the SPC format is here described.
+
+=======
+
+SPC-600/630:
+48-bit element in little endian (<) format
+
 Each record is a 6-bytes element in little endian (<) format.
 
 Drawing (note: each char represents 2 bits)::
@@ -36,16 +42,44 @@ Drawing (note: each char represents 2 bits)::
 
     overflow bit: 13, bit_mask = 2^(13-1) = 4096
 
-The first 6 bytes of a SPC file are an header containing the timestamps_unit
-(in 0.1ns units) in the two central bytes (i.e. bytes 2 and 3).
+SPC-134/144/154/830:
+
+    bit:                     32                0
+                             XXXX XXXX XXXX XXXX
+                             '''-----' '''-----'
+    field names:             a    b    c    d
+
+                             XXXX XXXX XXXX XXXX
+                             '-------' '-------'
+    numpy dtype:              field1    field0
+
+    macrotime = [ d ]       (12 bit)
+    detector  = [ c ]       (4 bit)
+    nanotime  = [ b ]       (12 bit)
+    aux       = [ a ]       (4 bit)
+
+    aux = [invalid, overflow, gap, mark]
+
+    If overflow == 1 and invalid == 1 --> number of overflows = [ b ][ c ][ d ]
+
+=======
+
+The first 6 (4) bytes of a SPC-600/630 (SPC-SPC-134/144/154/830) file are an
+header containing the timestamps_unit (in 0.1ns units) in the two central bytes
+(i.e. bytes 2 and 3).
+
 """
+
+# TODO: automatic board model identification (in a new function?)
 
 from __future__ import print_function, division
 import numpy as np
 
 
-def load_spc(fname):
+def load_spc(fname, spc_model='SPC-630'):
     """Load data from Becker & Hickl SPC files.
+
+    spc_model: name of the board model (ex. 'SPC-630')
 
     Returns:
         3 numpy arrays (timestamps, detector, nanotime) and a float
@@ -53,30 +87,74 @@ def load_spc(fname):
     """
 
     f = open(fname, 'rb')
-    # We first decode the first 6 bytes which is a header...
-    header = np.fromfile(f, dtype='u2', count=3)
-    timestamps_unit = header[1] * 0.1e-9
-    num_routing_bits = np.bitwise_and(header[0], 0x000F)  # unused
 
-    # ...and then the remaining records containing the photon data
-    spc_dtype = np.dtype([('field0', '<u2'), ('b', '<u1'), ('c', '<u1'),
-                          ('a', '<u2')])
-    data = np.fromfile(f, dtype=spc_dtype)
+    if ('630' in spc_model) or ('600' in spc_model):
 
-    nanotime =  4095 - np.bitwise_and(data['field0'], 0x0FFF)
-    detector = data['c']
+        # We first decode the first 6 bytes which is a header...
+        header = np.fromfile(f, dtype='u2', count=3)
+        timestamps_unit = header[1] * 0.1e-9
+        num_routing_bits = np.bitwise_and(header[0], 0x000F)  # unused
 
-    # Build the macrotime (timestamps) using in-place operation for efficiency
-    timestamps = data['b'].astype('int64')
-    np.left_shift(timestamps, 16, out=timestamps)
-    timestamps += data['a']
+        # ...and then the remaining records containing the photon data
+        spc_dtype = np.dtype([('field0', '<u2'), ('b', '<u1'), ('c', '<u1'),
+                            ('a', '<u2')])
+        data = np.fromfile(f, dtype=spc_dtype)
 
-    # extract the 13-th bit from data['field0']
-    overflow = np.bitwise_and(np.right_shift(data['field0'], 13), 1)
-    overflow = np.cumsum(overflow, dtype='int64')
+        nanotime =  4095 - np.bitwise_and(data['field0'], 0x0FFF)
+        detector = data['c']
 
-    # Add the overflow bits
-    timestamps += np.left_shift(overflow, 24)
+        # Build the macrotime (timestamps) using in-place operation for efficiency
+        timestamps = data['b'].astype('int64')
+        np.left_shift(timestamps, 16, out=timestamps)
+        timestamps += data['a']
+
+        # extract the 13-th bit from data['field0']
+        overflow = np.bitwise_and(np.right_shift(data['field0'], 13), 1)
+        overflow = np.cumsum(overflow, dtype='int64')
+
+        # Add the overflow bits
+        timestamps += np.left_shift(overflow, 24)
+
+    elif ('SPC-1' in spc_model) or ('SPC-830' in spc_model):
+        # We first decode the first 4 bytes which is a header...
+        header = np.fromfile(f, dtype='u4', count=1)[0]
+        timestamps_unit = np.bitwise_and(header, 0x00FFFFFF) * 0.1e-9
+        num_routing_bits = np.bitwise_and(np.right_shift(header, 32), 0x78)  # unused
+
+        # ...and then the remaining records containing the photon data
+        spc_dtype = np.dtype([('field0', '<u2'),('field1', '<u2')])
+        data = np.fromfile(f, dtype=spc_dtype)
+
+        nanotime =  4095 - np.bitwise_and(data['field1'], 0x0FFF)
+        detector = np.bitwise_and(np.right_shift(data['field0'], 12), 0x0F)
+
+        # Build the macrotime
+        timestamps = np.bitwise_and(data['field0'], 0x0FFF).astype(dtype='int64')
+
+        # Extract the various status bits
+        mark = np.bitwise_and(np.right_shift(data['field1'], 12), 0x01)
+        gap = np.bitwise_and(np.right_shift(data['field1'], 13), 0x01)
+        overflow = np.bitwise_and(np.right_shift(data['field1'], 14), 0x01).\
+            astype(dtype='int64')
+        invalid = np.bitwise_and(np.right_shift(data['field1'], 15), 0x01)
+
+        # Invalid bytes: number of overflows from the last detected photon
+        for i_ovf in np.nonzero(overflow)[0].tolist():
+            if invalid[i_ovf]:
+                overflow[i_ovf] = np.left_shift(np.bitwise_and(
+                    data['field1'][i_ovf], 0x0FFF), 16)\
+                    + data['field0'][i_ovf]
+
+        # Each overflow occurs every 2^12 macrotimes
+        overflow = np.left_shift(np.cumsum(overflow), 12)
+
+        # Add the overflow bits
+        timestamps += overflow
+
+        # Delete invalid entries
+        nanotime = np.delete(nanotime, invalid.nonzero())
+        timestamps = np.delete(timestamps, invalid.nonzero())
+        detector = np.delete(detector, invalid.nonzero())
 
     return timestamps, detector, nanotime, timestamps_unit
 
