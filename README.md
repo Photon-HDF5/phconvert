@@ -1,6 +1,6 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/l6ncuo9hwqiul36y/branch/master?svg=true)](https://ci.appveyor.com/project/tritemio/phconvert/branch/master) 
+[![Build status](https://ci.appveyor.com/api/projects/status/l6ncuo9hwqiul36y/branch/master?svg=true)](https://ci.appveyor.com/project/tritemio/phconvert/branch/master)
 [![Build Status](https://travis-ci.org/Photon-HDF5/phconvert.svg?branch=master)](https://travis-ci.org/Photon-HDF5/phconvert)
- 
+
 # phconvert
 
 *phconvert* is a python 2 & 3 library that helps writing valid
@@ -84,9 +84,9 @@ in the Photon-HDF5 reference documentation.
 
 ## Installation
 
-The recommended way to install *phconvert* is by using conda:
+The recommended way to install *phconvert* is using conda:
 
-    conda install -c tritemio phconvert
+    conda install -c conda-forge phconvert
 
 If you don't have conda installed, please install the free python distribution
 [Anaconda](https://store.continuum.io/cshop/anaconda/) choosing the python 3
@@ -105,7 +105,7 @@ See also:
 
 ## Dependencies
 
-- python 2.7 (legacy), 3.3 or greater (recommended)
+- python 2.7 (legacy), 3.4 or greater (recommended)
 - future
 - numpy >=1.9
 - pytables >=3.1
@@ -135,6 +135,16 @@ All the contributors will be acknowledged in this website, and will included
 as authors in the next software-paper publication.
 
 For more details see our [contribution policy](http://photon-hdf5.readthedocs.org/en/latest/contributing.html).
+
+## Authors
+
+List of contributors (by line of code):
+
+- Antonino Ingargiola (@tritemio) <tritemio AT gmail.com>
+- Ted Laurence (@talaurence) <laurence2 AT llnl.gov>
+- Marco Lamperti (@lampo808) <marco.lampo AT gmail.com>
+- Xavier Michalet (@smXplorer) <michalet AT chem.ucla.edu>
+- Anders Barth (@AndersBarth) <anders.barth AT gmail.com>
 
 ## Acknowledgements
 This work was supported by NIH Grant R01-GM95904.
