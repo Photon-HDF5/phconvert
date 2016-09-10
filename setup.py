@@ -8,7 +8,15 @@ long_description = """
 phconvert
 ==========
 
-Convert and write `Photon-HDF5 <http://photon-hdf5.org/>`_ files.
+Convert Beker&Hickl, PicoQuant and other formats used in single-molecule
+spectroscopy (e.g. smFRET, FCS, PIFE) to
+`Photon-HDF5 <http://photon-hdf5.org/>`_ files.
+
+Easy install via conda with::
+
+    conda install phconvert -c conda-forge
+
+See `Release Notes <https://github.com/Photon-HDF5/phconvert/releases>`__.
 
 """
 
@@ -22,7 +30,7 @@ setup(name = project_name,
       install_requires = ['numpy', 'setuptools', 'tables', 'future'],
       include_package_data=True,
       license = 'MIT',
-      description = ("Convert and write Photon-HDF5 files."),
+      description = ("Convert Beker&Hickl, PicoQuant and other formats to Photon-HDF5."),
       long_description = long_description,
       platforms = ('Windows', 'Linux', 'Mac OS X'),
       classifiers=['Intended Audience :: Science/Research',
