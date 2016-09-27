@@ -182,7 +182,7 @@ def ht3_reader(filename):
             ('InputOffset',       'int32'),
             ('InputRate',         'int32')])
         inputs = np.fromfile(f, input_dtype,
-                             count=hardware3['InpChansPresent'])
+                             count=hardware3['InpChansPresent'][0])
 
         # Time tagging mode specific header
         ttmode_dtype = np.dtype([
@@ -196,10 +196,10 @@ def ht3_reader(filename):
         # Special header for imaging. How many of the following ImgHdr
         # array elements are actually present in the file is indicated by
         # ImgHdrSize above.
-        ImgHdr = np.fromfile(f, dtype='int32', count=ttmode['ImgHdrSize'])
+        ImgHdr = np.fromfile(f, dtype='int32', count=ttmode['ImgHdrSize'][0])
 
         # The remainings are all T3 records
-        t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'])
+        t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'][0])
 
         timestamps_unit = 1./ttmode['SyncRate']
         nanotimes_unit = 1e-12*header['Resolution']
