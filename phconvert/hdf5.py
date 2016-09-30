@@ -603,6 +603,8 @@ def _normalize_detectors_specs(data_dict):
 
 def _normalize_setup_arrays(data_dict):
     """Make sure arrays of float in setup are arrays of floats."""
+    if 'setup' not in data_dict:
+        return
     # Convert sequences of strings in 'setup' in arrays of floats
     # Useful when input is from YAML whose parser retrives floats a strings
     setup = data_dict['setup']
