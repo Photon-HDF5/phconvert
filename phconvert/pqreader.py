@@ -30,6 +30,9 @@ from past.builtins import xrange
 from builtins import zip
 
 import os
+import struct
+import time
+from collections import OrderedDict
 import numpy as np
 
 has_numba = True
@@ -38,6 +41,49 @@ try:
 except ImportError:
     has_numba = False
 
+
+def load_ptu(filename, ovcfunc=None):
+    """Load data from a PicoQuant .ptu file.
+
+    Arguments:
+        filename (string): the path of the PTU file to be loaded.
+        ovcfunc (function or None): function to use for overflow/rollover
+            correction of timestamps. If None, it defaults to the
+            fastest available implementation for the current machine.
+
+    Returns:
+        A tuple of timestamps, detectors, nanotimes (integer arrays) and a
+        dictionary with metadata containing the keys
+        'timestamps_unit', 'nanotimes_unit', 'acquisition_duration' and
+        'tags'. The value of 'tags' is an OrderedDict of tags contained
+        in the PTU file header. Each item in the OrderedDict has 'idx', 'type'
+        and 'value' keys. Some tags also have a 'data' key.
+
+    """
+    assert os.path.isfile(filename), "File '%s' not found." % filename
+
+    t3records, timestamps_unit, nanotimes_unit, record_type, tags = \
+        ptu_reader(filename)
+
+    if record_type == 'rtPicoHarpT3':
+        detectors, timestamps, nanotimes = process_t3records(t3records,
+                time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
+                ovcfunc=ovcfunc)
+    elif record_type == 'rtHydraHarp2T3':
+        detectors, timestamps, nanotimes = process_t3records(t3records,
+                time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
+                ovcfunc=ovcfunc)
+    else:
+        msg = ('Sorry, decoding "%s" record type is not implemented!' %
+               record_type)
+        raise NotImplementedError(msg)
+
+    acquisition_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3
+    meta = {'timestamps_unit': timestamps_unit,
+            'nanotimes_unit': nanotimes_unit,
+            'acquisition_duration': acquisition_duration,
+            'tags': tags}
+    return timestamps, detectors, nanotimes, meta
 
 def load_ht3(filename, ovcfunc=None):
     """Load data from a PicoQuant .ht3 file.
@@ -324,6 +370,148 @@ def pt3_reader(filename):
                         router=router, ttmode=ttmode, imghdr=ImgHdr)
         return t3records, timestamps_unit, nanotimes_unit, metadata
 
+
+def ptu_reader(filename):
+    """Load raw t3 records and metadata from a PTU file.
+    """
+    # All the info about the PTU format has been inferred from PicoQuant demo:
+    # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PTU/cc/ptudemo.cc
+
+    # Constants used to decode the header
+    FileTagEnd = "Header_End"  # Last tag of the header (BLOCKEND)
+    # Tag Types
+    _ptu_tag_type = dict(
+        tyEmpty8      = 0xFFFF0008,
+        tyBool8       = 0x00000008,
+        tyInt8        = 0x10000008,
+        tyBitSet64    = 0x11000008,
+        tyColor8      = 0x12000008,
+        tyFloat8      = 0x20000008,
+        tyTDateTime   = 0x21000008,
+        tyFloat8Array = 0x2001FFFF,
+        tyAnsiString  = 0x4001FFFF,
+        tyWideString  = 0x4002FFFF,
+        tyBinaryBlob  = 0xFFFFFFFF,
+        )
+
+    # Record Types
+    _ptu_rec_type = dict(
+        rtPicoHarpT3     = 0x00010303,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $03 (PicoHarp)
+        rtPicoHarpT2     = 0x00010203,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $03 (PicoHarp)
+        rtHydraHarpT3    = 0x00010304,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $04 (HydraHarp)
+        rtHydraHarpT2    = 0x00010204,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $04 (HydraHarp)
+        rtHydraHarp2T3   = 0x01010304,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $03 (T3), HW: $04 (HydraHarp)
+        rtHydraHarp2T2   = 0x01010204,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $02 (T2), HW: $04 (HydraHarp)
+        rtTimeHarp260NT3 = 0x00010305,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $05 (TimeHarp260N)
+        rtTimeHarp260NT2 = 0x00010205,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
+        rtTimeHarp260PT3 = 0x00010306,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
+        rtTimeHarp260PT2 = 0x00010206,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
+        )
+
+    # Reverse mappings
+    _ptu_tag_type_r = {v: k for k, v in _ptu_tag_type.items()}
+    _ptu_rec_type_r = {v: k for k, v in _ptu_rec_type.items()}
+
+    # Load only the first few bytes to see is file is valid
+    with open(filename, 'rb') as f:
+        magic = f.read(8).rstrip(b'\0')
+        version = f.read(8).rstrip(b'\0')
+    if magic != b'PQTTTR':
+        raise IOError("This file is not a valid PTU file. "
+                      "Magic: '%s'." % magic)
+
+    # Now load the entire file
+    with open(filename, 'rb') as f:
+        s = f.read()
+
+    # Decode the header and save data in the OrderedDict `tags`
+    # Each item in `tags` is a dict as returned by _ptu_read_tag()
+    offset = 16
+    tag_end_offset = s.find(FileTagEnd.encode())
+
+    tags = OrderedDict()
+    tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
+    tags[tagname] = tag
+    while offset < tag_end_offset:
+        tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
+        tags[tagname] = tag
+
+    # A view of the t3recods as a numpy array (no new memory is allocated)
+    num_records = tags['TTResult_NumberOfRecords']['value']
+    t3records = np.frombuffer(s, dtype='uint32', count=num_records,
+                              offset=offset)
+
+    # Get some metadata
+    timestamps_unit = 1 / tags['TTResult_SyncRate']['value']
+    nanotimes_unit = tags['MeasDesc_Resolution']['value']
+    record_type = _ptu_rec_type_r[tags['TTResultFormat_TTTRRecType']['value']]
+    return t3records, timestamps_unit, nanotimes_unit, record_type, tags
+
+def _ptu_print_tags(tags):
+    """Print a table of tags from a PTU file header."""
+    line = '{:30s} %s {:8}  {:12} '
+    for n in tags:
+        value_fmt = '{:>20}'
+        if tags[n]['type'] == 'tyFloat8':
+            value_fmt = '{:20.4g}'
+        endline = '\n'
+        if tags[n]['type'] == 'tyAnsiString':
+            endline = tags[n]['data'] + '\n'  # hic sunt leones
+        print((line % value_fmt).format(n, tags[n]['value'], tags[n]['idx'], tags[n]['type']),
+              end=endline)
+
+def _ptu_read_tag(s, offset, tag_type_r):
+    """Decode a single tag from the PTU header struct.
+
+    Returns:
+        A dict with tag data. The keys 'idx', 'type' and 'value' are present
+        in all tags. The key 'data' is present only for a few types of tags.
+    """
+    # Struct fields: 32-char string, int32, uint32, int64
+    tag_struct = struct.unpack('32s i I q', s[offset:offset + 48])
+    offset += 48
+    # and save it into a dict
+    tagname = tag_struct[0].rstrip(b'\0').decode()
+    keys = ('idx', 'type', 'value')
+    tag = {k: v for k, v in zip(keys, tag_struct[1:])}
+    # Recover the name of the type (a string)
+    tag['type'] = tag_type_r[tag['type']]
+
+    # Some tag types need conversion
+    if tag['type'] == 'tyFloat8':
+        tag['value'] = np.int64(tag['value']).view('float64')
+    elif tag['type'] == 'tyBool8':
+        tag['value'] = bool(tag['value'])
+    elif tag['type'] == 'tyTDateTime':
+        TDateTime = np.uint64(tag['value']).view('float64')
+        t = time.gmtime(_ptu_TDateTime_to_time_t(TDateTime))
+        tag['value'] = time.strftime("%Y-%m-%d %H:%M:%S", t)
+
+    # Some tag types have additional data
+    if tag['type'] == 'tyAnsiString':
+        tag['data'] = s[offset: offset + tag['value']].rstrip(b'\0').decode()
+        offset += tag['value']
+    elif tag['type'] == 'tyFloat8Array':
+        tag['data'] = np.frombuffer(s, dtype='float', count=tag['value'] / 8)
+        offset += tag['value']
+    elif tag['type'] == 'tyWideString':
+        # WideString use type WCHAR in the original C++ demo code.
+        # WCHAR size is not fixed by C++ standard, but on windows
+        # is 2 bytes and the default encoding is UTF-16.
+        # I'm assuming this is what the PTU requires.
+        tag['data'] = s[offset: offset + tag['value'] * 2].decode('utf16')
+        offset += tag['value']
+    elif tag['type'] == 'tyBinaryBlob':
+        tag['data'] = s[offset: offset + tag['value']]
+        offset += tag['value']
+
+    return tagname, tag, offset
+
+def _ptu_TDateTime_to_time_t(TDateTime):
+    """Convert the weird time encoding used in PTU files to standard time_t."""
+    EpochDiff = 25569  # days between 30/12/1899 and 01/01/1970
+    SecsInDay = 86400  # number of seconds in a day
+    return (TDateTime - EpochDiff) * SecsInDay
 
 def process_t3records(t3records, time_bit=10, dtime_bit=15,
                       ch_bit=6, special_bit=True, ovcfunc=None):
