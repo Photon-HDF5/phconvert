@@ -7,15 +7,18 @@
 This module contains functions to load and decode files from PicoQuant
 hardware.
 
-The primary exported functions are:
+The three main functions to decode PTU, HT3 adn PT3 files are respectively:
 
-- :func:`load_ht3` which returns decoded
-  timestamps, detectors, nanotimes and metadata from an HT3 file.
-- :func:`load_pt3` which returns decoded
-  timestamps, detectors, nanotimes and metadata from a PT3 file.
+- :func:`load_ptu`
+- :func:`load_ht3`
+- :func:`load_pt3`
+
+These functions return the arrays timestamps, detectors, nanotimes and an
+additional metadata dict.
 
 Other lower level functions are:
 
+- :func:`ptu_reader` which loads metadata and raw t3 records from PTU files
 - :func:`ht3_reader` which loads metadata and raw t3 records from HT3 files
 - :func:`pt3_reader` which loads metadata and raw t3 records from PT3 files
 - :func:`process_t3records` which decodes the t3 records returning
