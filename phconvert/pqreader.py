@@ -641,6 +641,17 @@ def _correct_overflow_nsync(timestamps, detectors, overflow_ch, overflow):
     #timestamps[index_overflows] = cum_overflows
 
 
+def _correct_overflow_nsync_naive(timestamps, detectors, overflow_ch, overflow):
+    """Slow implementation of `_correct_overflow_nsync` used for testing.
+    """
+    overflow_correction = 0
+    for i in range(detectors.size):
+        if detectors[i] == overflow_ch:
+            overflow_correction += (overflow * timestamps[i])
+        else:
+            timestamps[i] += overflow_correction
+
+
 if has_numba:
     _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
         _correct_overflow1)
