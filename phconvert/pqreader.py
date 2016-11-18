@@ -432,7 +432,7 @@ def ptu_reader(filename):
     # Decode the header and save data in the OrderedDict `tags`
     # Each item in `tags` is a dict as returned by _ptu_read_tag()
     offset = 16
-    tag_end_offset = s.find(FileTagEnd.encode())
+    tag_end_offset = s.find(FileTagEnd.encode()) + len(FileTagEnd)
 
     tags = OrderedDict()
     tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
@@ -440,6 +440,9 @@ def ptu_reader(filename):
     while offset < tag_end_offset:
         tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
         tags[tagname] = tag
+
+    # Make sure we have read the last tag
+    assert list(tags.keys())[-1] == FileTagEnd
 
     # A view of the t3recods as a numpy array (no new memory is allocated)
     num_records = tags['TTResult_NumberOfRecords']['value']
@@ -585,16 +588,15 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     if special_bit:
         ch_bit += 1
     assert ch_bit <= 8
-    assert dtime_bit <= 16
+    assert time_bit <= 16
+    assert time_bit + dtime_bit + ch_bit == 32
 
     detectors = np.bitwise_and(
         np.right_shift(t3records, time_bit + dtime_bit), 2**ch_bit - 1).astype('uint8')
     nanotimes = np.bitwise_and(
         np.right_shift(t3records, time_bit), 2**dtime_bit - 1).astype('uint16')
 
-    assert time_bit <= 16
     dt = np.dtype([('low16', 'uint16'), ('high16', 'uint16')])
-
     t3records_low16 = np.frombuffer(t3records, dt)['low16']     # View
     timestamps = t3records_low16.astype(np.int64)               # Copy
     np.bitwise_and(timestamps, 2**time_bit - 1, out=timestamps)
