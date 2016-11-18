@@ -77,7 +77,7 @@ def load_ptu(filename, ovcfunc=None):
                          'rtTimeHarp260PT3'):
         detectors, timestamps, nanotimes = process_t3records(t3records,
                 time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
-                ovcfunc=ovcfunc)
+                ovcfunc=_correct_overflow_nsync)
     else:
         msg = ('Sorry, decoding "%s" record type is not implemented!' %
                record_type)
@@ -609,6 +609,8 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     return detectors, timestamps, nanotimes
 
 def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
+    """Apply overflow correction when each overflow has a special timestamp.
+    """
     overflow_correction = 0
     for i in xrange(detectors.size):
         if detectors[i] == overflow_ch:
@@ -616,12 +618,28 @@ def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
         timestamps[i] += overflow_correction
 
 def _correct_overflow2(timestamps, detectors, overflow_ch, overflow):
+    """Apply overflow correction when each overflow has a special timestamp.
+    """
     print('NOTE: You can speed-up the loading time by installing numba.')
     index_overflows = np.where((detectors == overflow_ch))[0]
     for n, (idx1, idx2) in enumerate(zip(index_overflows[:-1],
                                          index_overflows[1:])):
         timestamps[idx1:idx2] += (n + 1)*overflow
     timestamps[idx2:] += (n + 2)*overflow
+
+
+def _correct_overflow_nsync(timestamps, detectors, overflow_ch, overflow):
+    """Apply overflow correction when ov. timestamps contain # of overflows
+    """
+    index_overflows = np.where((detectors == overflow_ch))
+    num_overflows = timestamps[index_overflows]
+    cum_overflows = np.zeros(timestamps.size, dtype='int64')
+    cum_overflows[index_overflows] = num_overflows
+    np.cumsum(cum_overflows, out=cum_overflows)
+    timestamps += (cum_overflows * overflow)
+    # put nsync back in the overflow timestamps
+    #timestamps[index_overflows] = cum_overflows
+
 
 if has_numba:
     _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(

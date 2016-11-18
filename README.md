@@ -7,7 +7,7 @@
 <a href="http://photon-hdf5.org/" target="_blank">Photon-HDF5</a>
 files, a file format for time stamp-based single-molecule spectroscopy.
 Additionally, *phconvert* can convert a few common binary formats
-used in in single-molecule spectroscopy (PicoQuant .HT3,
+used in in single-molecule spectroscopy (PicoQuant .HT3/.PT3/.PTU,
 Becker & Hickl .SPC/.SET) to Photon-HDF5.
 
 For questions or issues running this software please use the
