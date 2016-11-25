@@ -45,6 +45,7 @@ before_script:
     - wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
 
 script:
+    - cd ../..
     - pwd
     - py.test -v
     - cd notebooks
