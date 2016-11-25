@@ -28,8 +28,7 @@ install:
   - conda update -q conda
   - conda install -q conda-build
   - conda info -a
-  - conda config --add channels tritemio
-  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy matplotlib pytables pytest seaborn numba nbconvert ipykernel"
+  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy matplotlib pytables pytest seaborn numba nbconvert ipykernel pandas"
   - activate test-environment
   - path
   - python -m pip install --upgrade pip
@@ -54,7 +53,7 @@ before_test:
   - 7z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
   - ps: wget https://www.dropbox.com/s/s8zzxcq7d2nfqe0/20161027_DM1_1nM_pH7_20MHz1.ptu.zip -OutFile 20161027_DM1_1nM_pH7_20MHz1.ptu.zip
   - 7z e 20161027_DM1_1nM_pH7_20MHz1.ptu.zip
-  - ps: wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3 -OutFile topfluorPE_2_1_1_1.pt3 
+  - ps: wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3 -OutFile topfluorPE_2_1_1_1.pt3
 
 test_script:
   - cd %APPVEYOR_BUILD_FOLDER%
