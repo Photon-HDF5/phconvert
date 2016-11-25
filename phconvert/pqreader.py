@@ -648,8 +648,7 @@ def _correct_overflow_nsync_naive(timestamps, detectors, overflow_ch, overflow):
     for i in range(detectors.size):
         if detectors[i] == overflow_ch:
             overflow_correction += (overflow * timestamps[i])
-        else:
-            timestamps[i] += overflow_correction
+        timestamps[i] += overflow_correction
 
 
 if has_numba:
