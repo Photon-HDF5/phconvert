@@ -25,19 +25,29 @@ before_install:
 
 
 install:
-    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip numpy matplotlib pytables numba nbconvert ipykernel
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip numpy matplotlib pytables numba nbconvert ipykernel pytest
     - source activate test-environment
     - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install pathlib ; fi
     - python setup.py install
 
 before_script:
     - cd notebooks
+    - mkdir data
+    - cd data
     - wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
     - wget https://ndownloader.figshare.com/files/3350669 -O dsdna_d7d17_50_50_1.spc
     - wget https://ndownloader.figshare.com/files/3350672 -O Pre.ht3
     - wget https://ndownloader.figshare.com/files/3350663 -O 0023uLRpitc_NTP_20dT_0.5GndCl.sm
+    - wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
+    - unzip Cy3.Cy5_diff_PIE-FRET.ptu.zip
+    - wget https://www.dropbox.com/s/s8zzxcq7d2nfqe0/20161027_DM1_1nM_pH7_20MHz1.ptu.zip
+    - unzip 20161027_DM1_1nM_pH7_20MHz1.ptu.zip
+    - wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
 
 script:
+    - cd ..
+    - py.test -v
+    - cd notebooks
     - python $TRAVIS_BUILD_DIR/tests/nbrun.py
 
 sudo: false

@@ -43,18 +43,22 @@ install:
 
 before_test:
   - cd %APPVEYOR_BUILD_FOLDER%\notebooks
-  #- mkdir data
-  #- cd data
+  - mkdir data
+  - cd data
   - dir
   - ps: wget https://ndownloader.figshare.com/files/3350666 -OutFile dsdna_d7d17_50_50_1.set
   - ps: wget https://ndownloader.figshare.com/files/3350669 -OutFile dsdna_d7d17_50_50_1.spc
   - ps: wget https://ndownloader.figshare.com/files/3350672 -OutFile Pre.ht3
   - ps: wget https://ndownloader.figshare.com/files/3350663 -OutFile 0023uLRpitc_NTP_20dT_0.5GndCl.sm
-  #- ps: wget http://files.figshare.com/2182601/0023uLRpitc_NTP_20dT_0.5GndCl.hdf5 -OutFile 0023uLRpitc_NTP_20dT_0.5GndCl.hdf5
+  - ps: wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
+  - 7z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
+  - ps: wget https://www.dropbox.com/s/s8zzxcq7d2nfqe0/20161027_DM1_1nM_pH7_20MHz1.ptu.zip
+  - 7z e 20161027_DM1_1nM_pH7_20MHz1.ptu.zip
+  - ps: wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
 
 test_script:
-  #- cd %APPVEYOR_BUILD_FOLDER%
-  #- py.test -v
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - py.test -v
   - cd %APPVEYOR_BUILD_FOLDER%\notebooks
   - python %APPVEYOR_BUILD_FOLDER%/tests/nbrun.py
 
