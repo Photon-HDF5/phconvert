@@ -29,7 +29,7 @@ can take advantage of numba, if installed, to significanly speed-up
 the processing.
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
 from past.builtins import xrange
 from builtins import zip
 
