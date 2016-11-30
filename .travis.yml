@@ -40,6 +40,7 @@ before_script:
     - wget https://ndownloader.figshare.com/files/3350663 -O 0023uLRpitc_NTP_20dT_0.5GndCl.sm
     - wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
     - unzip Cy3.Cy5_diff_PIE-FRET.ptu.zip
+    - wget https://ndownloader.figshare.com/files/6955091 -O 161128_DM1_50pM_pH74.ptu
     - wget https://www.dropbox.com/s/s8zzxcq7d2nfqe0/20161027_DM1_1nM_pH7_20MHz1.ptu.zip
     - unzip 20161027_DM1_1nM_pH7_20MHz1.ptu.zip
     - wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3

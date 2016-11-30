@@ -9,16 +9,21 @@ DATADIR = 'notebooks/data/'
 
 
 def dataset1():
-    fn = '20161027_DM1_1nM_pH7_20MHz1.ptu'
+    fn = '161128_DM1_50pM_pH74.ptu'
     fname = DATADIR + fn
     return fname
 
 def dataset2():
+    fn = '20161027_DM1_1nM_pH7_20MHz1.ptu'
+    fname = DATADIR + fn
+    return fname
+
+def dataset3():
     fn = 'Cy3+Cy5_diff_PIE-FRET.ptu'
     fname = DATADIR + fn
     return fname
 
-@pytest.fixture(scope="module", params=[dataset1, dataset2])
+@pytest.fixture(scope="module", params=[dataset1, dataset2, dataset3])
 def filename(request):
     fname = request.param()
     return fname
