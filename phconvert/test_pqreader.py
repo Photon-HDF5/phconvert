@@ -80,10 +80,5 @@ def test_load_pt3():
     timestamps, detectors, nanotimes, meta = phc.pqreader.load_pt3(filename)
     acq_duration = meta['header']['AcquisitionTime'] * 1e-3
     acq_duration2 = (timestamps[-1] - timestamps[0]) * meta['timestamps_unit']
-    # The two acquisition times should match. TODO: why they don't
+    # The two acquisition times should match. TODO: find out why they don't
     #assert abs(acq_duration - acq_duration2) < 0.1   ## BROKEN TEST!
-
-
-
-if __name__ == '__main__':
-    pytest.main("-x -v fretbursts/tests/test_burstlib.py")
