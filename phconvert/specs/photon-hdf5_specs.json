@@ -123,10 +123,6 @@
         "Pixel IDs for the second channel split through a non-polarizing beam splitter.",
         "array"
     ],
-    "/setup/measurement_specs/detectors_specs/labels": [
-        "User defined labels for each pixel IDs. In smFRET it is suggested to use \"donor\" and \"acceptor\" for the respective pixel IDs.",
-        "string"
-    ],
     "/setup/num_pixels": [
         "Total number of detector pixels.",
         "scalar"
