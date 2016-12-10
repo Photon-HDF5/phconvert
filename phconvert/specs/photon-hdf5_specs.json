@@ -144,7 +144,7 @@
         "scalar"
     ],
     "/setup/excitation_alternated": [
-        "New in version 0.5. Indicates whether each excitation source is alternated (True, or 1) or not alternated (False, or 0)."
+        "New in version 0.5. Indicates whether each excitation source is alternated (True, or 1) or not alternated (False, or 0).",
         "array"
     ],
     "/setup/lifetime": [

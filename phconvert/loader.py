@@ -70,7 +70,8 @@ def usalex_sm(
         lifetime = False,
         excitation_wavelengths = excitation_wavelengths,
         excitation_cw = [True, True],
-        detection_wavelengths = detection_wavelengths)
+        detection_wavelengths = detection_wavelengths,
+        excitation_alternated=[True, True])
 
     provenance = dict(filename=filename, software=software)
     acquisition_duration = (timestamps[-1] - timestamps[0]) * 12.5e-9
@@ -173,7 +174,8 @@ def nsalex_bh(filename_spc,
         lifetime = True,
         excitation_wavelengths = excitation_wavelengths,
         excitation_cw = [False, False],
-        detection_wavelengths = detection_wavelengths)
+        detection_wavelengths = detection_wavelengths,
+        excitation_alternated = [False, False])
 
     acquisition_duration = ((timestamps.max() - timestamps.min()) *
                             timestamps_unit)
@@ -257,7 +259,8 @@ def nsalex_ht3(filename,
         lifetime = True,
         excitation_wavelengths = excitation_wavelengths,
         excitation_cw = [False, False],
-        detection_wavelengths = detection_wavelengths)
+        detection_wavelengths = detection_wavelengths,
+        excitation_alternated = [False, False])
 
     data = dict(
         _filename=filename,

@@ -838,6 +838,7 @@ def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
         for name in optional_fields:
             _assert_has_field(name, h5file.root.setup, mandatory=False,
                               verbose=verbose)
+        # TODO: add test for excitation_alternated in nsALEX measurements
 
 def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
     """Assert that identity group exists and contains the mandatory fields.
@@ -948,13 +949,17 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     # Read number of channels in each branch
     num_ch = dict(spectral=setup.num_spectral_ch.read(),
                   split=setup.num_split_ch.read(),
-                  polarization=setup.num_spectral_ch.read())
+                  polarization=setup.num_polarization_ch.read())
 
     # Check for spectral channels
     if meas_type in ('smFRET', 'smFRET-usALEX', 'smFRET-nsALEX'):
-        _assert_valid(num_ch['spectral'] == 2)
+        _msg = ('%s measurement requires /setup/num_spectral_ch = 2 (not %d).' %
+               (meas_type, num_ch['spectral']))
+        _assert_valid(num_ch['spectral'] == 2, msg=_msg)
     if meas_type == 'smFRET-usALEX-3c':
-        _assert_valid(num_ch['spectral'] == 3)
+        _msg = ('%s measurement requires /setup/num_spectral_ch = 3 (not %d).' %
+               (meas_type, num_ch['spectral']))
+        _assert_valid(num_ch['spectral'] == 3, msg=_msg)
 
     # Check for spectral/split/polarization channels
     for feature, nch in num_ch.items():
@@ -974,7 +979,8 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     # TCSPC fields
     if meas_type == 'smFRET-nsALEX':
         _assert_has_field('lifetime', setup, **kwargs)
-        _assert_valid(setup.lifetime.read())
+        _assert_valid(setup.lifetime.read(),
+                      msg='smFRET-nsALEX requires lifetime = True.')
 
     if 'lifetime' in setup and setup.lifetime.read():
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
