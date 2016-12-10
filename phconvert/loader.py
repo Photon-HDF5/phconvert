@@ -49,7 +49,9 @@ def usalex_sm(
         timestamps = timestamps,
         timestamps_specs = dict(timestamps_unit=12.5e-9),
         detectors = detectors,
+    )
 
+    setup = dict(
         measurement_specs = dict(
             measurement_type = 'smFRET-usALEX',
             alex_period = alex_period,
@@ -57,10 +59,7 @@ def usalex_sm(
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
-                                   spectral_ch2 = np.atleast_1d(acceptor)))
-    )
-
-    setup = dict(
+                                   spectral_ch2 = np.atleast_1d(acceptor))),
         num_pixels = 2,
         num_spots = 1,
         num_spectral_ch = 2,
@@ -154,17 +153,16 @@ def nsalex_bh(filename_spc,
             tcspc_unit = tcspc_unit,
             tcspc_range = tcspc_range,
             tcspc_num_bins = tcspc_num_bins),
+    )
 
+    setup = dict(
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
             laser_repetition_rate = 1 / timestamps_unit,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
-                                   spectral_ch2 = np.atleast_1d(acceptor)))
-    )
-
-    setup = dict(
+                                   spectral_ch2 = np.atleast_1d(acceptor))),
         num_pixels = 2,
         num_spots = 1,
         num_spectral_ch = 2,
@@ -239,17 +237,16 @@ def nsalex_ht3(filename,
             tcspc_unit = tcspc_unit,
             tcspc_range = tcspc_range,
             tcspc_num_bins = tcspc_num_bins),
+    )
 
+    setup = dict(
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
             laser_repetition_rate = laser_repetition_rate,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
-                                   spectral_ch2 = np.atleast_1d(acceptor)))
-    )
-
-    setup = dict(
+                                   spectral_ch2 = np.atleast_1d(acceptor))),
         num_pixels = 2,
         num_spots = 1,
         num_spectral_ch = 2,

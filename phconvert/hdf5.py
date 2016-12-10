@@ -202,6 +202,15 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                             obj=item['value'], descr=item['description'],
                             chunked=item['is_phdata'], h5file=group._v_file)
 
+
+def _link_measurement_specs(h5file):
+    if 'setup' in h5file.root and 'measurement_specs' in h5file.root.setup:
+        link_kws = dict(name='measurement_specs',
+                        target='/setup/measurement_specs')
+        for ph_data in _sorted_photon_data_tables(h5file):
+            h5file.create_hard_link(ph_data, **link_kws)
+
+
 def save_photon_hdf5(data_dict,
                      h5_fname = None,
                      user_descr = None,
@@ -248,7 +257,14 @@ def save_photon_hdf5(data_dict,
     - `/setup/num_spectral_ch` (int): number of detection spectral bands
     - `/setup/num_polarization_ch` (int): number of detected polarization states
     - `/setup/num_split_ch` (int): number of beam splitted channels
-    - `/setup/modulated_excitation` (bool): True if excitation is alternated.
+    - `/setup/modulated_excitation` (bool): True if there is any form of intensity
+      or polarization modulation or interleaved excitation (PIE or nsALEX).
+      This field has become obsolete in version 0.5 and maintained only for
+      compatibility.
+    - `/setup/excitation_alternated` (array of bool): New in version 0.5.
+      Values are True if excitation the excitation source is
+      intensity-modulated, otherwise False. While in us-ALEX bot sources are
+      alternated, in PAX measurements only one source is alternated.
     - `/setup/lifetime` (bool): True if dataset contains TCSPC data.
 
     See also
@@ -314,7 +330,7 @@ def save_photon_hdf5(data_dict,
     title = official_fields_specs['/'][0].encode()
     h5file = tables.open_file(h5_fname, mode="w", title=title,
                               filters=comp_filter)
-    # Saving a file reference is useful in case of error
+    # Saving a file reference, useful in case of errors
     data_dict.update(_data_file=h5file)
 
     ## Identity info needs to be added after the file is created
@@ -330,6 +346,7 @@ def save_photon_hdf5(data_dict,
         fields_descr.update(user_descr)
     _save_photon_hdf5_dict(h5file.root, data_dict,
                            fields_descr=fields_descr, debug=debug)
+    _link_measurement_specs(h5file)
     h5file.flush()
 
     ## Validation
@@ -879,7 +896,8 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
         #msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
         #_assert_valid(isinstance(title, bytes), msg, strict=strict_description)
 
-        if pathname.endswith('/user') or '/user/' in pathname:
+        if (metaname.startswith('/photon_data/measurement_specs') or
+                pathname.endswith('/user') or '/user/' in pathname):
             pass
         else:
             # Check field names
@@ -923,14 +941,14 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     if 'measurement_specs' not in ph_data:
         if not skip_measurement_specs:
             # Called to print a warning
-            _assert_has_field('measurement_specs', ph_data, mandatory=False,
+            _assert_has_field('measurement_specs', setup, mandatory=False,
                               verbose=verbose, norepeat=norepeat, pool=pool)
         return
 
     all_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
                       'smFRET-nsALEX', 'generic']
 
-    meas_specs = ph_data.measurement_specs
+    meas_specs = setup.measurement_specs
     msg = 'Missing "measurement_type" in "%s".' % meas_specs._v_pathname
     _assert_has_field('measurement_type', meas_specs, msg, verbose=verbose)
 
