@@ -143,6 +143,10 @@
         "True (i.e. 1) if there is any form of excitation modulation of excitation wavelength (as in us-ALEX or PAX) or polarization. This field is also True for pulse-interleaved excitation (PIE) or ns-ALEX measurements.",
         "scalar"
     ],
+    "/setup/excitation_alternated": [
+        "New in version 0.5. Indicates whether each excitation source is alternated (True, or 1) or not alternated (False, or 0)."
+        "array"
+    ],
     "/setup/lifetime": [
         "True (i.e. 1) if the measurement includes a nanotimes array of photon arrival times with respect to a laser pulse (as in TCSPC measurements).",
         "scalar"
