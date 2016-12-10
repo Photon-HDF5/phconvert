@@ -47,7 +47,8 @@ _EMPTY = ' '
 # Names of mandatory fields in the setup group
 _setup_mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
                            'num_polarization_ch', 'num_split_ch',
-                           'modulated_excitation', 'lifetime']
+                           'modulated_excitation', 'lifetime',
+                           'excitation_alternated']
 
 # Names of mandatory fields in the identity group
 _identity_mantatory_fields = ['format_name', 'format_version', 'format_url',
@@ -818,16 +819,10 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
     _assert_identity(h5file, warnings=warnings, verbose=verbose)
 
     pool = []
-    kwargs = dict(pool=pool, norepeat=True,
+    kwargs = dict(setup=h5file.root.setup, pool=pool, norepeat=True,
                   skip_measurement_specs=skip_measurement_specs)
     for ph_data in _sorted_photon_data_tables(h5file):
         _check_photon_data_tables(ph_data, **kwargs)
-        if '/setup/lifetime' in h5file and h5file.root.setup.lifetime.read():
-            _assert_has_field('nanotimes', ph_data, verbose=verbose)
-            _assert_has_field('nanotimes_specs', ph_data, verbose=verbose)
-            nt_specs = ph_data.nanotimes_specs
-            _assert_has_field('tcspc_unit', nt_specs, verbose=verbose)
-            _assert_has_field('tcspc_num_bins', nt_specs, verbose=verbose)
 
 def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
     """Assert that setup exists and contains the mandatory fields.
@@ -915,7 +910,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
             else:
                 raise ValueError('Wrong type in JSON specs.')
 
-def _check_photon_data_tables(ph_data, norepeat=False, pool=None,
+def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
                               skip_measurement_specs=False, verbose=False):
     """Assert that the photon_data group follows the Photon-HDF5 specs.
     """
@@ -931,13 +926,9 @@ def _check_photon_data_tables(ph_data, norepeat=False, pool=None,
                               verbose=verbose, norepeat=norepeat, pool=pool)
         return
 
-    spectral_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
-                           'smFRET-nsALEX']
-    other_meas_types = ['cw_split', 'cw_polarization',
-                        'cw_split_polarization',
-                        'tcspc_split', 'tcspc_polarization',
-                        'tcspc_split_polarization']
-    all_meas_types = spectral_meas_types + other_meas_types
+    all_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
+                      'smFRET-nsALEX', 'generic']
+
     meas_specs = ph_data.measurement_specs
     msg = 'Missing "measurement_type" in "%s".' % meas_specs._v_pathname
     _assert_has_field('measurement_type', meas_specs, msg, verbose=verbose)
@@ -954,21 +945,26 @@ def _check_photon_data_tables(ph_data, norepeat=False, pool=None,
     kwargs = dict(msg_add=msg, verbose=verbose)
     det_specs = meas_specs.detectors_specs
 
-    # Check for spectral channels
-    if meas_type in spectral_meas_types:
-        _assert_has_field('spectral_ch1', det_specs, **kwargs)
-        _assert_has_field('spectral_ch2', det_specs, **kwargs)
-    if meas_type == 'smFRET-usALEX-3c':
-        _assert_has_field('spectral_ch3', det_specs, **kwargs)
+    # Read number of channels in each branch
+    num_ch = dict(spectral=setup.num_spectral_ch.read(),
+                  split=setup.num_split_ch.read(),
+                  polarization=setup.num_spectral_ch.read())
 
-    # Check for split/polarization channels
-    for feature in ('split', 'polarization'):
-        if feature in meas_type:
-            _assert_has_field('%s_ch1' % feature, det_specs, **kwargs)
-            _assert_has_field('%s_ch2' % feature, det_specs, **kwargs)
+    # Check for spectral channels
+    if meas_type in ('smFRET', 'smFRET-usALEX', 'smFRET-nsALEX'):
+        _assert_valid(num_ch['spectral'] == 2)
+    if meas_type == 'smFRET-usALEX-3c':
+        _assert_valid(num_ch['spectral'] == 3)
+
+    # Check for spectral/split/polarization channels
+    for feature, nch in num_ch.items():
+        if nch > 1:
+            for i in range(nch):
+                _assert_has_field('%s_ch%d' % (feature, i + 1), det_specs,
+                                  **kwargs)
 
     # us-ALEX fields
-    if meas_type in ['smFRET-usALEX', 'smFRET-usALEX-3c']:
+    if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
         _assert_has_field('alex_period', meas_specs, **kwargs)
 
     # ns-ALEX / PIE fields
@@ -976,16 +972,22 @@ def _check_photon_data_tables(ph_data, norepeat=False, pool=None,
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
 
     # TCSPC fields
-    if meas_type == 'smFRET-nsALEX' or 'tcspc' in meas_type:
+    if meas_type == 'smFRET-nsALEX':
+        _assert_has_field('lifetime', setup, **kwargs)
+        _assert_valid(setup.lifetime.read())
+
+    if 'lifetime' in setup and setup.lifetime.read():
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
         _assert_has_field('nanotimes', ph_data, **kwargs)
-        # TODO: implement valid case when nanotimes_specs is not present
-        #       but TCSPC data is stored in /setup/detectorN
-        #       See https://github.com/Photon-HDF5/photon-hdf5/issues/36
-        _assert_has_field('nanotimes_specs', ph_data, **kwargs)
-        for name in ['tcspc_unit', 'tcspc_num_bins']:
-            _assert_has_field(name, ph_data.nanotimes_specs, **kwargs)
 
+        if 'nanotimes_specs' in ph_data:
+            _assert_has_field('nanotimes_specs', ph_data, **kwargs)
+            tcspc_specs_group = ph_data.nanotimes_specs
+        else:
+            _assert_has_field('detectors', setup, **kwargs)
+            tcspc_specs_group = setup.detectors
+        for name in ('tcspc_unit', 'tcspc_num_bins'):
+            _assert_has_field(name, tcspc_specs_group, **kwargs)
 
 def print_attrs(node, which='user'):
     """Print the HDF5 attributes for `node_name`.
