@@ -215,15 +215,11 @@
         "Spot number where the pixel is used.",
         "array"
     ],
-    "/setup/detectors/nanotimes_specs": [
-        "TCSPC specifications for each pixel.",
-        "group"
-    ],
-    "/setup/detectors/nanotimes_specs/tcspc_units": [
+    "/setup/detectors/tcspc_units": [
         "TCSPC bin size in seconds (i.e. nanotimes units) for each pixel.",
         "array"
     ],
-    "/setup/detectors/nanotimes_specs/tcspc_num_bins": [
+    "/setup/detectors/tcspc_num_bins": [
         "Number of TCSPC bins for each pixel.",
         "array"
     ],
