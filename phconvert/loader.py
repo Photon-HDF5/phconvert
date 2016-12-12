@@ -59,7 +59,13 @@ def usalex_sm(
                                    spectral_ch2 = np.atleast_1d(acceptor))),
     )
 
+    detectors_group = dict(
+        id=[0, 1],
+        counts=[(detectors == ch).sum() for ch in sorted([donor, acceptor])]
+    )
+
     setup = dict(
+        detectors = detectors_group,
         num_pixels = 2,
         num_spots = 1,
         num_spectral_ch = 2,

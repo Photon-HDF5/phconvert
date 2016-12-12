@@ -776,6 +776,31 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
 
 
+def _asser_valid_detectors(h5file):
+    det_cnts = {}
+    for ph_data in _sorted_photon_data_tables(h5file):
+        vals, counts = np.unique(ph_data.detectors[:], return_counts=True)
+        for v, c in zip(vals, counts):
+            _assert_valid(v not in det_cnts, 'Duplicated detector ID "%d"' % v)
+            det_cnts[v] = c
+    det_counts_a = np.array([(k, v) for k, v in det_cnts.items()])
+    sort_idx = det_counts_a[:, 0].argsort()
+    det_counts_a = det_counts_a[sort_idx]
+
+    detectors = h5file.setup.detectors
+    dets_ids = detectors.id.read()
+    m = 'detectors/id length is no equal to the number of unique detetors.'
+    _assert_valid(len(det_cnts) == len(dets_ids), msg=m)
+    m = 'detectors/id is not equal to the sorted unique detetors.'
+    condition = all(d1 == d2 for d1, d2 in zip(dets_ids, det_counts_a[:, 0]))
+    _assert_valid(condition, msg=m)
+    if 'counts' in detectors:
+        counts = detectors.counts.read()
+        m = 'detectors/id is not equal to the sorted unique detetors.'
+        condition = all(c1 == c2 for c1, c2 in zip(counts, det_counts_a[:, 1]))
+        _assert_valid(condition, msg=m)
+
+
 def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
                              strict_description=True, require_setup=True,
                              skip_measurement_specs=False):
@@ -846,7 +871,8 @@ def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
         for name in optional_fields:
             _assert_has_field(name, h5file.root.setup, mandatory=False,
                               verbose=verbose)
-        # TODO: add test for excitation_alternated in nsALEX measurements
+        if 'detectors' in h5file.root.setup:
+            _asser_valid_detectors(h5file)
 
 def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
     """Assert that identity group exists and contains the mandatory fields.
@@ -962,11 +988,11 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     # Check for spectral channels
     if meas_type in ('smFRET', 'smFRET-usALEX', 'smFRET-nsALEX'):
         _msg = ('%s measurement requires /setup/num_spectral_ch = 2 (not %d).' %
-               (meas_type, num_ch['spectral']))
+                (meas_type, num_ch['spectral']))
         _assert_valid(num_ch['spectral'] == 2, msg=_msg)
     if meas_type == 'smFRET-usALEX-3c':
         _msg = ('%s measurement requires /setup/num_spectral_ch = 3 (not %d).' %
-               (meas_type, num_ch['spectral']))
+                (meas_type, num_ch['spectral']))
         _assert_valid(num_ch['spectral'] == 3, msg=_msg)
 
     # Check for spectral/split/polarization channels
@@ -989,6 +1015,10 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
         _assert_has_field('lifetime', setup, **kwargs)
         _assert_valid(setup.lifetime.read(),
                       msg='smFRET-nsALEX requires lifetime = True.')
+
+    if 'nanotimes' in ph_data and 'lifetime' in setup:
+        _assert_valid(setup.lifetime.read(),
+                      'Lifetime is False but nanotimes are present.')
 
     if 'lifetime' in setup and setup.lifetime.read():
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
