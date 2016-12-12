@@ -203,14 +203,6 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                             chunked=item['is_phdata'], h5file=group._v_file)
 
 
-def _link_measurement_specs(h5file):
-    if 'setup' in h5file.root and 'measurement_specs' in h5file.root.setup:
-        link_kws = dict(name='measurement_specs',
-                        target='/setup/measurement_specs')
-        for ph_data in _sorted_photon_data_tables(h5file):
-            h5file.create_hard_link(ph_data, **link_kws)
-
-
 def save_photon_hdf5(data_dict,
                      h5_fname = None,
                      user_descr = None,
@@ -346,7 +338,6 @@ def save_photon_hdf5(data_dict,
         fields_descr.update(user_descr)
     _save_photon_hdf5_dict(h5file.root, data_dict,
                            fields_descr=fields_descr, debug=debug)
-    _link_measurement_specs(h5file)
     h5file.flush()
 
     ## Validation
@@ -896,8 +887,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
         #msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
         #_assert_valid(isinstance(title, bytes), msg, strict=strict_description)
 
-        if (metaname.startswith('/photon_data/measurement_specs') or
-                pathname.endswith('/user') or '/user/' in pathname):
+        if pathname.endswith('/user') or '/user/' in pathname:
             pass
         else:
             # Check field names
@@ -941,14 +931,14 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     if 'measurement_specs' not in ph_data:
         if not skip_measurement_specs:
             # Called to print a warning
-            _assert_has_field('measurement_specs', setup, mandatory=False,
+            _assert_has_field('measurement_specs', ph_data, mandatory=False,
                               verbose=verbose, norepeat=norepeat, pool=pool)
         return
 
     all_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
                       'smFRET-nsALEX', 'generic']
 
-    meas_specs = setup.measurement_specs
+    meas_specs = ph_data.measurement_specs
     msg = 'Missing "measurement_type" in "%s".' % meas_specs._v_pathname
     _assert_has_field('measurement_type', meas_specs, msg, verbose=verbose)
 

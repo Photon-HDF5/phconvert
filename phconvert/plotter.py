@@ -17,7 +17,7 @@ def alternation_hist(d, bins=None, ax=None, **kwargs):
     modulated_excitation = d['setup']['modulated_excitation']
     assert modulated_excitation
 
-    measurement_type = d['setup']['measurement_specs']['measurement_type']
+    measurement_type = d['photon_data']['measurement_specs']['measurement_type']
 
     if measurement_type == 'smFRET-usALEX':
         plot_alternation = alternation_hist_usalex
@@ -45,7 +45,7 @@ def alternation_hist_usalex(d, bins=None, ax=None,
     ph_data = d['photon_data']
     ph_times_t = ph_data['timestamps']
     det_t = ph_data['detectors']
-    meas_specs = d['setup']['measurement_specs']
+    meas_specs = ph_data['measurement_specs']
     period = meas_specs['alex_period']
 
     det_specs = meas_specs['detectors_specs']
@@ -98,7 +98,7 @@ def alternation_hist_nsalex(d, bins=None, ax=None):
     if bins is None:
         bins = np.arange(ph_data['nanotimes_specs']['tcspc_num_bins'])
 
-    meas_specs = d['setup']['measurement_specs']
+    meas_specs = ph_data['measurement_specs']
     det_specs = meas_specs['detectors_specs']
     d_ch = det_specs['spectral_ch1']
     a_ch = det_specs['spectral_ch2']
