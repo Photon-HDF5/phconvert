@@ -194,9 +194,17 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                 print('WARNING: missing description for "%s"' %
                       item['meta_path'])
 
-        if isinstance(item['value'], dict):
-            h5file.create_group(item['group_path'], item['name'],
-                                title=item['description'].encode())
+        if isinstance(item['value'], tables.Array):
+            # If the data is already a pytable array set only the title
+            item['value'].set_attr('TITLE', item['description'].encode())
+        elif isinstance(item['value'], dict):
+            if item['name'] in h5file.get_node(item['group_path']):
+                # If group exists only set TITLE
+                grp = h5file.get_node(item['group_path'], item['name'])
+                grp._f_setattr('TITLE', item['description'].encode())
+            else:
+                h5file.create_group(item['group_path'], item['name'],
+                                    title=item['description'].encode())
         else:
             _h5_write_array(item['group_path'], item['name'],
                             obj=item['value'], descr=item['description'],
@@ -205,6 +213,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
 
 def save_photon_hdf5(data_dict,
                      h5_fname = None,
+                     h5file = None,
                      user_descr = None,
                      overwrite = False,
                      compression = dict(complevel=6, complib='zlib'),
@@ -270,8 +279,11 @@ def save_photon_hdf5(data_dict,
             The keys must strings matching valid Photon-HDF5 paths.
             The values must be scalars, arrays, strings or another dict.
         h5_fname (string or None): file name for the output Photon-HDF5 file.
-            If None, the file name is taken from ``data_dict['_filename']``
-            with extension changed to '.hdf5'.
+            If None and h5file is also None, the file name is taken from
+            ``data_dict['_filename']`` with extension changed to '.hdf5'.
+        h5file (pytables.File or None): an already open and writable
+            HDF5 file to use as contained. Use if you want to reuse an HDF5
+            file where you have already have stored photon_data arrays.
         user_descr (dict or None): dictionary of descriptions (strings) for
             user-defined fields. The keys must be strings representing
             the full HDF5 path of each field. The values must be
@@ -302,15 +314,20 @@ def save_photon_hdf5(data_dict,
     comp_filter = tables.Filters(**compression)
 
     ## Compute file names
-    if h5_fname is None:
-        basename, extension = os.path.splitext(data_dict['_filename'])
-        if compression['complib'] == 'blosc':
-            basename += '_blosc'
-        h5_fname = basename + '.hdf5'
+    if h5file is not None:
+        _msg = 'Argument `h5file` must be None or a `tables.File` object.'
+        assert isinstance(h5file, tables.File), _msg
+        h5_fname = h5file.filename
+    else:
+        if h5_fname is None:
+            basename, extension = os.path.splitext(data_dict['_filename'])
+            if compression['complib'] == 'blosc':
+                basename += '_blosc'
+            h5_fname = basename + '.hdf5'
 
-    if os.path.isfile(h5_fname) and not overwrite:
-        basename, extension = os.path.splitext(h5_fname)
-        h5_fname = basename + '_new_copy.hdf5'
+        if os.path.isfile(h5_fname) and not overwrite:
+            basename, extension = os.path.splitext(h5_fname)
+            h5_fname = basename + '_new_copy.hdf5'
 
     ## Prefill and fix user-provided data_dict
     _populate_provenance(data_dict)
@@ -320,8 +337,13 @@ def save_photon_hdf5(data_dict,
     ## Create the HDF5 file
     print('Saving: %s' % h5_fname)
     title = official_fields_specs['/'][0].encode()
-    h5file = tables.open_file(h5_fname, mode="w", title=title,
-                              filters=comp_filter)
+    if h5file is None:
+        h5file = tables.open_file(h5_fname, mode="w", title=title,
+                                  filters=comp_filter)
+    else:
+        # If file already opened set only the root-node TITLE
+        h5file.set_node_attr('/', attrname='TITLE', attrvalue=title)
+
     # Saving a file reference, useful in case of errors
     data_dict.update(_data_file=h5file)
 
@@ -430,7 +452,7 @@ def _get_file_metadata(fname):
     filename = os.path.basename(full_filename)
 
     # Creation and modification time (but not exactly on *NIX)
-    # see https://docs.python.org/2/library/os.path.html#os.path.getctime)
+    # see https://docs.python.org/3/library/os.path.html#os.path.getctime)
     ctime = time.localtime(os.path.getctime(full_filename))
     mtime = time.localtime(os.path.getmtime(full_filename))
 
