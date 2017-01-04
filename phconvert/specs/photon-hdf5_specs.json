@@ -118,7 +118,7 @@
     "/photon_data/measurement_specs/detectors_specs/split_ch2": [
         "Pixel IDs for the second channel split through a non-polarizing beam splitter.",
         "array"
-    ],    
+    ],
     "/setup": [
         "Information about the experimental setup.",
         "group"
@@ -191,11 +191,15 @@
         "Metadata relative to each detector's pixel. Each field is an array with size equal to the number of the detectors.",
         "group"
     ],
-    "/setup/detectors/ids": [
+    "/setup/detectors/id": [
+        "Array of detector IDs as they appear on /photon_data/detectors.",
+        "array"
+    ],
+    "/setup/detectors/id_hardware": [
         "Array of original IDs assigned by the acquisition hardware to each detector.",
         "array"
     ],
-    "/setup/detectors/labels": [
+    "/setup/detectors/label": [
         "Array of labels (strings) describing each detector.",
         "array"
     ],
