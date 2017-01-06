@@ -798,7 +798,7 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
 
 
-def _asser_valid_detectors(h5file):
+def _assert_valid_detectors(h5file):
     det_cnts = {}
     for ph_data in _sorted_photon_data_tables(h5file):
         vals, counts = np.unique(ph_data.detectors[:], return_counts=True)
@@ -894,7 +894,7 @@ def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
             _assert_has_field(name, h5file.root.setup, mandatory=False,
                               verbose=verbose)
         if 'detectors' in h5file.root.setup:
-            _asser_valid_detectors(h5file)
+            _assert_valid_detectors(h5file)
 
 def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
     """Assert that identity group exists and contains the mandatory fields.
