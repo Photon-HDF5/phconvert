@@ -809,7 +809,7 @@ def _asser_valid_detectors(h5file):
     sort_idx = det_counts_a[:, 0].argsort()
     det_counts_a = det_counts_a[sort_idx]
 
-    detectors = h5file.setup.detectors
+    detectors = h5file.root.setup.detectors
     dets_ids = detectors.id.read()
     m = 'detectors/id length is no equal to the number of unique detetors.'
     _assert_valid(len(det_cnts) == len(dets_ids), msg=m)
