@@ -54,6 +54,11 @@ _setup_mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
 _identity_mantatory_fields = ['format_name', 'format_version', 'format_url',
                               'software', 'software_version', 'creation_time']
 
+# Names of fields in /setup/detectors
+_detectors_group_fields = ('id', 'id_hardware', 'counts', 'dcr', 'afterpulsing',
+        'positions', 'spot', 'module', 'label', 'tcspc_unit', 'tcspc_num_bins')
+
+
 def _metapath(fullpath):
     """Normalize a HDF5 path by removing trailing digits after "photon_data".
     """
@@ -440,8 +445,8 @@ def _compute_acquisition_duration(data_dict):
 
 
 def _populate_detectors_group(data):
-    det_grp = data['setup']['detectors']
-    if 'id' in det_grp and 'counts' in det_grp:
+    det_grp = data['setup'].get('detectors', {})
+    if 'id' in det_grp and 'id_hardware' in det_grp and 'counts' in det_grp:
         # nothing to do
         return
 
@@ -454,10 +459,12 @@ def _populate_detectors_group(data):
         det_cnts.extend(counts)
         spot.extend([i] * len(vals))
 
-    det_grp['id'] = det_grp.get('id', np.array(det_val))
+    det_grp.setdefault('id', np.array(det_val))
+    det_grp.setdefault('id_hardware', np.array(det_val))
     det_grp['counts'] = np.array(det_cnts)
     if _is_mutispot(data):
         det_grp['spot'] = np.array(spot)
+    data['setup']['detectors'] = det_grp
 
 
 def _get_identity(h5file):
@@ -681,6 +688,17 @@ def _normalize_setup_arrays(data_dict):
         if name in setup:
             setup[name] = np.array([float(v) for v in setup[name]], dtype=float)
 
+
+def _normalize_detectors_group(data_dict):
+    """Convert fields in /setup/detectors to `numpy.ndarray`."""
+    if 'setup' not in data_dict:
+        return
+    det_grp = data_dict['setup']['detectors']
+    for name in _detectors_group_fields:
+        if name in det_grp:
+            det_grp[name] = np.asarray(det_grp[name])
+
+
 def _convert_scalar_item(item):
     """Cast a scalar item (from _iter_hdf5_dict) to scalar."""
     # Special case for scalar fields which are string in data_dict.
@@ -712,6 +730,7 @@ def _convert_scalar_item(item):
                                      % item['meta_path'])
     return scalar_value
 
+
 def _normalize_scalars(data_dict):
     """Make sure all scalar fields are scalars."""
     ## scalar fields conversions
@@ -723,6 +742,7 @@ def _normalize_scalars(data_dict):
             curr_dict = item['curr_dict']
             curr_dict[item['name']] = scalar_value
 
+
 def _sanitize_data(data_dict, require_setup=True):
     """Perform type conversions to strictly conform to Photon-HDF5 specs.
 
@@ -733,6 +753,7 @@ def _sanitize_data(data_dict, require_setup=True):
     - cast bools or sequences of bools to integers
     - convert scalar fields which are strings to numbers
     - convert sequences of strings in arrays of floats for selected setup fields
+    - convert /setup/detectors fields into numpy's arrays.
     """
     def _assert_has_key(dict_, key, dict_name):
         if key not in dict_:
@@ -762,14 +783,19 @@ def _sanitize_data(data_dict, require_setup=True):
     _normalize_setup_arrays(data_dict)
     # Cast scalar fields to scalar
     _normalize_scalars(data_dict)
+    # Convert fields in /setup/detectors to numpy arrays
+    _normalize_detectors_group(data_dict)
+
 
 ##
 # Validation functions
 #
+
 class Invalid_PhotonHDF5(Exception):
     """Error raised when a file is not a valid Photon-HDF5 file.
     """
     pass
+
 
 def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
     """Assert `condition` and raise Invalid_PhotonHDF5(msg) on fail.
@@ -800,6 +826,7 @@ def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
         else:
             print('Photon-HDF5 WARNING: %s' % msg)
     return condition
+
 
 def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
                       norepeat=False, pool=None, verbose=False):
@@ -840,12 +867,10 @@ def _assert_valid_detectors(h5file):
     if _is_mutispot(h5file.root):
         spot = detectors.spot.read()
     else:
-        spot = np.zeros(1, dtype='uint8')
+        spot = np.zeros(len(det_ids), dtype='uint8')
 
     m = 'detectors/%s length (%d) is not equal to the number of detectors (%d).'
-    det_fields = ('counts', 'dcr', 'afterpulsing', 'positions', 'spot',
-                  'label', 'module', 'tcspc_unit', 'tcspc_num_bins')
-    for field in det_fields:
+    for field in _detectors_group_fields:
         if field in detectors:
             values = detectors._f_get_child(field)
             _assert_valid(len(values) == len(det_ids),
@@ -919,6 +944,7 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
     for ph_data in _sorted_photon_data_tables(h5file):
         _check_photon_data_tables(ph_data, **kwargs)
 
+
 def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
     """Assert that setup exists and contains the mandatory fields.
     """
@@ -936,6 +962,7 @@ def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
         if 'detectors' in h5file.root.setup:
             _assert_valid_detectors(h5file)
 
+
 def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
     """Assert that identity group exists and contains the mandatory fields.
     """
@@ -950,6 +977,7 @@ def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
         for name in optional_fields:
             _assert_has_field(name, h5file.root.identity, mandatory=False,
                               verbose=verbose)
+
 
 def _assert_valid_fields(h5file, strict_description=True, verbose=False):
     """Assert compliance of field names, descriptions and data types.
@@ -1006,6 +1034,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
                 _assert_valid(node.ndim >= 1, msg)
             else:
                 raise ValueError('Wrong type in JSON specs.')
+
 
 def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
                               skip_measurement_specs=False, verbose=False):
@@ -1094,6 +1123,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
             tcspc_specs_group = setup.detectors
         for name in ('tcspc_unit', 'tcspc_num_bins'):
             _assert_has_field(name, tcspc_specs_group, **kwargs)
+
 
 def print_attrs(node, which='user'):
     """Print the HDF5 attributes for `node_name`.
