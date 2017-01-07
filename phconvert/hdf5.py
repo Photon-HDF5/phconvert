@@ -331,6 +331,8 @@ def save_photon_hdf5(data_dict,
 
     ## Prefill and fix user-provided data_dict
     _populate_provenance(data_dict)
+    if 'setup' in data_dict:
+        _populate_detectors_group(data_dict)
     _sanitize_data(data_dict, require_setup)
     _compute_acquisition_duration(data_dict)
 
@@ -370,6 +372,11 @@ def save_photon_hdf5(data_dict,
     if close:
         h5file.close()
 
+
+def _is_mutispot(h5root_or_dict):
+    return 'photon_data' not in h5root_or_dict
+
+
 def _populate_identity(data_dict, h5file):
     """Populate identity metadata adding info from the newly created file.
     """
@@ -379,6 +386,7 @@ def _populate_identity(data_dict, h5file):
     if 'identity' not in data_dict:
         data_dict['identity'] = {}
     data_dict['identity'].update(identity)
+
 
 def _populate_provenance(data_dict):
     """Try to find the original data file to fill provenance fields.
@@ -409,6 +417,7 @@ def _populate_provenance(data_dict):
         if orig_creation_time is not None:
             provenance['creation_time'] = orig_creation_time
 
+
 def _compute_acquisition_duration(data_dict):
     """Compute acquisition_duration if not present. Single-spot only.
     """
@@ -429,6 +438,28 @@ def _compute_acquisition_duration(data_dict):
                                 timestamps_unit)
         data_dict['acquisition_duration'] = np.round(acquisition_duration, 1)
 
+
+def _populate_detectors_group(data):
+    det_grp = data['setup']['detectors']
+    if 'id' in det_grp and 'counts' in det_grp:
+        # nothing to do
+        return
+
+    # Note that detectors with 0 counts cannot be detected
+    det_val, det_cnts, spot = [], [], []
+    for i, ph_data in enumerate(_sorted_photon_data(data)):
+        detectors = data[ph_data]['detectors'][:]  # numpy or pytables array
+        vals, counts = np.unique(detectors, return_counts=True)
+        det_val.extend(vals)
+        det_cnts.extend(counts)
+        spot.extend([i] * len(vals))
+
+    det_grp['id'] = det_grp.get('id', np.array(det_val))
+    det_grp['counts'] = np.array(det_cnts)
+    if _is_mutispot(data):
+        det_grp['spot'] = np.array(spot)
+
+
 def _get_identity(h5file):
     """Return a dict with identity information for `h5file`.
     """
@@ -442,6 +473,7 @@ def _get_identity(h5file):
                     format_version=LATEST_FORMAT_VERSION,
                     format_url=root_attributes['format_url'])
     return identity
+
 
 def _get_file_metadata(fname):
     """Return a dict with file metadata.
@@ -482,6 +514,7 @@ def dict_from_group(group, read=True):
         out[node._v_name] = value
     return out
 
+
 def dict_to_group(group, dictionary):
     """Save `dictionary` into HDF5 format in `group`.
     """
@@ -502,6 +535,7 @@ def dict_to_group(group, dictionary):
             # Save a single space to workaround h5labview bug (see issue #4)
             node.title = _EMPTY.encode()  # saved as binary both on py2 and py3
     h5file.flush()
+
 
 def load_photon_hdf5(filename, **kwargs):
     """Open a Photon-HDF5 file in pytables, validating it.
@@ -799,28 +833,34 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
 
 
 def _assert_valid_detectors(h5file):
-    det_cnts = {}
-    for ph_data in _sorted_photon_data_tables(h5file):
-        vals, counts = np.unique(ph_data.detectors[:], return_counts=True)
-        for v, c in zip(vals, counts):
-            _assert_valid(v not in det_cnts, 'Duplicated detector ID "%d"' % v)
-            det_cnts[v] = c
-    det_counts_a = np.array([(k, v) for k, v in det_cnts.items()])
-    sort_idx = det_counts_a[:, 0].argsort()
-    det_counts_a = det_counts_a[sort_idx]
-
     detectors = h5file.root.setup.detectors
-    dets_ids = detectors.id.read()
-    m = 'detectors/id length is no equal to the number of unique detetors.'
-    _assert_valid(len(det_cnts) == len(dets_ids), msg=m)
-    m = 'detectors/id is not equal to the sorted unique detetors.'
-    condition = all(d1 == d2 for d1, d2 in zip(dets_ids, det_counts_a[:, 0]))
-    _assert_valid(condition, msg=m)
+    det_ids = detectors.id.read()
     if 'counts' in detectors:
-        counts = detectors.counts.read()
-        m = 'detectors/id is not equal to the sorted unique detetors.'
-        condition = all(c1 == c2 for c1, c2 in zip(counts, det_counts_a[:, 1]))
-        _assert_valid(condition, msg=m)
+        det_counts = detectors.counts.read()
+    if _is_mutispot(h5file.root):
+        spot = detectors.spot.read()
+    else:
+        spot = np.zeros(1, dtype='uint8')
+
+    m = 'detectors/%s length (%d) is not equal to the number of detectors (%d).'
+    det_fields = ('counts', 'dcr', 'afterpulsing', 'positions', 'spot',
+                  'label', 'module', 'tcspc_unit', 'tcspc_num_bins')
+    for field in det_fields:
+        if field in detectors:
+            values = detectors._f_get_child(field)
+            _assert_valid(len(values) == len(det_ids),
+                          msg=m % (field, len(values), len(det_ids)))
+
+    msg = 'Detector %d in spot %d not found in detectors/id.'
+    msgc = 'Wrong counts (%d instead of %d) for detector %d in spot %d.'
+    for i, ph_data in enumerate(_sorted_photon_data_tables(h5file)):
+        vals, cnts = np.unique(ph_data.detectors[:], return_counts=True)
+        det_ids_spot = det_ids[spot == i]
+        for v, c in zip(vals, cnts):
+            _assert_valid(v in det_ids_spot, msg=msg % (v, i))
+            if 'counts' in detectors:
+                csaved = det_counts[spot == i][det_ids_spot == v]
+                _assert_valid(c == csaved, msg=msgc % (csaved, c, v, i))
 
 
 def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
