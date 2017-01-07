@@ -569,7 +569,8 @@ def _sorted_photon_data_tables(h5file):
     ph_datas = [n for n in h5file.root._f_iter_nodes()
                 if n._v_name.startswith(prefix)]
 
-    ph_datas.sort(key=lambda x: x._v_name[len(prefix):])
+    if len(ph_datas) > 1:
+        ph_datas.sort(key=lambda x: int(x._v_name[len(prefix):]))
     return ph_datas
 
 def _sorted_photon_data(data_dict):
@@ -581,8 +582,7 @@ def _sorted_photon_data(data_dict):
     prefix = 'photon_data'
     keys = [k for k in data_dict.keys() if k.startswith(prefix)]
     if len(keys) > 1:
-        sorted_channels = sorted([int(k[len(prefix):]) for k in keys])
-        keys = ['%s%d' % (prefix, ch) for ch in sorted_channels]
+        keys.sort(key=lambda x: int(x[len(prefix):]))
     return keys
 
 def photon_data_mapping(h5file, name='timestamps'):
