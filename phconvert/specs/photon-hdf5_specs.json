@@ -192,23 +192,23 @@
         "group"
     ],
     "/setup/detectors/id": [
-        "Array of detector IDs as they appear on /photon_data/detectors.",
+        "Detector IDs as they appear on /photon_data/detectors.",
         "array"
     ],
     "/setup/detectors/id_hardware": [
-        "Array of original IDs assigned by the acquisition hardware to each detector.",
+        "Original IDs assigned by the acquisition hardware to each detector.",
         "array"
     ],
     "/setup/detectors/label": [
-        "Array of labels (strings) describing each detector.",
+        "Labels (strings) describing each detector.",
         "array"
     ],
     "/setup/detectors/counts": [
-        "Array of number photons detected by each detector.",
+        "Total number of counts detected by each detector.",
         "array"
     ],
     "/setup/detectors/module": [
-        "Array of strings containing the module's name for each pixel.",
+        "The module's name each pixel belongs to.",
         "array"
     ],
     "/setup/detectors/position": [
@@ -224,7 +224,7 @@
         "array"
     ],
     "/setup/detectors/spot": [
-        "Spot number where the pixel is used.",
+        "Spot number for each pixel in the measurement.",
         "array"
     ],
     "/setup/detectors/tcspc_units": [
