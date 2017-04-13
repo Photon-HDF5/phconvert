@@ -137,6 +137,7 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
         if isinstance(obj, str):
             obj = obj.encode()
 
+    ## TODO: remove node if already present
     save(group, name, obj=obj)
     # Set title through property access to work around pytable issue
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
@@ -287,7 +288,7 @@ def save_photon_hdf5(data_dict,
             If None and h5file is also None, the file name is taken from
             ``data_dict['_filename']`` with extension changed to '.hdf5'.
         h5file (pytables.File or None): an already open and writable
-            HDF5 file to use as contained. Use if you want to reuse an HDF5
+            HDF5 file to use as container. Use if you want to reuse an HDF5
             file where you have already have stored photon_data arrays.
         user_descr (dict or None): dictionary of descriptions (strings) for
             user-defined fields. The keys must be strings representing
