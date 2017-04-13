@@ -362,10 +362,10 @@ def pt3_reader(filename):
         # Special header for imaging. How many of the following ImgHdr
         # array elements are actually present in the file is indicated by
         # ImgHdrSize above.
-        ImgHdr = np.fromfile(f, dtype='int32', count=ttmode['ImgHdrSize'])
+        ImgHdr = np.fromfile(f, dtype='int32', count=ttmode['ImgHdrSize'][0])
 
         # The remainings are all T3 records
-        t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'])
+        t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'][0])
 
         timestamps_unit = 1./ttmode['InpRate0']
         nanotimes_unit = 1e-9*hardware['Resolution']

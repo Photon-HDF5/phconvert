@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 _green = 'g'
-_red  = 'r'
+_red = 'r'
 
 
 def alternation_hist(d, bins=None, ax=None, **kwargs):
@@ -17,8 +17,7 @@ def alternation_hist(d, bins=None, ax=None, **kwargs):
     modulated_excitation = d['setup']['modulated_excitation']
     assert modulated_excitation
 
-    measurement_type = d['photon_data']['measurement_specs']\
-                        ['measurement_type']
+    measurement_type = d['photon_data']['measurement_specs']['measurement_type']
 
     if measurement_type == 'smFRET-usALEX':
         plot_alternation = alternation_hist_usalex
@@ -46,21 +45,22 @@ def alternation_hist_usalex(d, bins=None, ax=None,
     ph_data = d['photon_data']
     ph_times_t = ph_data['timestamps']
     det_t = ph_data['detectors']
-    period = ph_data['measurement_specs']['alex_period']
+    meas_specs = ph_data['measurement_specs']
+    period = meas_specs['alex_period']
 
-    det_specs = ph_data['measurement_specs']['detectors_specs']
-    d_ch =  det_specs['spectral_ch1']
-    a_ch =  det_specs['spectral_ch2']
+    det_specs = meas_specs['detectors_specs']
+    d_ch = det_specs['spectral_ch1']
+    a_ch = det_specs['spectral_ch2']
 
     d_em_t = (det_t == d_ch)
     a_em_t = (det_t == a_ch)
-    D_ON = ph_data['measurement_specs']['alex_excitation_period1']
-    A_ON = ph_data['measurement_specs']['alex_excitation_period2']
-    offset = ph_data['measurement_specs']['alex_offset']
+    D_ON = meas_specs['alex_excitation_period1']
+    A_ON = meas_specs['alex_excitation_period2']
+    offset = meas_specs['alex_offset']
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
 
-    hist_style_ = dict(bins=bins,  alpha=0.5, histtype='stepfilled', lw=1.3)
+    hist_style_ = dict(bins=bins, alpha=0.5, histtype='stepfilled', lw=1.3)
     hist_style_.update(hist_style)
 
     span_style_ = dict(alpha=0.1)
@@ -98,12 +98,13 @@ def alternation_hist_nsalex(d, bins=None, ax=None):
     if bins is None:
         bins = np.arange(ph_data['nanotimes_specs']['tcspc_num_bins'])
 
-    det_specs = ph_data['measurement_specs']['detectors_specs']
-    d_ch =  det_specs['spectral_ch1']
-    a_ch =  det_specs['spectral_ch2']
+    meas_specs = ph_data['measurement_specs']
+    det_specs = meas_specs['detectors_specs']
+    d_ch = det_specs['spectral_ch1']
+    a_ch = det_specs['spectral_ch2']
 
-    D_ON = ph_data['measurement_specs']['alex_excitation_period1']
-    A_ON = ph_data['measurement_specs']['alex_excitation_period2']
+    D_ON = meas_specs['alex_excitation_period1']
+    A_ON = meas_specs['alex_excitation_period2']
 
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
@@ -112,9 +113,9 @@ def alternation_hist_nsalex(d, bins=None, ax=None):
     nanotimes_a = ph_data['nanotimes'][ph_data['detectors'] == a_ch]
 
     ax.hist(nanotimes_d, bins=bins, histtype='step', label=D_label, lw=1.2,
-             alpha=0.5, color=_green)
+            alpha=0.5, color=_green)
     ax.hist(nanotimes_a, bins=bins, histtype='step', label=A_label, lw=1.2,
-             alpha=0.5, color=_red)
+            alpha=0.5, color=_red)
     ax.set_xlabel('TCSPC nanotimes bins')
 
     ax.set_yscale('log')

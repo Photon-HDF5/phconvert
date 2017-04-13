@@ -49,7 +49,6 @@ def usalex_sm(
         timestamps = timestamps,
         timestamps_specs = dict(timestamps_unit=12.5e-9),
         detectors = detectors,
-
         measurement_specs = dict(
             measurement_type = 'smFRET-usALEX',
             alex_period = alex_period,
@@ -57,7 +56,7 @@ def usalex_sm(
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
-                                   spectral_ch2 = np.atleast_1d(acceptor)))
+                                   spectral_ch2 = np.atleast_1d(acceptor))),
     )
 
     setup = dict(
@@ -70,7 +69,8 @@ def usalex_sm(
         lifetime = False,
         excitation_wavelengths = excitation_wavelengths,
         excitation_cw = [True, True],
-        detection_wavelengths = detection_wavelengths)
+        detection_wavelengths = detection_wavelengths,
+        excitation_alternated=[True, True])
 
     provenance = dict(filename=filename, software=software)
     acquisition_duration = (timestamps[-1] - timestamps[0]) * 12.5e-9
@@ -153,14 +153,13 @@ def nsalex_bh(filename_spc,
             tcspc_unit = tcspc_unit,
             tcspc_range = tcspc_range,
             tcspc_num_bins = tcspc_num_bins),
-
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
             laser_repetition_rate = 1 / timestamps_unit,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
-                                   spectral_ch2 = np.atleast_1d(acceptor)))
+                                   spectral_ch2 = np.atleast_1d(acceptor))),
     )
 
     setup = dict(
@@ -173,7 +172,8 @@ def nsalex_bh(filename_spc,
         lifetime = True,
         excitation_wavelengths = excitation_wavelengths,
         excitation_cw = [False, False],
-        detection_wavelengths = detection_wavelengths)
+        detection_wavelengths = detection_wavelengths,
+        excitation_alternated = [False, False])
 
     acquisition_duration = ((timestamps.max() - timestamps.min()) *
                             timestamps_unit)
@@ -237,14 +237,13 @@ def nsalex_ht3(filename,
             tcspc_unit = tcspc_unit,
             tcspc_range = tcspc_range,
             tcspc_num_bins = tcspc_num_bins),
-
         measurement_specs = dict(
             measurement_type = 'smFRET-nsALEX',
             laser_repetition_rate = laser_repetition_rate,
             alex_excitation_period1 = alex_period_donor,
             alex_excitation_period2 = alex_period_acceptor,
             detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
-                                   spectral_ch2 = np.atleast_1d(acceptor)))
+                                   spectral_ch2 = np.atleast_1d(acceptor))),
     )
 
     setup = dict(
@@ -257,7 +256,8 @@ def nsalex_ht3(filename,
         lifetime = True,
         excitation_wavelengths = excitation_wavelengths,
         excitation_cw = [False, False],
-        detection_wavelengths = detection_wavelengths)
+        detection_wavelengths = detection_wavelengths,
+        excitation_alternated = [False, False])
 
     data = dict(
         _filename=filename,
