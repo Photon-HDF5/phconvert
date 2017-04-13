@@ -137,7 +137,9 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
         if isinstance(obj, str):
             obj = obj.encode()
 
-    ## TODO: remove node if already present
+    if name in h5file.get_node(group):
+        # Remove a pre-existing node with the same name
+        h5file.remove_node(group, name)
     save(group, name, obj=obj)
     # Set title through property access to work around pytable issue
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
@@ -212,6 +214,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                 h5file.create_group(item['group_path'], item['name'],
                                     title=item['description'].encode())
         else:
+            # Node is not a tables.Array or a Group, write it
             _h5_write_array(item['group_path'], item['name'],
                             obj=item['value'], descr=item['description'],
                             chunked=item['is_phdata'], h5file=group._v_file)
@@ -287,9 +290,11 @@ def save_photon_hdf5(data_dict,
         h5_fname (string or None): file name for the output Photon-HDF5 file.
             If None and h5file is also None, the file name is taken from
             ``data_dict['_filename']`` with extension changed to '.hdf5'.
-        h5file (pytables.File or None): an already open and writable
-            HDF5 file to use as container. Use if you want to reuse an HDF5
-            file where you have already have stored photon_data arrays.
+        h5file (pytables.File or None): an already open and writable HDF5
+            file to use as container. This argument can be used to complete
+            an HDF5 file already containing some arrays, or to update
+            an already existing Photon-HDF5 file in-place.
+            For more info see note below.
         user_descr (dict or None): dictionary of descriptions (strings) for
             user-defined fields. The keys must be strings representing
             the full HDF5 path of each field. The values must be
@@ -316,6 +321,18 @@ def save_photon_hdf5(data_dict,
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
+
+    Note:
+        The argument `h5file` accepts an aready open HDF5 file for storage.
+        This allows completing a partially written file (for example
+        containing only photon_data arrays) or correcting and already complete
+        Photon-HDF5 file. When using `h5file`, you need to pass a full
+        `data_dict` structure as usual. If you don't want update an array,
+        put in `data_dict` a reference to the existing pytables array
+        (instead of using a numpy array). Fields containing numpy arrays
+        will be overwritten. Fields containing pytables Array (including
+        CArray or EArray) will be left unmodified. IN either cases the TITLE
+        attribute is always updated.
     """
     comp_filter = tables.Filters(**compression)
 
