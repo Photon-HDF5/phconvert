@@ -56,7 +56,8 @@ _identity_mantatory_fields = ['format_name', 'format_version', 'format_url',
 
 # Names of fields in /setup/detectors
 _detectors_group_fields = ('id', 'id_hardware', 'counts', 'dcr', 'afterpulsing',
-        'positions', 'spot', 'module', 'label', 'tcspc_unit', 'tcspc_num_bins')
+                           'positions', 'spot', 'module', 'label', 'tcspc_unit',
+                           'tcspc_num_bins')
 
 
 def _metapath(fullpath):
@@ -69,6 +70,7 @@ def _metapath(fullpath):
         metapath = ('/photon_data' +
                     re.match(pattern, fullpath).group(1))
     return metapath
+
 
 def _analyze_path(name, prefix_list):
     """
@@ -112,11 +114,13 @@ def _analyze_path(name, prefix_list):
     return dict(full_path=full_path, group_path=group_path,
                 meta_path=meta_path, is_phdata=is_phdata, is_user=is_user)
 
+
 def _is_structured_array(obj):
     if hasattr(obj, 'dtype') and obj.dtype.kind == 'V':
         return True
     else:
         return False
+
 
 def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     """Writes `obj` in the pytables HDF5 `group` with name `name`.
@@ -145,6 +149,7 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
     node = h5file.get_node(group)._f_get_child(name)
     node.title = descr.encode()  # saved as binary both on py2 and py3
+
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                     debug=False):
@@ -180,6 +185,7 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                 yield sub_item
             if debug:
                 print('End Group "%s"' % (item['full_path']))
+
 
 def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                            debug=False):
@@ -607,6 +613,7 @@ def _get_version(h5file):
         raise Invalid_PhotonHDF5('No version identification.')
     return version
 
+
 def _check_version(filename):
     """Return file format version string (unicode on both py2 and py3).
 
@@ -617,6 +624,7 @@ def _check_version(filename):
     with tables.open_file(filename) as h5file:
         version = _get_version(h5file)
     return version
+
 
 def _sorted_photon_data_tables(h5file):
     """Return a sorted list of keys "photon_dataN", sorted by N.
@@ -632,6 +640,7 @@ def _sorted_photon_data_tables(h5file):
         ph_datas.sort(key=lambda x: int(x._v_name[len(prefix):]))
     return ph_datas
 
+
 def _sorted_photon_data(data_dict):
     """Return a sorted list of keys "photon_dataN", sorted by N.
 
@@ -643,6 +652,7 @@ def _sorted_photon_data(data_dict):
     if len(keys) > 1:
         keys.sort(key=lambda x: int(x[len(prefix):]))
     return keys
+
 
 def photon_data_mapping(h5file, name='timestamps'):
     """Return a mapping (OrderedDict) between ch and photon_data array.
@@ -657,6 +667,7 @@ def photon_data_mapping(h5file, name='timestamps'):
             mapping[ch] = ph
     return mapping
 
+
 def _is_sequence(obj):
     is_sequence = False
     if isinstance(obj, tuple) or isinstance(obj, list):
@@ -664,6 +675,7 @@ def _is_sequence(obj):
     elif isinstance(obj, np.ndarray):
         is_sequence = obj.ndim > 0
     return is_sequence
+
 
 def _normalize_bools(data_dict):
     """Cast bools (both scalars or in sequences) to integers."""
@@ -675,6 +687,7 @@ def _normalize_bools(data_dict):
                 data_dict[name] = int(value)
             elif _is_sequence(value) and isinstance(value[0], bool):
                 data_dict[name] = np.asarray(value, dtype='uint8')
+
 
 def _normalize_detectors_specs(data_dict):
     base = '/photon_data/measurement_specs/detectors_specs/'
@@ -1016,7 +1029,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
         _assert_valid(len(title) > 0, msg, strict=strict_description)
 
         ## Test description is a binary string
-        # This depends on how pytbales loads the string and fails for some
+        # This depends on how pytables loads the string and fails for some
         # fields (e.g. user fields in BH file) under python 3.
         # The test is disable for the time being.
         #msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
