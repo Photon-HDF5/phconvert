@@ -266,15 +266,15 @@ def save_photon_hdf5(data_dict,
     - `/setup/num_spots` (int): number of excitation/detection spots
     - `/setup/num_spectral_ch` (int): number of detection spectral bands
     - `/setup/num_polarization_ch` (int): number of detected polarization states
-    - `/setup/num_split_ch` (int): number of beam splitted channels
+    - `/setup/num_split_ch` (int): number of beam split channels
     - `/setup/modulated_excitation` (bool): True if there is any form of intensity
       or polarization modulation or interleaved excitation (PIE or nsALEX).
       This field has become obsolete in version 0.5 and maintained only for
       compatibility.
     - `/setup/excitation_alternated` (array of bool): New in version 0.5.
-      Values are True if excitation the excitation source is
-      intensity-modulated, otherwise False. While in us-ALEX bot sources are
-      alternated, in PAX measurements only one source is alternated.
+      Values are True if the respective excitation source is
+      intensity-modulated. In us-ALEX both sources are alternated,
+      while in PAX measurements only one source is alternated.
     - `/setup/lifetime` (bool): True if dataset contains TCSPC data.
 
     See also
@@ -323,7 +323,7 @@ def save_photon_hdf5(data_dict,
     http://photon-hdf5.readthedocs.org/
 
     Note:
-        The argument `h5file` accepts an aready open HDF5 file for storage.
+        The argument `h5file` accepts an already open HDF5 file for storage.
         This allows completing a partially written file (for example
         containing only photon_data arrays) or correcting and already complete
         Photon-HDF5 file. When using `h5file`, you need to pass a full
@@ -331,7 +331,7 @@ def save_photon_hdf5(data_dict,
         put in `data_dict` a reference to the existing pytables array
         (instead of using a numpy array). Fields containing numpy arrays
         will be overwritten. Fields containing pytables Array (including
-        CArray or EArray) will be left unmodified. IN either cases the TITLE
+        CArray or EArray) will be left unmodified. In either cases the TITLE
         attribute is always updated.
     """
     comp_filter = tables.Filters(**compression)
@@ -690,6 +690,7 @@ def _normalize_detectors_specs(data_dict):
         if item['meta_path'] in cast_fields:
             cdict = item['curr_dict']
             cdict[item['name']] = np.array(item['value'], dtype=dtype, ndmin=1)
+
 
 def _normalize_setup_arrays(data_dict):
     """Make sure arrays of float in setup are arrays of floats."""
