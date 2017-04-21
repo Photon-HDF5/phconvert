@@ -1144,6 +1144,12 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
                       'Lifetime is False but nanotimes are present.')
 
     if 'lifetime' in setup and setup.lifetime.read():
+        msg = """\
+        According to /setup/lifetime (=True) this file should be a
+        TCSPC measurement. However /setup/excitation_cw says that all
+        the laser sources are CW, not pulsed. At least one source need
+        to be pulsed."""
+        _assert_valid(not all(setup.excitation_cw.read()), msg=dedent(msg))
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
         _assert_has_field('nanotimes', ph_data, **kwargs)
 
