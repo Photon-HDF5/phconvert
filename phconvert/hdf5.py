@@ -1124,6 +1124,18 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
             for i in range(nch):
                 _assert_has_field('%s_ch%d' % (feature, i + 1), det_specs,
                                   **kwargs)
+    msg = """
+    According to /setup/excitation_alternated this measurement uses
+    laser alternation and lasers are {laser}. However, there is no {field}
+    field in measurement_specs. {field} is mandatory in measurements
+    using alternation and {laser} lasers."""
+    if any(setup.excitation_alternated[:]):
+        if all(setup.excitation_cw[:]):
+            fmt = dict(field='alex_period', laser='CW')
+        else:
+            fmt = dict(field='laser_repetition_rate', laser='pulsed')
+        _assert_has_field(fmt['field'], meas_specs,
+                          msg_add=dedent(_msg.format(**fmt)))
 
     # us-ALEX fields
     if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
