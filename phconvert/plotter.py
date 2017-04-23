@@ -44,7 +44,7 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
         ax = plt.gca()
 
     if bins is None:
-        bins = 100
+        bins = 101
 
     ph_data = d.get('photon_data', 'photon_data%d' % ich)
     ph_times_t = ph_data['timestamps']
@@ -58,9 +58,9 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
 
     d_em_t = (det_t == d_ch)
     a_em_t = (det_t == a_ch)
-    D_ON = meas_specs['alex_excitation_period1']
-    A_ON = meas_specs['alex_excitation_period2']
-    offset = meas_specs['alex_offset']
+    D_ON = meas_specs.get('alex_excitation_period1', (0, 0.475 * period))
+    A_ON = meas_specs.get('alex_excitation_period2', (period, 0.975 * period))
+    offset = meas_specs.get('alex_offset', 0)
     D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
     A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
 
