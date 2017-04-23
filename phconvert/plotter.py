@@ -17,12 +17,12 @@ def alternation_hist(d, bins=None, ich=0, ax=None, **kwargs):
     setup = d['setup']
     assert any(setup['excitation_alternated'])
 
-    ph_data = d.get('photon_data', 'photon_data%d' % ich)
+    ph_data = d.get('photon_data', d['photon_data%d' % ich])
     measurement_type = ph_data['measurement_specs']['measurement_type']
-    if ((measurement_type == 'generic' and setup['lifetime']) or
+    if ((measurement_type == 'generic' and not setup['lifetime']) or
             measurement_type == 'smFRET-usALEX'):
         TYPE = 'CW'
-    elif ((measurement_type == 'generic' and not setup['lifetime']) or
+    elif ((measurement_type == 'generic' and setup['lifetime']) or
             measurement_type == 'smFRET-nsALEX'):
         TYPE = 'lifetime'
     else:
@@ -46,9 +46,9 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
     if bins is None:
         bins = 101
 
-    ph_data = d.get('photon_data', 'photon_data%d' % ich)
-    ph_times_t = ph_data['timestamps']
-    det_t = ph_data['detectors']
+    ph_data = d.get('photon_data', d['photon_data%d' % ich])
+    ph_times_t = ph_data['timestamps'][:]
+    det_t = ph_data['detectors'][:]
     meas_specs = ph_data['measurement_specs']
     period = meas_specs['alex_period']
 
@@ -58,11 +58,13 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
 
     d_em_t = (det_t == d_ch)
     a_em_t = (det_t == a_ch)
-    D_ON = meas_specs.get('alex_excitation_period1', (0, 0.475 * period))
-    A_ON = meas_specs.get('alex_excitation_period2', (period, 0.975 * period))
+    D_ON = meas_specs.get('alex_excitation_period1', None)
+    A_ON = meas_specs.get('alex_excitation_period2', None)
     offset = meas_specs.get('alex_offset', 0)
-    D_label = 'Donor: %d-%d' % (D_ON[0], D_ON[1])
-    A_label = 'Accept: %d-%d' % (A_ON[0], A_ON[1])
+    D_label = 'Donor: '
+    A_label = 'Accept: '
+    D_label += 'no selection' if D_ON is None else ('%d-%d' % tuple(D_ON))
+    A_label += 'no selection' if A_ON is None else ('%d-%d' % tuple(A_ON))
 
     hist_style_ = dict(bins=bins, alpha=0.5, histtype='stepfilled', lw=1.3)
     hist_style_.update(hist_style)
@@ -76,17 +78,19 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
             **hist_style_)
     ax.set_xlabel('(timestamps - alex_offset) MOD alex_period')
 
-    if D_ON[0] < D_ON[1]:
-        ax.axvspan(D_ON[0], D_ON[1], color=_green, **span_style_)
-    else:
-        ax.axvspan(0, D_ON[1], color=_green, **span_style_)
-        ax.axvspan(D_ON[0], period, color=_green, **span_style_)
+    if D_ON is not None:
+        if D_ON[0] < D_ON[1]:
+            ax.axvspan(D_ON[0], D_ON[1], color=_green, **span_style_)
+        else:
+            ax.axvspan(0, D_ON[1], color=_green, **span_style_)
+            ax.axvspan(D_ON[0], period, color=_green, **span_style_)
 
-    if A_ON[0] < A_ON[1]:
-        ax.axvspan(A_ON[0], A_ON[1], color=_red, **span_style_)
-    else:
-        ax.axvspan(0, A_ON[1], color=_red, **span_style_)
-        ax.axvspan(A_ON[0], period, color=_red, **span_style_)
+    if A_ON is not None:
+        if A_ON[0] < A_ON[1]:
+            ax.axvspan(A_ON[0], A_ON[1], color=_red, **span_style_)
+        else:
+            ax.axvspan(0, A_ON[1], color=_red, **span_style_)
+            ax.axvspan(A_ON[0], period, color=_red, **span_style_)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
 
 
@@ -97,7 +101,7 @@ def alternation_hist_nsalex(d, bins=None, ich=0, ax=None):
         plt.figure()
         ax = plt.gca()
 
-    ph_data = d.get('photon_data', 'photon_data%d' % ich)
+    ph_data = d.get('photon_data', d['photon_data%d' % ich])
 
     if bins is None:
         bins = np.arange(ph_data['nanotimes_specs']['tcspc_num_bins'])
