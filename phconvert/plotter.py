@@ -15,7 +15,6 @@ def alternation_hist(d, bins=None, ich=0, ax=None, **kwargs):
     """Plot the alternation histogram for the the data in dictionary `d`.
     """
     setup = d['setup']
-    assert any(setup['excitation_alternated'])
 
     ph_data = d.get('photon_data', d['photon_data%d' % ich])
     measurement_type = ph_data['measurement_specs']['measurement_type']
@@ -39,6 +38,9 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
                             hist_style={}, span_style={}):
     """Plot the us-ALEX alternation histogram for the data in dictionary `d`.
     """
+    msg = ("At least one source needs to be alternated "
+           "(i.e. intensity-modulated)")
+    assert any(d['setup']['excitation_alternated']), msg
     if ax is None:
         plt.figure()
         ax = plt.gca()
@@ -97,6 +99,8 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
 def alternation_hist_nsalex(d, bins=None, ich=0, ax=None):
     """Plot the ns-ALEX alternation histogram for the data in dictionary `d`.
     """
+    msg = 'At least one source needs to be pulsed.'
+    assert not all(d['setup']['excitation_cw']), msg
     if ax is None:
         plt.figure()
         ax = plt.gca()
