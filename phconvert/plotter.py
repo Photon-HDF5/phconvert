@@ -11,27 +11,31 @@ _green = 'g'
 _red = 'r'
 
 
-def alternation_hist(d, bins=None, ax=None, **kwargs):
+def alternation_hist(d, bins=None, ich=0, ax=None, **kwargs):
     """Plot the alternation histogram for the the data in dictionary `d`.
     """
-    modulated_excitation = d['setup']['modulated_excitation']
-    assert modulated_excitation
+    setup = d['setup']
+    assert any(setup['excitation_alternated'])
 
-    measurement_type = d['photon_data']['measurement_specs']['measurement_type']
-
-    if measurement_type == 'smFRET-usALEX':
-        plot_alternation = alternation_hist_usalex
-    elif measurement_type == 'smFRET-nsALEX':
-        plot_alternation = alternation_hist_nsalex
+    ph_data = d.get('photon_data', 'photon_data%d' % ich)
+    measurement_type = ph_data['measurement_specs']['measurement_type']
+    if ((measurement_type == 'generic' and setup['lifetime']) or
+            measurement_type == 'smFRET-usALEX'):
+        TYPE = 'CW'
+    elif ((measurement_type == 'generic' and not setup['lifetime']) or
+            measurement_type == 'smFRET-nsALEX'):
+        TYPE = 'lifetime'
     else:
-        msg = 'Alternation histogram for measurement %s not supported.' %\
-              measurement_type
+        msg = ('Alternation histogram for measurement %s not supported.' %
+               measurement_type)
         raise ValueError(msg)
 
-    plot_alternation(d, bins=bins, ax=ax, **kwargs)
+    plot_alex = {'CW': alternation_hist_usalex,
+                 'lifetime': alternation_hist_nsalex}
+    plot_alex[TYPE](d, bins=bins, ich=ich, ax=ax, **kwargs)
 
 
-def alternation_hist_usalex(d, bins=None, ax=None,
+def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
                             hist_style={}, span_style={}):
     """Plot the us-ALEX alternation histogram for the data in dictionary `d`.
     """
@@ -42,7 +46,7 @@ def alternation_hist_usalex(d, bins=None, ax=None,
     if bins is None:
         bins = 100
 
-    ph_data = d['photon_data']
+    ph_data = d.get('photon_data', 'photon_data%d' % ich)
     ph_times_t = ph_data['timestamps']
     det_t = ph_data['detectors']
     meas_specs = ph_data['measurement_specs']
@@ -86,14 +90,14 @@ def alternation_hist_usalex(d, bins=None, ax=None,
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
 
 
-def alternation_hist_nsalex(d, bins=None, ax=None):
+def alternation_hist_nsalex(d, bins=None, ich=0, ax=None):
     """Plot the ns-ALEX alternation histogram for the data in dictionary `d`.
     """
     if ax is None:
         plt.figure()
         ax = plt.gca()
 
-    ph_data = d['photon_data']
+    ph_data = d.get('photon_data', 'photon_data%d' % ich)
 
     if bins is None:
         bins = np.arange(ph_data['nanotimes_specs']['tcspc_num_bins'])
