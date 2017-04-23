@@ -16,7 +16,7 @@ def alternation_hist(d, bins=None, ich=0, ax=None, **kwargs):
     """
     setup = d['setup']
 
-    ph_data = d.get('photon_data', d['photon_data%d' % ich])
+    ph_data = d.get('photon_data', d.get('photon_data%d' % ich))
     measurement_type = ph_data['measurement_specs']['measurement_type']
     if ((measurement_type == 'generic' and not setup['lifetime']) or
             measurement_type == 'smFRET-usALEX'):
@@ -48,7 +48,7 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
     if bins is None:
         bins = 101
 
-    ph_data = d.get('photon_data', d['photon_data%d' % ich])
+    ph_data = d.get('photon_data', d.get('photon_data%d' % ich))
     ph_times_t = ph_data['timestamps'][:]
     det_t = ph_data['detectors'][:]
     meas_specs = ph_data['measurement_specs']
@@ -105,11 +105,9 @@ def alternation_hist_nsalex(d, bins=None, ich=0, ax=None):
         plt.figure()
         ax = plt.gca()
 
-    ph_data = d.get('photon_data', d['photon_data%d' % ich])
-
+    ph_data = d.get('photon_data', d.get('photon_data%d' % ich))
     if bins is None:
         bins = np.arange(ph_data['nanotimes_specs']['tcspc_num_bins'])
-
     meas_specs = ph_data['measurement_specs']
     det_specs = meas_specs['detectors_specs']
     d_ch = det_specs['spectral_ch1']
