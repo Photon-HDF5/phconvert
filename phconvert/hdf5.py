@@ -1135,7 +1135,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
         else:
             fmt = dict(field='laser_repetition_rate', laser='pulsed')
         _assert_has_field(fmt['field'], meas_specs,
-                          msg_add=dedent(_msg.format(**fmt)))
+                          msg_add=dedent(msg.format(**fmt)))
 
     # us-ALEX fields
     if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
@@ -1159,7 +1159,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
         msg = """\
         According to /setup/lifetime (=True) this file should be a
         TCSPC measurement. However /setup/excitation_cw says that all
-        the laser sources are CW instead of pulsed. At least one source 
+        the laser sources are CW instead of pulsed. At least one source
         needs to be pulsed."""
         _assert_valid(not all(setup.excitation_cw.read()), msg=dedent(msg))
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
