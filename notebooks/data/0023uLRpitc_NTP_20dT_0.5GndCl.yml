@@ -1,0 +1,7 @@
+sample:
+    sample_name: 20dt ssDNA oligo doubly labeled with Cy3B and Atto647N
+    dye_names: Cy3B, ATTO647N
+    buffer_name: TE50 + 0.5M GndCl
+
+description: >
+    us-ALEX measurement of a doubly-labeled ssDNA sample.
