@@ -33,7 +33,7 @@ install:
   - conda update -q conda
   - conda install -q conda-build
   - conda info -a
-  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy matplotlib pytables pytest seaborn numba nbconvert ipykernel pandas yaml"
+  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy matplotlib pytables pytest seaborn numba nbconvert ipykernel pandas pyyaml"
   - activate test-environment
   - path
   - python -m pip install --upgrade pip

@@ -26,7 +26,7 @@ before_install:
 
 
 install:
-    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip numpy matplotlib pytables numba nbconvert ipykernel pytest pandas yaml
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip numpy matplotlib pytables numba nbconvert ipykernel pytest pandas pyyaml
     - source activate test-environment
     - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install pathlib ; fi
     - python setup.py install
