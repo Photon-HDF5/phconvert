@@ -32,9 +32,7 @@ install:
     - python setup.py install
 
 before_script:
-    - cd notebooks
-    - mkdir -p data
-    - cd data
+    - cd notebooks/data
     - wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
     - wget https://ndownloader.figshare.com/files/3350669 -O dsdna_d7d17_50_50_1.spc
     - wget https://ndownloader.figshare.com/files/3350672 -O Pre.ht3
