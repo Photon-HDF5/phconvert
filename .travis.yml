@@ -33,7 +33,7 @@ install:
 
 before_script:
     - cd notebooks
-    - mkdir data
+    - mkdir -p data
     - cd data
     - wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
     - wget https://ndownloader.figshare.com/files/3350669 -O dsdna_d7d17_50_50_1.spc
