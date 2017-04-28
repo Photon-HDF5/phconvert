@@ -369,7 +369,7 @@ def save_photon_hdf5(data_dict,
     print('Saving: %s' % h5_fname)
     title = official_fields_specs['/'][0].encode()
     if h5file is None:
-        h5file = tables.open_file(h5_fname, mode="w", title=title,
+        h5file = tables.open_file(str(h5_fname), mode="w", title=title,
                                   filters=comp_filter)
     else:
         # If file already opened set only the root-node TITLE
