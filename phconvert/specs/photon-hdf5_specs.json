@@ -163,6 +163,10 @@
         "For each excitation source, this field indicates whether excitation is continuous wave (CW), True (i.e. 1), or pulsed, False (i.e. 0).",
         "array"
     ],
+    "/setup/laser_repetition_rates": [
+        "Repetition rates in Hz for each laser. CW lasers have a value of 0.",
+        "array"
+    ],
     "/setup/excitation_polarizations": [
         "List of polarization angles (in degrees) for each excitation source.",
         "array"
