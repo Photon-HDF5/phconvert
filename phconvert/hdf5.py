@@ -1202,10 +1202,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
         needs to be pulsed."""
         _assert_valid(not all(setup.excitation_cw.read()), msg=dedent(msg))
         _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
-        _assert_has_field('laser_repetition_rate', setup, **kwargs)
-        m = 'Different laser_repetition_rate in setup and measurement_specs!'
-        _assert_valid(meas_specs.laser_repetition_rate.read() ==
-                      setup.laser_repetition_rate.read(), m)
+        _assert_has_field('laser_repetition_rates', setup, **kwargs)
         _assert_has_field('nanotimes', ph_data, **kwargs)
 
         if 'nanotimes_specs' in ph_data:
