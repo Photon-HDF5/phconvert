@@ -1182,7 +1182,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
 
     # ns-ALEX / PIE fields
     if meas_type == 'smFRET-nsALEX':
-        _assert_has_field('laser_repetition_rates', meas_specs, **kwargs)
+        _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
 
     # TCSPC fields
     if meas_type == 'smFRET-nsALEX':
