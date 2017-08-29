@@ -59,6 +59,11 @@ _detectors_group_fields = ('id', 'id_hardware', 'counts', 'dcr', 'afterpulsing',
                            'positions', 'spot', 'module', 'label', 'tcspc_unit',
                            'tcspc_num_bins')
 
+# All valid measurement_type strings
+valid_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
+                    'smFRET-nsALEX', 'generic']
+
+
 
 def _metapath(fullpath):
     """Normalize a HDF5 path by removing trailing digits after "photon_data".
@@ -765,7 +770,7 @@ def _convert_scalar_item(item):
 
 def _normalize_scalars(data_dict):
     """Make sure all scalar fields are scalars."""
-    ## scalar fields conversions
+    # scalar fields conversions
     for item in _iter_hdf5_dict(data_dict):
         if item['is_user']:
             continue
@@ -784,8 +789,8 @@ def _sanitize_data(data_dict, require_setup=True):
     - convert scalar fields that are array of size == 1 to scalars
     - cast bools or sequences of bools to integers
     - convert scalar fields which are strings to numbers
-    - convert sequences of strings in arrays of floats for selected setup fields
-    - convert /setup/detectors fields into numpy's arrays.
+    - for some setup fields, convert sequences of strings to arrays of floats
+    - convert /setup/detectors fields into numpy arrays.
     """
     def _assert_has_key(dict_, key, dict_name):
         if key not in dict_:
@@ -1084,9 +1089,6 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
                               verbose=verbose, norepeat=norepeat, pool=pool)
         return
 
-    all_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
-                      'smFRET-nsALEX', 'generic']
-
     meas_specs = ph_data.measurement_specs
     msg = 'Missing "measurement_type" in "%s".' % meas_specs._v_pathname
     _assert_has_field('measurement_type', meas_specs, msg, verbose=verbose)
@@ -1094,7 +1096,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     meas_type = meas_specs.measurement_type.read().decode()
     if verbose:
         print('* Measurement type: "%s"' % meas_type)
-    _assert_valid(meas_type in all_meas_types,
+    _assert_valid(meas_type in valid_meas_types,
                   msg='Unknown measurement type "%s"' % meas_type)
 
     # At this point we have a valid measurement_type
