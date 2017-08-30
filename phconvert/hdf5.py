@@ -947,6 +947,8 @@ def _assert_valid_detectors(h5file):
     msg = 'Detector %d in spot %d not found in detectors/id.'
     msgc = 'Wrong counts (%d instead of %d) for detector %d in spot %d.'
     for i, ph_data in enumerate(_sorted_photon_data_tables(h5file)):
+        if 'detectors' not in ph_data:
+            break
         vals, cnts = np.unique(ph_data.detectors[:], return_counts=True)
         det_ids_spot = det_ids[spot == i]
         for v, c in zip(vals, cnts):
