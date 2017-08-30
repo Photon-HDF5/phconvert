@@ -1,7 +1,7 @@
 #
 # phconvert - Reference library to read and save Photon-HDF5 files
 #
-# Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
+# Copyright (C) 2014-2017 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
 
@@ -58,6 +58,11 @@ _identity_mantatory_fields = ['format_name', 'format_version', 'format_url',
 _detectors_group_fields = ('id', 'id_hardware', 'counts', 'dcr', 'afterpulsing',
                            'positions', 'spot', 'module', 'label', 'tcspc_unit',
                            'tcspc_num_bins')
+
+# All valid measurement_type strings
+valid_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
+                    'smFRET-nsALEX', 'generic']
+
 
 
 def _metapath(fullpath):
@@ -361,7 +366,7 @@ def save_photon_hdf5(data_dict,
     ## Prefill and fix user-provided data_dict
     _populate_provenance(data_dict)
     if 'setup' in data_dict:
-        _populate_detectors_group(data_dict)
+        _populate_setup(data_dict)
     _sanitize_data(data_dict, require_setup)
     _compute_acquisition_duration(data_dict)
 
@@ -466,6 +471,32 @@ def _compute_acquisition_duration(data_dict):
         acquisition_duration = ((timestamps.max() - timestamps.min()) *
                                 timestamps_unit)
         data_dict['acquisition_duration'] = np.round(acquisition_duration, 1)
+
+
+def _populate_setup(data_dict):
+    _populate_detectors_group(data_dict)
+    _autofill_laser_rep_rates(data_dict)
+
+
+def _autofill_laser_rep_rates(data_dict):
+    ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
+    if 'measurement_specs' not in ph_data:
+        return
+    meas_specs = ph_data['measurement_specs']
+    if meas_specs['measurement_type'] != 'smFRET-nsALEX':
+        return
+    laser_rep_rate = 'laser_repetition_rate'
+    laser_rep_rates = laser_rep_rate + 's'
+    if laser_rep_rate not in meas_specs:
+        msg = """\
+            Measurement type 'smFRET-nsALEX' is missing the field
+            'laser_repetition_rate' in 'measurement_specs'."""
+        raise Invalid_PhotonHDF5(dedent(msg))
+    setup = data_dict['setup']
+    if laser_rep_rates not in setup:
+        # Create the array of laser repetition rates
+        # Note: all lasers repetition rates are assumed equal
+        setup[laser_rep_rates] = [meas_specs[laser_rep_rate]] * 2
 
 
 def _populate_detectors_group(data):
@@ -697,12 +728,15 @@ def _normalize_detectors_specs(data_dict):
 
     # Retrive the detectors' dtype (from first photon_data group in multi-spot)
     ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
+    if 'detectors' not in ph_data:
+        return
     dtype = ph_data['detectors'].dtype
 
     for item in _iter_hdf5_dict(data_dict):
         if item['meta_path'] in cast_fields:
             cdict = item['curr_dict']
-            cdict[item['name']] = np.array(item['value'], dtype=dtype, ndmin=1)
+            cdict[item['name']] = np.array(item['value'],
+                                           dtype=dtype, ndmin=1)
 
 
 def _normalize_setup_arrays(data_dict):
@@ -715,10 +749,12 @@ def _normalize_setup_arrays(data_dict):
     # Arrays of float fields in setup group
     names_aof = ['detection_wavelengths', 'excitation_wavelengths',
                  'excitation_input_powers', 'detection_polarizations',
-                 'excitation_intensity', 'detection_split_ch_ratios']
+                 'excitation_intensity', 'detection_split_ch_ratios',
+                 'laser_repetition_rates']
     for name in names_aof:
         if name in setup:
-            setup[name] = np.array([float(v) for v in setup[name]], dtype=float)
+            setup[name] = np.array([float(v) for v in setup[name]],
+                                   dtype=float)
 
 
 def _normalize_detectors_group(data_dict):
@@ -765,7 +801,7 @@ def _convert_scalar_item(item):
 
 def _normalize_scalars(data_dict):
     """Make sure all scalar fields are scalars."""
-    ## scalar fields conversions
+    # scalar fields conversions
     for item in _iter_hdf5_dict(data_dict):
         if item['is_user']:
             continue
@@ -784,8 +820,8 @@ def _sanitize_data(data_dict, require_setup=True):
     - convert scalar fields that are array of size == 1 to scalars
     - cast bools or sequences of bools to integers
     - convert scalar fields which are strings to numbers
-    - convert sequences of strings in arrays of floats for selected setup fields
-    - convert /setup/detectors fields into numpy's arrays.
+    - for some setup fields, convert sequences of strings to arrays of floats
+    - convert /setup/detectors fields into numpy arrays.
     """
     def _assert_has_key(dict_, key, dict_name):
         if key not in dict_:
@@ -911,6 +947,8 @@ def _assert_valid_detectors(h5file):
     msg = 'Detector %d in spot %d not found in detectors/id.'
     msgc = 'Wrong counts (%d instead of %d) for detector %d in spot %d.'
     for i, ph_data in enumerate(_sorted_photon_data_tables(h5file)):
+        if 'detectors' not in ph_data:
+            break
         vals, cnts = np.unique(ph_data.detectors[:], return_counts=True)
         det_ids_spot = det_ids[spot == i]
         for v, c in zip(vals, cnts):
@@ -980,19 +1018,19 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
 def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
     """Assert that setup exists and contains the mandatory fields.
     """
-    if _assert_has_field('setup', h5file.root, mandatory=strict,
-                         verbose=verbose):
-        for name in _setup_mantatory_fields:
-            _assert_has_field(name, h5file.root.setup, mandatory=strict,
-                              verbose=verbose)
-        if not warnings:
-            return
+    if not _assert_has_field('setup', h5file.root, mandatory=strict,
+                             verbose=verbose):
+        return
+    for name in _setup_mantatory_fields:
+        _assert_has_field(name, h5file.root.setup, mandatory=strict,
+                          verbose=verbose)
+    if 'detectors' in h5file.root.setup:
+        _assert_valid_detectors(h5file)
+    if warnings:
         optional_fields = ['excitation_wavelengths', 'detection_wavelengths']
         for name in optional_fields:
             _assert_has_field(name, h5file.root.setup, mandatory=False,
                               verbose=verbose)
-        if 'detectors' in h5file.root.setup:
-            _assert_valid_detectors(h5file)
 
 
 def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
@@ -1084,9 +1122,6 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
                               verbose=verbose, norepeat=norepeat, pool=pool)
         return
 
-    all_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
-                      'smFRET-nsALEX', 'generic']
-
     meas_specs = ph_data.measurement_specs
     msg = 'Missing "measurement_type" in "%s".' % meas_specs._v_pathname
     _assert_has_field('measurement_type', meas_specs, msg, verbose=verbose)
@@ -1094,14 +1129,13 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     meas_type = meas_specs.measurement_type.read().decode()
     if verbose:
         print('* Measurement type: "%s"' % meas_type)
-    _assert_valid(meas_type in all_meas_types,
+    _assert_valid(meas_type in valid_meas_types,
                   msg='Unknown measurement type "%s"' % meas_type)
 
     # At this point we have a valid measurement_type
     # We will check (and raise an error) for any missing field.
     msg = '\nThis field is mandatory for "%s" data.' % meas_type
     kwargs = dict(msg_add=msg, verbose=verbose)
-    det_specs = meas_specs.detectors_specs
 
     # Read number of channels in each branch
     num_ch = dict(spectral=setup.num_spectral_ch.read(),
@@ -1110,46 +1144,44 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
 
     # Check for spectral channels
     if meas_type in ('smFRET', 'smFRET-usALEX', 'smFRET-nsALEX'):
-        _msg = ('%s measurement requires /setup/num_spectral_ch = 2 (not %d).' %
-                (meas_type, num_ch['spectral']))
+        _msg = ('%s measurement requires /setup/num_spectral_ch = 2 '
+                '(not %d).' % (meas_type, num_ch['spectral']))
         _assert_valid(num_ch['spectral'] == 2, msg=_msg)
     if meas_type == 'smFRET-usALEX-3c':
-        _msg = ('%s measurement requires /setup/num_spectral_ch = 3 (not %d).' %
-                (meas_type, num_ch['spectral']))
+        _msg = ('%s measurement requires /setup/num_spectral_ch = 3 '
+                '(not %d).' % (meas_type, num_ch['spectral']))
         _assert_valid(num_ch['spectral'] == 3, msg=_msg)
 
-    # Check for spectral/split/polarization channels
-    for feature, nch in num_ch.items():
-        if nch > 1:
-            for i in range(nch):
-                _assert_has_field('%s_ch%d' % (feature, i + 1), det_specs,
-                                  **kwargs)
-    msg = """
+    # handle case of no detectors array and no detectors_specs
+    # which is possible when measurement_type is 'generic'
+    if 'detectors' in ph_data:
+        det_specs = meas_specs.detectors_specs
+        # Check for spectral/split/polarization channels in detectors_specs
+        for feature, nch in num_ch.items():
+            if nch > 1:
+                for i in range(nch):
+                    _assert_has_field('%s_ch%d' % (feature, i + 1),
+                                      det_specs, **kwargs)
+
+    # Check presences of repetititon rate with pulsed lasers
+    msg0 = "According to /setup/excitation_cw some lasers are pulsed.\n"
+    if not all(setup.excitation_cw[:]):
+        m = "However, the field '/setup/laser_repetition_rates' is missing."
+        _assert_has_field('laser_repetition_rates', setup, msg_add=msg0 + m)
+        m = ("However, the field 'measurement_specs/laser_repetition_rate' "
+             "is missing.")
+        _assert_has_field('laser_repetition_rate', meas_specs,
+                          msg_add=msg0 + m)
+
+    msg_cw = """
     According to /setup/excitation_alternated this measurement uses
-    laser alternation and lasers are {laser}. However, there is no {field}
-    field in measurement_specs. {field} is mandatory in measurements
-    using alternation and {laser} lasers."""
-    if any(setup.excitation_alternated[:]):
-        if all(setup.excitation_cw[:]):
-            fmt = dict(field='alex_period', laser='CW')
-        else:
-            fmt = dict(field='laser_repetition_rate', laser='pulsed')
-        _assert_has_field(fmt['field'], meas_specs,
-                          msg_add=dedent(msg.format(**fmt)))
-
-    # us-ALEX fields
-    if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
-        _assert_has_field('alex_period', meas_specs, **kwargs)
-
-    # ns-ALEX / PIE fields
-    if meas_type == 'smFRET-nsALEX':
-        _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
-
-    # TCSPC fields
-    if meas_type == 'smFRET-nsALEX':
-        _assert_has_field('lifetime', setup, **kwargs)
-        _assert_valid(setup.lifetime.read(),
-                      msg='smFRET-nsALEX requires lifetime = True.')
+    laser alternation and CW lasers. However, there is no alex_period
+    field in measurement_specs. alex_period is mandatory in measurements
+    using alternation and CW lasers."""
+    if all(setup.excitation_cw[:]):
+        if any(setup.excitation_alternated[:]):
+            _assert_has_field('alex_period', meas_specs,
+                              msg_add=dedent(msg_cw))
 
     if 'nanotimes' in ph_data and 'lifetime' in setup:
         _assert_valid(setup.lifetime.read(),
@@ -1162,7 +1194,6 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
         the laser sources are CW instead of pulsed. At least one source
         needs to be pulsed."""
         _assert_valid(not all(setup.excitation_cw.read()), msg=dedent(msg))
-        _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
         _assert_has_field('nanotimes', ph_data, **kwargs)
 
         if 'nanotimes_specs' in ph_data:
@@ -1173,6 +1204,22 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
             tcspc_specs_group = setup.detectors
         for name in ('tcspc_unit', 'tcspc_num_bins'):
             _assert_has_field(name, tcspc_specs_group, **kwargs)
+
+    # us-ALEX fields
+    if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
+        msg = 'All lasers need to be CW in %s measurements.'
+        _assert_valid(all(setup.excitation_cw[:]), msg=msg % meas_type)
+        msg = 'All lasers need to be alternated in %s measurements.'
+        _assert_valid(all(setup.excitation_alternated[:]),
+                      msg=msg % meas_type)
+
+    # ns-ALEX / PIE fields
+    if meas_type == 'smFRET-nsALEX':
+        msg = 'All lasers need to be pulsed in smFRET-nsALEX measurements.'
+        _assert_valid(all(~setup.excitation_cw[:]), msg=msg)
+        _assert_has_field('lifetime', setup, **kwargs)
+        _assert_valid(setup.lifetime.read(),
+                      msg='smFRET-nsALEX requires lifetime = True.')
 
 
 def print_attrs(node, which='user'):
