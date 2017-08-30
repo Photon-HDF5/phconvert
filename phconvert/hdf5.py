@@ -921,7 +921,7 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
     if verbose:
         print('Checking "%s" in %s.' % (name, group._v_pathname))
     if msg is None:
-        msg = 'Missing field "%s" in "%s".' % (name, group._v_pathname)
+        msg = 'Missing field "%s" in "%s". ' % (name, group._v_pathname)
     if msg_add is not None:
         msg += msg_add
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
