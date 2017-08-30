@@ -728,6 +728,8 @@ def _normalize_detectors_specs(data_dict):
 
     # Retrive the detectors' dtype (from first photon_data group in multi-spot)
     ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
+    if 'detectors' not in ph_data:
+        return
     dtype = ph_data['detectors'].dtype
 
     for item in _iter_hdf5_dict(data_dict):
