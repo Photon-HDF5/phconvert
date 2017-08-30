@@ -1132,7 +1132,6 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     # We will check (and raise an error) for any missing field.
     msg = '\nThis field is mandatory for "%s" data.' % meas_type
     kwargs = dict(msg_add=msg, verbose=verbose)
-    det_specs = meas_specs.detectors_specs
 
     # Read number of channels in each branch
     num_ch = dict(spectral=setup.num_spectral_ch.read(),
@@ -1149,46 +1148,36 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
                 '(not %d).' % (meas_type, num_ch['spectral']))
         _assert_valid(num_ch['spectral'] == 3, msg=_msg)
 
-    # Check for spectral/split/polarization channels
-    for feature, nch in num_ch.items():
-        if nch > 1:
-            for i in range(nch):
-                _assert_has_field('%s_ch%d' % (feature, i + 1), det_specs,
-                                  **kwargs)
-    msg = """
-    According to /setup/excitation_alternated this measurement uses
-    laser alternation and lasers are {laser}. However, there is no {field}
-    field in measurement_specs. {field} is mandatory in measurements
-    using alternation and {laser} lasers."""
-    if any(setup.excitation_alternated[:]):
-        if all(setup.excitation_cw[:]):
-            fmt = dict(field='alex_period', laser='CW')
-        else:
-            fmt = dict(field='laser_repetition_rate', laser='pulsed')
-        _assert_has_field(fmt['field'], meas_specs,
-                          msg_add=dedent(msg.format(**fmt)))
+    # handle case of no detectors array and no detectors_specs
+    # which is possible when measurement_type is 'generic'
+    if 'detectors' in ph_data:
+        det_specs = meas_specs.detectors_specs
+        # Check for spectral/split/polarization channels in detectors_specs
+        for feature, nch in num_ch.items():
+            if nch > 1:
+                for i in range(nch):
+                    _assert_has_field('%s_ch%d' % (feature, i + 1),
+                                      det_specs, **kwargs)
 
-    msg = """
-    According to /setup/excitation_cw some lasers are pulsed.
-    However, the mandatory field '/setup/laser_repetition_rates' is missing.
-    """
+    # Check presences of repetititon rate with pulsed lasers
+    msg0 = "According to /setup/excitation_cw some lasers are pulsed.\n"
     if not all(setup.excitation_cw[:]):
-        _assert_has_field('laser_repetition_rates', setup,
-                          msg_add=dedent(msg))
+        m = "However, the field '/setup/laser_repetition_rates' is missing."
+        _assert_has_field('laser_repetition_rates', setup, msg_add=msg0 + m)
+        m = ("However, the field 'measurement_specs/laser_repetition_rate' "
+             "is missing.")
+        _assert_has_field('laser_repetition_rate', meas_specs,
+                          msg_add=msg0 + m)
 
-    # us-ALEX fields
-    if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
-        _assert_has_field('alex_period', meas_specs, **kwargs)
-
-    # ns-ALEX / PIE fields
-    if meas_type == 'smFRET-nsALEX':
-        _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
-
-    # TCSPC fields
-    if meas_type == 'smFRET-nsALEX':
-        _assert_has_field('lifetime', setup, **kwargs)
-        _assert_valid(setup.lifetime.read(),
-                      msg='smFRET-nsALEX requires lifetime = True.')
+    msg_cw = """
+    According to /setup/excitation_alternated this measurement uses
+    laser alternation and CW lasers. However, there is no alex_period
+    field in measurement_specs. alex_period is mandatory in measurements
+    using alternation and CW lasers."""
+    if all(setup.excitation_cw[:]):
+        if any(setup.excitation_alternated[:]):
+            _assert_has_field('alex_period', meas_specs,
+                              msg_add=dedent(msg_cw))
 
     if 'nanotimes' in ph_data and 'lifetime' in setup:
         _assert_valid(setup.lifetime.read(),
@@ -1201,8 +1190,6 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
         the laser sources are CW instead of pulsed. At least one source
         needs to be pulsed."""
         _assert_valid(not all(setup.excitation_cw.read()), msg=dedent(msg))
-        _assert_has_field('laser_repetition_rate', meas_specs, **kwargs)
-        _assert_has_field('laser_repetition_rates', setup, **kwargs)
         _assert_has_field('nanotimes', ph_data, **kwargs)
 
         if 'nanotimes_specs' in ph_data:
@@ -1213,6 +1200,22 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
             tcspc_specs_group = setup.detectors
         for name in ('tcspc_unit', 'tcspc_num_bins'):
             _assert_has_field(name, tcspc_specs_group, **kwargs)
+
+    # us-ALEX fields
+    if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
+        msg = 'All lasers need to be CW in %s measurements.'
+        _assert_valid(all(setup.excitation_cw[:]), msg=msg % meas_type)
+        msg = 'All lasers need to be alternated in %s measurements.'
+        _assert_valid(all(setup.excitation_alternated[:]),
+                      msg=msg % meas_type)
+
+    # ns-ALEX / PIE fields
+    if meas_type == 'smFRET-nsALEX':
+        msg = 'All lasers need to be pulsed in smFRET-nsALEX measurements.'
+        _assert_valid(all(~setup.excitation_cw[:]), msg=msg)
+        _assert_has_field('lifetime', setup, **kwargs)
+        _assert_valid(setup.lifetime.read(),
+                      msg='smFRET-nsALEX requires lifetime = True.')
 
 
 def print_attrs(node, which='user'):
