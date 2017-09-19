@@ -140,6 +140,32 @@ def load_pt3(filename, ovcfunc=None):
 
     return timestamps, detectors, nanotimes, meta
 
+def load_t3r(filename, ovcfunc=None):
+    """Load data from a PicoQuant .pt3 file.
+
+    Arguments:
+        filename (string): the path of the t3r file to be loaded.
+        ovcfunc (function or None): function to use for overflow/rollover
+            correction of timestamps. If None, it defaults to the
+            fastest available implementation for the current machine.
+
+    Returns:
+        A tuple of timestamps, detectors, nanotimes (integer arrays) and a
+        dictionary with metadata containing at least the keys
+        'timestamps_unit' and 'nanotimes_unit'.
+    """
+    assert os.path.isfile(filename), "File '%s' not found." % filename
+
+    t3records, timestamps_unit, nanotimes_unit, meta = t3r_reader(filename)
+    detectors, timestamps, nanotimes = process_t3records_t3rfile(
+        t3records, reserved=1, valid=1, time_bit=12, dtime_bit=16,
+        ch_bit=2, special_bit=False)
+    meta.update({'timestamps_unit': timestamps_unit,
+                 'nanotimes_unit': nanotimes_unit})
+
+    return timestamps, detectors, nanotimes, meta
+
+
 def ht3_reader(filename):
     """Load raw t3 records and metadata from an HT3 file.
     """
@@ -362,10 +388,10 @@ def pt3_reader(filename):
         # Special header for imaging. How many of the following ImgHdr
         # array elements are actually present in the file is indicated by
         # ImgHdrSize above.
-        ImgHdr = np.fromfile(f, dtype='int32', count=ttmode['ImgHdrSize'][0])
+        ImgHdr = np.fromfile(f, dtype='int32', count=ttmode['ImgHdrSize'])
 
         # The remainings are all T3 records
-        t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'][0])
+        t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'])
 
         timestamps_unit = 1./ttmode['InpRate0']
         nanotimes_unit = 1e-9*hardware['Resolution']
@@ -374,6 +400,127 @@ def pt3_reader(filename):
                         repeatgroup=repeatgroup, hardware=hardware,
                         router=router, ttmode=ttmode, imghdr=ImgHdr)
         return t3records, timestamps_unit, nanotimes_unit, metadata
+
+def t3r_reader(filename):
+    """Load raw t3 records and metadata from a PT3 file.
+    """
+    with open(filename, 'rb') as f:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Binary file header
+        header_dtype = np.dtype([
+                ('Ident',             'S16'   ),
+                ('SoftwareVersion',     'S6'    ),
+                ('HardwareVersion',     'S6'    ),
+                #('CreatorName',       'S18'   ),
+                #('CreatorVersion',    'S12'   ),
+                ('FileTime',          'S18'   ),
+                ('CRLF',              'S2'    ),
+                ('Comment',           'S256'  ),
+                ('NumberOfChannels',   'int32'),
+                ('NumberOfCurves',    'int32' ),
+                ('BitsPerChannel',     'int32' ),   # bits in each T3 record
+                ('RoutingChannels',   'int32' ),
+                ('NumberOfBoards',    'int32' ),
+                ('ActiveCurve',       'int32' ),
+                ('MeasurementMode',   'int32' ),
+                ('SubMode',           'int32' ),
+                ('RangeNo',           'int32' ),
+                ('Offset',            'int32' ),
+                ('AcquisitionTime',   'int32' ),   # in ms
+                ('StopAt',            'uint32'),
+                ('StopOnOvfl',        'int32' ),
+                ('Restart',           'int32' ),
+                ('DispLinLog',        'int32' ),
+                ('DispTimeAxisFrom',  'int32' ),
+                ('DispTimeAxisTo',    'int32' ),
+                ('DispCountAxisFrom', 'int32' ),
+                ('DispCountAxisTo',   'int32' ),
+            ])
+        header = np.fromfile(f, dtype=header_dtype, count=1)
+
+        if header['SoftwareVersion'][0] != b'5.0':
+            raise IOError(("Format '%s' not supported. "
+                           "Only valid format is '5.0'.") % \
+                           header['SoftwareVersion'][0])
+
+        dispcurve_dtype = np.dtype([
+                ('DispCurveMapTo', 'int32'),
+                ('DispCurveShow',  'int32')])
+        dispcurve = np.fromfile(f, dispcurve_dtype, count=8)
+
+        params_dtype = np.dtype([
+                ('ParamStart', 'f4'),
+                ('ParamStep',  'f4'),
+                ('ParamEnd',   'f4')])
+        params = np.fromfile(f, params_dtype, count=3)
+
+        repeat_dtype = np.dtype([
+                ('RepeatMode',      'int32'),
+                ('RepeatsPerCurve', 'int32'),
+                ('RepeatTime',       'int32'),
+                ('RepeatWaitTime',  'int32'),
+                ('ScriptName',      'S20'  )])
+        repeatgroup = np.fromfile(f, repeat_dtype, count=1)
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # Hardware information header
+        hw_dtype = np.dtype([
+                #('HardwareIdent',   'S16'  ),
+                #('HardwarePartNo',  'S8'   ),
+                #('HardwareSerial',  'int32'),
+                ('BoardSerial',     'int32'),
+                ('CFDZeroCross',   'int32'),
+                #('CFDLevel0',       'int32'),
+                ('CFDDiscriminatorMin',   'int32'),
+                ('SYNCLevel',       'int32'),
+                ('CurveOffset',       'int32'),
+                ('Resolution',      'f4')])
+                #('RouterModelCode', 'int32'),
+                #('RouterEnabled',   'int32')
+        hardware = np.fromfile(f, hw_dtype, count=1)
+
+        # rtr_dtype = np.dtype([
+            # ('InputType',       'int32'),
+            # ('InputLevel',      'int32'),
+            # ('InputEdge',       'int32'),
+            # ('CFDPresent',      'int32'),
+            # ('CFDLevel',        'int32'),
+            # ('CFDZCross',       'int32')])
+        # router = np.fromfile(f, rtr_dtype, count=4)
+
+        # Time tagging mode specific header
+        ttmode_dtype = np.dtype([
+                ('TTTRGlobclock',      'int32' ),
+                ('ExtDevices',      'int32' ),
+                ('Reserved1',       'int32' ),
+                ('Reserved2',       'int32' ),
+                ('Reserved3',       'int32' ),
+                ('Reserved4',       'int32' ),
+                ('Reserved5',       'int32' ),
+                ('SyncRate',        'int32' ),
+                ('AverageCFDRate',        'int32' ),
+                ('StopAfter',       'int32' ),
+                ('StopReason',      'int32' ),
+                ('nRecords',        'int32' ),
+                ('ImgHdrSize',      'int32')])
+        ttmode = np.fromfile(f, ttmode_dtype, count=1)
+
+        # Special header for imaging. How many of the following ImgHdr
+        # array elements are actually present in the file is indicated by
+        # ImgHdrSize above.
+        ImgHdr = np.fromfile(f, dtype='int32', count=ttmode['ImgHdrSize'])
+
+        # The remainings are all T3 records
+        t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'])
+
+        timestamps_unit = 100e-9 #1./ttmode['SyncRate']
+        nanotimes_unit = 1e-9*hardware['Resolution']
+
+        metadata = dict(header=header, dispcurve=dispcurve, params=params,
+                        repeatgroup=repeatgroup, hardware=hardware,
+                         ttmode=ttmode, imghdr=ImgHdr)# router=router,
+        return t3records, timestamps_unit, nanotimes_unit, metadata
+
 
 
 def ptu_reader(filename):
@@ -607,6 +754,42 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
         ovcfunc = _correct_overflow
     ovcfunc(timestamps, detectors, overflow_ch, overflow)
     return detectors, timestamps, nanotimes
+    
+
+        
+def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime_bit=16,
+                      ch_bit=2, special_bit=False):
+    """time_bit: nanotimes
+    dtime_bit: TimeTag
+    if valid==1 the Data == Channel
+    else Data = Overflow[1], Reserved[8], Marker[3]
+    """
+    if special_bit:
+        ch_bit += 1
+    assert ch_bit <= 8
+    assert time_bit <= 16
+    assert time_bit+reserved+valid+dtime_bit+ch_bit == 32
+    
+    detectors = np.bitwise_and(
+        np.right_shift(t3records, time_bit+dtime_bit+reserved+valid), 2**ch_bit-1).astype('uint8')
+    nanotimes = np.bitwise_and(
+    np.right_shift(t3records, dtime_bit), 2**time_bit-1).astype('uint16')
+    
+    valid = np.bitwise_and(
+        np.right_shift(t3records, time_bit+dtime_bit+reserved+valid), 2**valid-1).astype('uint8')
+
+    dt = np.dtype([('low16', 'uint16'), ('high16', 'uint16')])
+    t3records_low16 = np.frombuffer(t3records, dt)['low16']     # View
+    timestamps = t3records_low16.astype(np.int64)               # Copy
+    np.bitwise_and(timestamps, 2**dtime_bit - 1, out=timestamps)
+
+    overflow_ch = 2**ch_bit - 1
+    overflow = 2**dtime_bit
+    #_t3r_correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
+    #    _t3r_correct_overflow)
+    _t3r_correct_overflow(timestamps, valid, overflow_ch, overflow)
+    
+    return detectors, timestamps, nanotimes
 
 def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
     """Apply overflow correction when each overflow has a special timestamp.
@@ -650,7 +833,31 @@ def _correct_overflow_nsync_naive(timestamps, detectors, overflow_ch, overflow):
             overflow_correction += (overflow * timestamps[i])
         timestamps[i] += overflow_correction
 
+def _t3r_correct_overflow(timestamps, valid, overflow_ch, overflow):
+    """Apply overflow correction when each overflow has a special timestamp.
+    """
+    overflow_correction = 0
+    for i in xrange(valid.size):
+        if valid[i] == 0:
+            overflow_correction += overflow
+        timestamps[i] += overflow_correction
+    
+def _t3r_correct_overflow2(timestamps, valid, overflow_ch, overflow):
+    """Apply overflow correction when each overflow has a special timestamp.
+    """
+    index_overflows = np.where((valid == 0))
+    num_overflows = timestamps[index_overflows]
+    cum_overflows = np.zeros(timestamps.size, dtype='int64')
+    cum_overflows[index_overflows] = num_overflows
+    np.cumsum(cum_overflows, out=cum_overflows)
+    timestamps += (cum_overflows * overflow)
 
+if has_numba:
+    _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
+        _correct_overflow1)
+else:
+    _correct_overflow = _correct_overflow2
+        
 if has_numba:
     _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
         _correct_overflow1)
