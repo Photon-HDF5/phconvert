@@ -783,7 +783,7 @@ def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime
     overflow = 2**dtime_bit
     #_t3r_correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
     #    _t3r_correct_overflow)
-    _correct_overflow1(timestamps, valid, overflow_ch, overflow)
+    _t3r_correct_overflow(timestamps, valid, overflow_ch, overflow)
     
     return detectors, timestamps, nanotimes
 
@@ -822,13 +822,29 @@ def _correct_overflow_nsync(timestamps, detectors, overflow_ch, overflow):
 
 def _correct_overflow_nsync_naive(timestamps, detectors, overflow_ch, overflow):
     """Slow implementation of `_correct_overflow_nsync` used for testing.
-    """
+    """ 
     overflow_correction = 0
     for i in range(detectors.size):
         if detectors[i] == overflow_ch:
             overflow_correction += (overflow * timestamps[i])
         timestamps[i] += overflow_correction
-
+def _t3r_correct_overflow(timestamps, valid, overflow_ch, overflow):
+    """Apply overflow correction when each overflow has a special timestamp.
+    """
+    overflow_correction = 0;
+    for i in xrange(valid.size):
+        if valid[i] == 0:
+            overflow_correction += overflow
+        timestamps[i] += overflow_correction
+def _t3r_correct_overflow2(timestamps, valid, overflow_ch, overflow):
+    """Apply overflow correction when each overflow has a special timestamp.
+    """
+    index_overflows = np.where((valid == 0))
+    num_overflows = timestamps[index_overflows]
+    cum_overflows = np.zeros(timestamps.size, dtype='int64')
+    cum_overflows[index_overflows] = num_overflows
+    np.cumsum(cum_overflows, out=cum_overflows)
+    timestamps += (cum_overflows * overflow)
 
 if has_numba:
     _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
