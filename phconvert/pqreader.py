@@ -490,8 +490,6 @@ def t3r_reader(filename):
                 ('Ident',             'S16'   ),
                 ('SoftwareVersion',     'S6'    ),
                 ('HardwareVersion',     'S6'    ),
-                #('CreatorName',       'S18'   ),
-                #('CreatorVersion',    'S12'   ),
                 ('FileTime',          'S18'   ),
                 ('CRLF',              'S2'    ),
                 ('Comment',           'S256'  ),
@@ -540,33 +538,17 @@ def t3r_reader(filename):
                 ('RepeatWaitTime',  'int32'),
                 ('ScriptName',      'S20'  )])
         repeatgroup = np.fromfile(f, repeat_dtype, count=1)
-
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Hardware information header
         hw_dtype = np.dtype([
-                #('HardwareIdent',   'S16'  ),
-                #('HardwarePartNo',  'S8'   ),
-                #('HardwareSerial',  'int32'),
+
                 ('BoardSerial',     'int32'),
                 ('CFDZeroCross',   'int32'),
-                #('CFDLevel0',       'int32'),
                 ('CFDDiscriminatorMin',   'int32'),
                 ('SYNCLevel',       'int32'),
                 ('CurveOffset',       'int32'),
                 ('Resolution',      'f4')])
-                #('RouterModelCode', 'int32'),
-                #('RouterEnabled',   'int32')
         hardware = np.fromfile(f, hw_dtype, count=1)
-
-        # rtr_dtype = np.dtype([
-            # ('InputType',       'int32'),
-            # ('InputLevel',      'int32'),
-            # ('InputEdge',       'int32'),
-            # ('CFDPresent',      'int32'),
-            # ('CFDLevel',        'int32'),
-            # ('CFDZCross',       'int32')])
-        # router = np.fromfile(f, rtr_dtype, count=4)
-
         # Time tagging mode specific header
         ttmode_dtype = np.dtype([
                 ('TTTRGlobclock',      'int32' ),
@@ -752,6 +734,7 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
         ovcfunc = _correct_overflow
     ovcfunc(timestamps, detectors, overflow_ch, overflow)
     return detectors, timestamps, nanotimes
+
 def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime_bit=16,
                       ch_bit=2, special_bit=False):
     """ For processing file.t3r format
@@ -769,7 +752,7 @@ def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime
     detectors = np.bitwise_and(
         np.right_shift(t3records, time_bit+dtime_bit+reserved+valid), 2**ch_bit-1).astype('uint8')
     nanotimes = np.bitwise_and(
-    np.right_shift(t3records, dtime_bit), 2**time_bit-1).astype('uint16')
+        np.right_shift(t3records, dtime_bit), 2**time_bit-1).astype('uint16')
     
     valid = np.bitwise_and(
         np.right_shift(t3records, time_bit+dtime_bit+reserved+valid), 2**valid-1).astype('uint8')
@@ -781,10 +764,7 @@ def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime
 
     overflow_ch = 2**ch_bit - 1
     overflow = 2**dtime_bit
-    #_t3r_correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
-    #    _t3r_correct_overflow)
-    _t3r_correct_overflow(timestamps, valid, overflow_ch, overflow)
-    
+    _correct_overflow1(timestamps, valid, 0, overflow)        
     return detectors, timestamps, nanotimes
 
 def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
@@ -828,23 +808,6 @@ def _correct_overflow_nsync_naive(timestamps, detectors, overflow_ch, overflow):
         if detectors[i] == overflow_ch:
             overflow_correction += (overflow * timestamps[i])
         timestamps[i] += overflow_correction
-def _t3r_correct_overflow(timestamps, valid, overflow_ch, overflow):
-    """Apply overflow correction when each overflow has a special timestamp.
-    """
-    overflow_correction = 0;
-    for i in xrange(valid.size):
-        if valid[i] == 0:
-            overflow_correction += overflow
-        timestamps[i] += overflow_correction
-def _t3r_correct_overflow2(timestamps, valid, overflow_ch, overflow):
-    """Apply overflow correction when each overflow has a special timestamp.
-    """
-    index_overflows = np.where((valid == 0))
-    num_overflows = timestamps[index_overflows]
-    cum_overflows = np.zeros(timestamps.size, dtype='int64')
-    cum_overflows[index_overflows] = num_overflows
-    np.cumsum(cum_overflows, out=cum_overflows)
-    timestamps += (cum_overflows * overflow)
 
 if has_numba:
     _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(

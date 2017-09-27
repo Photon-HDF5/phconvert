@@ -307,7 +307,6 @@ def nsalex_pt3(filename,
         software_version = software_version,
     )
 
-
     photon_data = dict(
         timestamps = timestamps,
         timestamps_specs = dict(timestamps_unit=timestamps_unit),
@@ -344,7 +343,6 @@ def nsalex_pt3(filename,
     data = dict(
         _filename=filename,
         acquisition_duration = acquisition_duration,
-
         photon_data = photon_data,
         setup = setup,
         provenance = provenance)
@@ -390,7 +388,6 @@ def nsalex_t3r(filename,
         software_version = software_version,
     )
 
-
     photon_data = dict(
         timestamps = timestamps,
         timestamps_specs = dict(timestamps_unit=timestamps_unit),
@@ -427,7 +424,6 @@ def nsalex_t3r(filename,
     data = dict(
         _filename=filename,
         acquisition_duration = acquisition_duration,
-
         photon_data = photon_data,
         setup = setup,
         provenance = provenance)
