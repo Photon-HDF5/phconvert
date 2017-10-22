@@ -268,6 +268,8 @@ def nsalex_ht3(filename,
         provenance = provenance)
 
     return data, metadata
+
+
 def nsalex_pt3(filename,
                donor = 0,
                acceptor = 1,
@@ -275,7 +277,7 @@ def nsalex_pt3(filename,
                alex_period_acceptor = (1540, 3050),
                excitation_wavelengths = (523e-9, 628e-9),
                detection_wavelengths = (580e-9, 680e-9)):
-    """Load a .ht3 file containing ns-ALEX data and return a dict.
+    """Load a .pt3 file containing ns-ALEX data and return a dict.
 
     This dictionary can be passed to the :func:`phconvert.hdf5.save_photon_hdf5`
     function to save the data in Photon-HDF5 format.
@@ -289,7 +291,7 @@ def nsalex_pt3(filename,
     tcspc_unit = float(metadata.pop('nanotimes_unit'))
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins * tcspc_unit
-    laser_repetition_rate = float(metadata['ttmode']['InpRate0']) #SyncRate changed to InpRate0
+    laser_repetition_rate = float(metadata['ttmode']['InpRate0'])
     acquisition_duration = float(metadata['header']['AcquisitionTime'][0] * 1e-3)
     software = str(metadata['header']['CreatorName'][0])
     software_version = str(metadata['header']['CreatorVersion'][0])
@@ -347,7 +349,8 @@ def nsalex_pt3(filename,
         setup = setup,
         provenance = provenance)
 
-    return data, metadata   
+    return data, metadata
+
 
 def nsalex_t3r(filename,
                donor = 0,
@@ -370,7 +373,7 @@ def nsalex_t3r(filename,
     tcspc_unit = float(metadata.pop('nanotimes_unit'))
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins * tcspc_unit
-    laser_repetition_rate = float(metadata['ttmode']['SyncRate']) # InpRate0changed to SyncRate
+    laser_repetition_rate = float(metadata['ttmode']['SyncRate'])
     acquisition_duration = float(metadata['header']['AcquisitionTime'][0] * 1e-3)
     software = str(metadata['header']['SoftwareVersion'][0])
     software_version = str(metadata['header']['HardwareVersion'][0])
@@ -429,5 +432,6 @@ def nsalex_t3r(filename,
         provenance = provenance)
 
     return data, metadata
+
 
 del print_function, absolute_import, division  # cleanup namespace
