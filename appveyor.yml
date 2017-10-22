@@ -58,6 +58,10 @@ before_test:
   - curl -fsSLO  https://www.dropbox.com/s/s8zzxcq7d2nfqe0/20161027_DM1_1nM_pH7_20MHz1.ptu.zip
   - 7z e 20161027_DM1_1nM_pH7_20MHz1.ptu.zip
   - ps: wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3 -OutFile topfluorPE_2_1_1_1.pt3
+  - ps: wget https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip -OutFile DNA_FRET_0.5nM.pt3.zip
+  - 7z e DNA_FRET_0.5nM.pt3.zip
+  - ps: wget https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip -OutFile data.zip
+  - 7z e data.zip
 
 test_script:
   - cd %APPVEYOR_BUILD_FOLDER%
