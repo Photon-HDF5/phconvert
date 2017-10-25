@@ -145,6 +145,7 @@ List of contributors (by lines of code):
 - Marco Lamperti (@lampo808) <marco.lampo AT gmail.com>
 - Xavier Michalet (@smXplorer) <michalet AT chem.ucla.edu>
 - Anders Barth (@AndersBarth) <anders.barth AT gmail.com>
+- Biswajit Pradhan (@biswajitSM) <biswajitp145 AT gmail.com.
 
 We thank also @ncodina for providing PTU files and helping in testing
 the PTU decoder in phconvert.
