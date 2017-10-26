@@ -7,12 +7,17 @@
 <a href="http://photon-hdf5.org/" target="_blank">Photon-HDF5</a>
 files, a file format for time stamp-based single-molecule spectroscopy.
 Additionally, *phconvert* can convert a few common binary formats
-used in in single-molecule spectroscopy (PicoQuant .HT3/.PT3/.PTU,
+used in in single-molecule spectroscopy (PicoQuant .HT3/.PT3/.PTU,.T3R,
 Becker & Hickl .SPC/.SET) to Photon-HDF5.
 
 For questions or issues running this software please use the
 [Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5)
 or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
+
+## What's new
+
+**Oct. 2017:** Phconvert 0.8 relased, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/0.8).
+
 
 ## Quick-start: Converting files to Photon-HDF5
 
@@ -64,7 +69,7 @@ We are willing add support for as many file formats as possible!
 ### Why phconvert?
 
 When writing Photon-HDF5 files, phconvert saves you time
-and protects you against common programming errors that risk
+and protects you against common errors that risk
 to make the file not a valid Photon-HDF5. Also a description
 is automatically added to each Photon-HDF5 field.
 The descriptions are extracted from a [JSON file](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json)
