@@ -1147,6 +1147,10 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
         _msg = ('%s measurement requires /setup/num_spectral_ch = 2 '
                 '(not %d).' % (meas_type, num_ch['spectral']))
         _assert_valid(num_ch['spectral'] == 2, msg=_msg)
+        for branch in ('split', 'polarization'):
+            _msg = ('%s measurement requires /setup/num_%s_ch = 1 '
+                    '(not %d).' % (meas_type, branch, num_ch[branch]))
+            _assert_valid(num_ch[branch] == 1, msg=_msg)
     if meas_type == 'smFRET-usALEX-3c':
         _msg = ('%s measurement requires /setup/num_spectral_ch = 3 '
                 '(not %d).' % (meas_type, num_ch['spectral']))
@@ -1172,6 +1176,13 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
              "is missing.")
         _assert_has_field('laser_repetition_rate', meas_specs,
                           msg_add=msg0 + m)
+    else:
+        # All lasers are CW, check that there is no pulsed laser field
+        msg = ('According to /setup/excitation_cw all lasera are CW.\n'
+               'However, `%d` has the field `laser_repetition_rate`.')
+        _assert_valid('laser_repetition_rate' not in setup, msg % 'setup')
+        _assert_valid('laser_repetition_rate' not in meas_specs,
+                      msg % 'measurement_specs')
 
     msg_cw = """
     According to /setup/excitation_alternated this measurement uses
@@ -1182,6 +1193,15 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
         if any(setup.excitation_alternated[:]):
             _assert_has_field('alex_period', meas_specs,
                               msg_add=dedent(msg_cw))
+        else:
+            # No alternated laser, check that no ALEX field is present
+            msg0 = ('According to /setup/excitation_alternated '
+                    'no laser is alternated.\n')
+            msg1 = 'However, measurement_specs has the ALEX field `%d`.'
+            fields = ['alex_period', 'alex_offset']
+            fields += ['alex_excitation_period%d' % i for i in (1, 2, 3)]
+            for field in fields:
+                _assert_valid(field not in meas_specs, msg0 + msg1 % field)
 
     if 'nanotimes' in ph_data and 'lifetime' in setup:
         _assert_valid(setup.lifetime.read(),
