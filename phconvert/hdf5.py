@@ -1179,7 +1179,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     else:
         # All lasers are CW, check that there is no pulsed laser field
         msg = ('According to /setup/excitation_cw all lasera are CW.\n'
-               'However, `%d` has the field `laser_repetition_rate`.')
+               'However, `%s` has the field `laser_repetition_rate`.')
         _assert_valid('laser_repetition_rate' not in setup, msg % 'setup')
         _assert_valid('laser_repetition_rate' not in meas_specs,
                       msg % 'measurement_specs')
@@ -1197,7 +1197,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
             # No alternated laser, check that no ALEX field is present
             msg0 = ('According to /setup/excitation_alternated '
                     'no laser is alternated.\n')
-            msg1 = 'However, measurement_specs has the ALEX field `%d`.'
+            msg1 = 'However, measurement_specs has the ALEX field `%s`.'
             fields = ['alex_period', 'alex_offset']
             fields += ['alex_excitation_period%d' % i for i in (1, 2, 3)]
             for field in fields:
