@@ -1083,7 +1083,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
             # Check fields use official description
             msg = 'Description (TITLE) for "%s" not compliant.' % metaname
             _assert_valid(title.decode() == official_fields_specs[metaname][0],
-                          msg)
+                          msg, strict=strict_description)
 
             # Check fields have correct type
             official_type = official_fields_specs[metaname][1]
