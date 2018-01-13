@@ -6,6 +6,7 @@
 
 from . import loader
 from . import hdf5
+from . import v04
 
 has_matplotlib = True
 try:
