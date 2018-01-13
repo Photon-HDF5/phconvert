@@ -32,3 +32,4 @@ root_attributes = OrderedDict([
 ])
 
 official_fields_specs = _get_fields_descr()
+del OrderedDict
