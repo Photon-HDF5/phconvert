@@ -35,7 +35,7 @@ import numpy as np
 
 from .metadata import (official_fields_specs, root_attributes,
                        FORMAT_VERSION)
-from .._version import get_versions
+from phconvert._version import get_versions
 
 
 __version__ = str(get_versions()['version'])
