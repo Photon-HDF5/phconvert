@@ -1,0 +1,298 @@
+{
+    "/": [
+        "A file format for photon-counting detector based single-molecule spectroscopy experiments.",
+        "group"
+    ],
+    "/acquisition_duration": [
+        "Measurement duration in seconds.",
+        "scalar"
+    ],
+    "/description": [
+        "A user-defined comment describing the data file.",
+        "string"
+    ],
+    "/photon_data": [
+        "Group containing arrays of photon-data.",
+        "group"
+    ],
+    "/photon_data/timestamps": [
+        "Array of photon timestamps. Units specified in timestamps_units (defined in timestamps_specs/).",
+        "array"
+    ],
+    "/photon_data/detectors": [
+        "Array of pixel IDs for each timestamp.",
+        "array"
+    ],
+    "/photon_data/nanotimes": [
+        "TCSPC photon arrival time (nanotimes). Units and other specifications are in nanotimes_specs group.",
+        "array"
+    ],
+    "/photon_data/particles": [
+        "Particle IDs (integer) for each timestamp.",
+        "array"
+    ],
+    "/photon_data/timestamps_specs": [
+        "Specifications for timestamps.",
+        "group"
+    ],
+    "/photon_data/timestamps_specs/timestamps_unit": [
+        "Value of 1-unit timestamp-increment in seconds.",
+        "scalar"
+    ],
+    "/photon_data/nanotimes_specs": [
+        "Group for nanotime-specific data.",
+        "group"
+    ],
+    "/photon_data/nanotimes_specs/tcspc_unit": [
+        "Value of 1-unit nanotime-increment in seconds (TCSPC bin size).",
+        "scalar"
+    ],
+    "/photon_data/nanotimes_specs/tcspc_num_bins": [
+        "Number of TCSPC bins.",
+        "scalar"
+    ],
+    "/photon_data/nanotimes_specs/tcspc_range": [
+        "TCSPC full-scale range in seconds.",
+        "scalar"
+    ],
+    "/photon_data/measurement_specs": [
+        "Metadata necessary for interpretation of the particular type of measurement.",
+        "group"
+    ],
+    "/photon_data/measurement_specs/measurement_type": [
+        "Name of the measurement the data represents.",
+        "string"
+    ],
+    "/photon_data/measurement_specs/alex_period": [
+        "Period of laser alternation in us-ALEX measurements in timestamps units (defined in timestamps_specs/).",
+        "scalar"
+    ],
+    "/photon_data/measurement_specs/laser_repetition_rate": [
+        "Repetition rate of the pulsed excitation laser (in Hertz).",
+        "scalar"
+    ],
+    "/photon_data/measurement_specs/alex_offset": [
+        "Time offset (in timestamps unit) to apply to timestamps to obtain a properly aligned alternation histogram.",
+        "scalar"
+    ],
+    "/photon_data/measurement_specs/alex_excitation_period1": [
+        "Values pair (start-stop range, in timestamps units) identifying photons in the excitation period of wavelength 1 (the shortest).",
+        "array"
+    ],
+    "/photon_data/measurement_specs/alex_excitation_period2": [
+        "Values pair (start-stop range, in timestamps units) identifying photons in the excitation period of wavelength 2.",
+        "array"
+    ],
+    "/photon_data/measurement_specs/detectors_specs": [
+        "Mapping between the pixel IDs and the detection channels.",
+        "group"
+    ],
+    "/photon_data/measurement_specs/detectors_specs/spectral_ch1": [
+        "Pixel IDs for the first spectral channel (i.e. donor in a 2-color smFRET measurement).",
+        "array"
+    ],
+    "/photon_data/measurement_specs/detectors_specs/spectral_ch2": [
+        "Pixel IDs for the first spectral channel (i.e. acceptor in a 2-color smFRET measurement).",
+        "array"
+    ],
+    "/photon_data/measurement_specs/detectors_specs/polarization_ch1": [
+        "Pixel IDs for the first polarization channel.",
+        "array"
+    ],
+    "/photon_data/measurement_specs/detectors_specs/polarization_ch2": [
+        "Pixel IDs for the second polarization channel.",
+        "array"
+    ],
+    "/photon_data/measurement_specs/detectors_specs/split_ch1": [
+        "Pixel IDs for the first channel split through a non-polarizing beam splitter.",
+        "array"
+    ],
+    "/photon_data/measurement_specs/detectors_specs/split_ch2": [
+        "Pixel IDs for the second channel split through a non-polarizing beam splitter.",
+        "array"
+    ],
+    "/photon_data/measurement_specs/detectors_specs/labels": [
+        "User defined labels for each pixel IDs. In smFRET it is suggested to use \"donor\" and \"acceptor\" for the respective pixel IDs.",
+        "string"
+    ],
+    "/setup": [
+        "Information about the experimental setup.",
+        "group"
+    ],
+    "/setup/num_pixels": [
+        "Total number of detector pixels.",
+        "scalar"
+    ],
+    "/setup/num_spots": [
+        "Number of excitation (or detection) \"spots\" in the sample.",
+        "scalar"
+    ],
+    "/setup/num_spectral_ch": [
+        "Number of distinct spectral bands which are acquired.",
+        "scalar"
+    ],
+    "/setup/num_polarization_ch": [
+        "Number of distinct polarization states which are acquired.",
+        "scalar"
+    ],
+    "/setup/num_split_ch": [
+        "Number of distinct detection channels detecting the same spectral band and polarization. This value is > 1 when using a non-polarizing beam splitter.",
+        "scalar"
+    ],
+    "/setup/modulated_excitation": [
+        "True (i.e. 1) if there is any form of excitation modulation of excitation wavelength (as in us-ALEX or PAX) or polarization. This field is also True for pulse-interleaved excitation (PIE) or ns-ALEX measurements.",
+        "scalar"
+    ],
+    "/setup/lifetime": [
+        "True (i.e. 1) if the measurement includes a nanotimes array of photon arrival times with respect to a laser pulse (as in TCSPC measurements).",
+        "scalar"
+    ],
+    "/setup/excitation_wavelengths": [
+        "List of excitation wavelengths (center wavelength if broad-band) in increasing order (unit: meter).",
+        "array"
+    ],
+    "/setup/excitation_cw": [
+        "For each excitation source, this field indicates whether excitation is continuous wave (CW), True (i.e. 1), or pulsed, False (i.e. 0).",
+        "array"
+    ],
+    "/setup/excitation_polarizations": [
+        "List of polarization angles (in degrees) for each excitation source.",
+        "array"
+    ],
+    "/setup/excitation_input_powers": [
+        "Excitation power in Watts for each excitation source. This is the excitation power entering the optical system.",
+        "array"
+    ],
+    "/setup/excitation_intensity": [
+        "Excitation intensity in the sample for each excitation source (units: Watt/meter^2). In the case of confocal excitation this is the peak PSF intensity.",
+        "array"
+    ],
+    "/setup/detection_wavelengths": [
+        "Reference wavelengths (units: meter) for each detected spectral band.",
+        "array"
+    ],
+    "/setup/detection_polarizations": [
+        "Polarization angles (in degrees) for each detected polarization.",
+        "array"
+    ],
+    "/setup/detection_split_ch_ratios": [
+        "Power fraction detected by each \"beam-split\" channel (i.e. independent detection channels obtained through a non-polarizing beam splitter).",
+        "array"
+    ],
+    "/identity": [
+        "Information about the Photon-HDF5 data file.",
+        "group"
+    ],
+    "/identity/author": [
+        "Author of the current data file.",
+        "string"
+    ],
+    "/identity/author_affiliation": [
+        "Company or institution the author is affiliated with.",
+        "string"
+    ],
+    "/identity/creator": [
+        "Creator of the current Photon-HDF5 file.",
+        "string"
+    ],
+    "/identity/creator_affiliation": [
+        "Company or institution the creator is affiliated with.",
+        "string"
+    ],
+    "/identity/url": [
+        "URL that allow to download the Photon-HDF5 data file.",
+        "string"
+    ],
+    "/identity/doi": [
+        "Digital Object Identifier (DOI) for the Photon-HDF5 data file.",
+        "string"
+    ],
+    "/identity/filename": [
+        "Original file name of the current Photon-HDF5 file (i.e. file name at creation time).",
+        "string"
+    ],
+    "/identity/filename_full": [
+        "Original file name (with full path) of the current Photon-HDF5 file (i.e. full file name at creation time).",
+        "string"
+    ],
+    "/identity/creation_time": [
+        "Creation time of the current Photon-HDF5 file.",
+        "string"
+    ],
+    "/identity/software": [
+        "Name of the software used to create the current Photon-HDF5 file.",
+        "string"
+    ],
+    "/identity/software_version": [
+        "Version of the software used to create current the Photon-HDF5 file.",
+        "string"
+    ],
+    "/identity/format_name": [
+        "Name of the file format.",
+        "string"
+    ],
+    "/identity/format_version": [
+        "Version for the Photon-HDF5 format.",
+        "string"
+    ],
+    "/identity/format_url": [
+        "Official URL for the Photon-HDF5 format.",
+        "string"
+    ],
+    "/identity/funding": [
+        "A description of funding sources and/or grants used to produce the data.",
+        "string"
+    ],
+    "/identity/license": [
+        "The license under which the data is released.",
+        "string"
+    ],
+    "/provenance": [
+        "Information about the original data file.",
+        "group"
+    ],
+    "/provenance/filename": [
+        "File name of the original data file before conversion to Photon-HDF5.",
+        "string"
+    ],
+    "/provenance/filename_full": [
+        "File name (with full path) of the original data file before conversion to Photon-HDF5.",
+        "string"
+    ],
+    "/provenance/creation_time": [
+        "Creation time of the original data file.",
+        "string"
+    ],
+    "/provenance/modification_time": [
+        "Time of last modification of the original data file.",
+        "string"
+    ],
+    "/provenance/software": [
+        "Software used to save the original data file.",
+        "string"
+    ],
+    "/provenance/software_version": [
+        "Version of the software used to save the original data file.",
+        "string"
+    ],
+    "/sample": [
+        "Information about the measured sample.",
+        "group"
+    ],
+    "/sample/num_dyes": [
+        "Number of different dyes present in the samples.",
+        "scalar"
+    ],
+    "/sample/dye_names": [
+        "String containing a comma-separated list of dye or fluorophore names.",
+        "string"
+    ],
+    "/sample/buffer_name": [
+        "A descriptive name for the buffer.",
+        "string"
+    ],
+    "/sample/sample_name": [
+        "A descriptive name for the sample.",
+        "string"
+    ]
+}
