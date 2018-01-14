@@ -6,9 +6,10 @@
 *phconvert* is a python 2 & 3 library that helps writing valid
 <a href="http://photon-hdf5.org/" target="_blank">Photon-HDF5</a>
 files, a file format for time stamp-based single-molecule spectroscopy.
-Additionally, *phconvert* can convert a few common binary formats
-used in in single-molecule spectroscopy (PicoQuant .HT3/.PT3/.PTU,.T3R,
-Becker & Hickl .SPC/.SET) to Photon-HDF5.
+Additionally, *phconvert* can convert to Photon-HDF5 all the common binary
+formats used in solution-based single-molecule spectroscopy. These includes
+PicoQuant's .HT3/.PT3/.PTU/.T3R, Becker & Hickl's .SPC/.SET and the .SM format
+used by WeissLab and others for µs-ALEX smFRET.
 
 For questions or issues running this software please use the
 [Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5)
@@ -16,7 +17,7 @@ or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
 
 ## What's new
 
-**Oct. 2017:** Phconvert 0.8 relased, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/0.8).
+**Jan. 2018:** Phconvert 0.8.1 relased, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/0.8.1).
 
 
 ## Quick-start: Converting files to Photon-HDF5
