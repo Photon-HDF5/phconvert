@@ -1103,7 +1103,8 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
                 msg = '"%s" must be an array.' % pathname
                 _assert_valid(node.ndim >= 1, msg)
                 # check that photon_data arrays are strictly 1D
-                ph_data_arrays = ('timestamps', 'detectors', 'nanotimes')
+                ph_data_arrays = ('timestamps', 'detectors', 'nanotimes',
+                                  'particles')
                 if node._v_name in ph_data_arrays:
                     msg = ('The array /photon_data/%s must be 1D. '
                            'It is %dD instead.' % (node._v_name, node.ndim))
