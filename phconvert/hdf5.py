@@ -1102,6 +1102,12 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
             elif official_type == 'array':
                 msg = '"%s" must be an array.' % pathname
                 _assert_valid(node.ndim >= 1, msg)
+                # check that photon_data arrays are strictly 1D
+                ph_data_arrays = ('timestamps', 'detectors', 'nanotimes')
+                if node._v_name in ph_data_arrays:
+                    msg = ('The array /photon_data/%s must be 1D. '
+                           'It is %dD instead.' % (node._v_name, node.ndim))
+                    _assert_valid(node.ndim == 1, msg)
             else:
                 raise ValueError('Wrong type in JSON specs.')
 
