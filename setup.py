@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import versioneer
 
 project_name = 'phconvert'
@@ -27,8 +27,6 @@ setup(name = project_name,
       author_email = 'tritemio@gmail.com',
       url = 'http://photon-hdf5.github.io/phconvert/',
       download_url = 'http://photon-hdf5.github.io/phconvert/',
-      install_requires = ['numpy', 'setuptools', 'tables', 'future'],
-      include_package_data=True,
       license = 'MIT',
       description = ("Convert Beker&Hickl, PicoQuant and other formats to Photon-HDF5."),
       long_description = long_description,
@@ -39,10 +37,12 @@ setup(name = project_name,
                    'Programming Language :: Python :: 2.7',
                    'Programming Language :: Python :: 3.4',
                    'Programming Language :: Python :: 3.5',
+                   'Programming Language :: Python :: 3.6',
                    'Topic :: Scientific/Engineering',
                    ],
-      packages = ['phconvert', 'phconvert.v04'],
-      package_data = {'phconvert': ['specs/*.json', 'v04/specs/*.json']},
+      install_requires = ['numpy', 'setuptools', 'tables', 'future'],
+      packages=find_packages('.'),
+      package_data = {'': ['*.json', 'v04/specs/*.json']},
       keywords = ('single-molecule FRET smFRET biophysics file-format HDF5 '
                   'Photon-HDF5'),
       )
