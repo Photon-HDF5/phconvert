@@ -42,7 +42,7 @@ setup(name = project_name,
                    ],
       install_requires = ['numpy', 'setuptools', 'tables', 'future'],
       packages=find_packages('.'),
-      package_data = {'': ['*.json', 'v04/specs/*.json']},
+      package_data = {'': ['specs/*.json', 'v04/specs/*.json']},
       keywords = ('single-molecule FRET smFRET biophysics file-format HDF5 '
                   'Photon-HDF5'),
       )
