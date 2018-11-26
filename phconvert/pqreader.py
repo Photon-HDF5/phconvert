@@ -7,7 +7,7 @@
 This module contains functions to load and decode files from PicoQuant
 hardware.
 
-The three main functions to decode PTU, HT3 adn PT3 files are respectively:
+The three main functions to decode PTU, HT3 and PT3 files are respectively:
 
 - :func:`load_ptu`
 - :func:`load_ht3`
@@ -94,6 +94,7 @@ def load_ptu(filename, ovcfunc=None):
             'tags': tags}
     return timestamps, detectors, nanotimes, meta
 
+
 def load_ht3(filename, ovcfunc=None):
     """Load data from a PicoQuant .ht3 file.
 
@@ -118,6 +119,7 @@ def load_ht3(filename, ovcfunc=None):
                  'nanotimes_unit': nanotimes_unit})
 
     return timestamps, detectors, nanotimes, meta
+
 
 def load_pt3(filename, ovcfunc=None):
     """Load data from a PicoQuant .pt3 file.
@@ -144,6 +146,7 @@ def load_pt3(filename, ovcfunc=None):
 
     return timestamps, detectors, nanotimes, meta
 
+
 def load_t3r(filename, ovcfunc=None):
     """Load data from a PicoQuant .pt3 file.
 
@@ -168,6 +171,7 @@ def load_t3r(filename, ovcfunc=None):
                  'nanotimes_unit': nanotimes_unit})
 
     return timestamps, detectors, nanotimes, meta
+
 
 def ht3_reader(filename):
     """Load raw t3 records and metadata from an HT3 file.
@@ -473,7 +477,7 @@ def ptu_reader(filename):
     # Make sure we have read the last tag
     assert list(tags.keys())[-1] == FileTagEnd
 
-    # A view of the t3recods as a numpy array (no new memory is allocated)
+    # A view of the t3records as a numpy array (no new memory is allocated)
     num_records = tags['TTResult_NumberOfRecords']['value']
     t3records = np.frombuffer(s, dtype='uint32', count=num_records,
                               offset=offset)
@@ -483,6 +487,7 @@ def ptu_reader(filename):
     nanotimes_unit = tags['MeasDesc_Resolution']['value']
     record_type = _ptu_rec_type_r[tags['TTResultFormat_TTTRRecType']['value']]
     return t3records, timestamps_unit, nanotimes_unit, record_type, tags
+
 
 def t3r_reader(filename):
     """Load raw t3 records and metadata from a PT3 file.
@@ -586,6 +591,7 @@ def t3r_reader(filename):
                          ttmode=ttmode, imghdr=ImgHdr)# router=router,
         return t3records, timestamps_unit, nanotimes_unit, metadata
 
+
 def _ptu_print_tags(tags):
     """Print a table of tags from a PTU file header."""
     line = '{:30s} %s {:8}  {:12} '
@@ -598,6 +604,7 @@ def _ptu_print_tags(tags):
             endline = tags[n]['data'] + '\n'  # hic sunt leones
         print((line % value_fmt).format(n, tags[n]['value'], tags[n]['idx'], tags[n]['type']),
               end=endline)
+
 
 def _ptu_read_tag(s, offset, tag_type_r):
     """Decode a single tag from the PTU header struct.
@@ -646,11 +653,13 @@ def _ptu_read_tag(s, offset, tag_type_r):
 
     return tagname, tag, offset
 
+
 def _ptu_TDateTime_to_time_t(TDateTime):
     """Convert the weird time encoding used in PTU files to standard time_t."""
     EpochDiff = 25569  # days between 30/12/1899 and 01/01/1970
     SecsInDay = 86400  # number of seconds in a day
     return (TDateTime - EpochDiff) * SecsInDay
+
 
 def process_t3records(t3records, time_bit=10, dtime_bit=15,
                       ch_bit=6, special_bit=True, ovcfunc=None):
@@ -739,6 +748,7 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     ovcfunc(timestamps, detectors, overflow_ch, overflow)
     return detectors, timestamps, nanotimes
 
+
 def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime_bit=16,
                       ch_bit=2, special_bit=False):
     """ For processing file.t3r format
@@ -752,12 +762,12 @@ def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime
     assert ch_bit <= 8
     assert time_bit <= 16
     assert time_bit+reserved+valid+dtime_bit+ch_bit == 32
-    
+
     detectors = np.bitwise_and(
         np.right_shift(t3records, time_bit+dtime_bit+reserved+valid), 2**ch_bit-1).astype('uint8')
     nanotimes = np.bitwise_and(
         np.right_shift(t3records, dtime_bit), 2**time_bit-1).astype('uint16')
-    
+
     valid = np.bitwise_and(
         np.right_shift(t3records, time_bit+dtime_bit+reserved+valid), 2**valid-1).astype('uint8')
 
@@ -768,8 +778,9 @@ def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime
 
     overflow_ch = 2**ch_bit - 1
     overflow = 2**dtime_bit
-    _correct_overflow1(timestamps, valid, 0, overflow)        
+    _correct_overflow1(timestamps, valid, 0, overflow)
     return detectors, timestamps, nanotimes
+
 
 def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
     """Apply overflow correction when each overflow has a special timestamp.
@@ -779,6 +790,7 @@ def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
         if detectors[i] == overflow_ch:
             overflow_correction += overflow
         timestamps[i] += overflow_correction
+
 
 def _correct_overflow2(timestamps, detectors, overflow_ch, overflow):
     """Apply overflow correction when each overflow has a special timestamp.
@@ -806,12 +818,13 @@ def _correct_overflow_nsync(timestamps, detectors, overflow_ch, overflow):
 
 def _correct_overflow_nsync_naive(timestamps, detectors, overflow_ch, overflow):
     """Slow implementation of `_correct_overflow_nsync` used for testing.
-    """ 
+    """
     overflow_correction = 0
     for i in range(detectors.size):
         if detectors[i] == overflow_ch:
             overflow_correction += (overflow * timestamps[i])
         timestamps[i] += overflow_correction
+
 
 if has_numba:
     _correct_overflow = numba.jit('void(i8[:], u1[:], u4, u8)')(
