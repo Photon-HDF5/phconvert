@@ -70,14 +70,18 @@ def load_ptu(filename, ovcfunc=None):
         ptu_reader(filename)
 
     if record_type == 'rtPicoHarpT3':
-        detectors, timestamps, nanotimes = process_t3records(t3records,
-                time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
-                ovcfunc=ovcfunc)
+        detectors, timestamps, nanotimes = process_t3records(
+            t3records, time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
+            ovcfunc=ovcfunc)
+    elif record_type == 'rtHydraHarpT3':
+        detectors, timestamps, nanotimes = process_t3records(
+            t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
+            ovcfunc=ovcfunc)
     elif record_type in ('rtHydraHarp2T3', 'rtTimeHarp260NT3',
                          'rtTimeHarp260PT3'):
-        detectors, timestamps, nanotimes = process_t3records(t3records,
-                time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
-                ovcfunc=_correct_overflow_nsync)
+        detectors, timestamps, nanotimes = process_t3records(
+            t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
+            ovcfunc=_correct_overflow_nsync)
     else:
         msg = ('Sorry, decoding "%s" record type is not implemented!' %
                record_type)
