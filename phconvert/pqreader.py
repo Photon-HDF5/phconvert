@@ -95,10 +95,10 @@ def load_ptu(filename, ovcfunc=None):
             'nanotimes_unit': nanotimes_unit,
             'acquisition_duration': acquisition_duration,
             'laser_repetition_rate': tags['TTResult_SyncRate']['value'],
-            'software': tags['CreatorSW_Name']['value'],
-            'software_version': tags['CreatorSW_Version']['value'],
+            'software': tags['CreatorSW_Name']['data'],
+            'software_version': tags['CreatorSW_Version']['data'],
             'creation_time': creation_time,
-            'hardware_name': tags['HW_Type']['value'],
+            'hardware_name': tags['HW_Type']['data'],
             'tags': tags}
     return timestamps, detectors, nanotimes, meta
 
@@ -130,10 +130,10 @@ def load_ht3(filename, ovcfunc=None):
                  'nanotimes_unit': nanotimes_unit,
                  'acquisition_duration': meta['header']['Tacq'][0] * 1e-3,
                  'laser_repetition_rate': meta['ttmode']['SyncRate'],
-                 'software': meta['header']['CreatorName'][0],
-                 'software_version': meta['header']['CreatorVersion'][0],
+                 'software': meta['header']['CreatorName'][0].decode(),
+                 'software_version': meta['header']['CreatorVersion'][0].decode(),
                  'creation_time': creation_time,
-                 'hardware_name': meta['header']['Ident'][0],
+                 'hardware_name': meta['header']['Ident'][0].decode(),
                  })
     return timestamps, detectors, nanotimes, meta
 
@@ -166,10 +166,10 @@ def load_pt3(filename, ovcfunc=None):
                  'nanotimes_unit': nanotimes_unit,
                  'acquisition_duration': acquisition_duration,
                  'laser_repetition_rate': meta['ttmode']['InpRate0'],
-                 'software': meta['header']['CreatorName'][0],
-                 'software_version': meta['header']['CreatorVersion'][0],
+                 'software': meta['header']['CreatorName'][0].decode(),
+                 'software_version': meta['header']['CreatorVersion'][0].decode(),
                  'creation_time': creation_time,
-                 'hardware_name': meta['header']['Ident'][0],
+                 'hardware_name': meta['header']['Ident'][0].decode(),
                  })
     return timestamps, detectors, nanotimes, meta
 

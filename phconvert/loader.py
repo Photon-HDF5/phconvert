@@ -125,7 +125,7 @@ def nsalex_bh(filename_spc,
     else:
         raise IOError("File '%s' not found." % filename_set)
 
-    # Estract the creation time from the .SET file metadata as it will be
+    # Extract the creation time from the .SET file metadata as it will be
     # more reliable than the creation time from the file system
     provenance = dict(filename=filename_spc, software=software)
     if 'identification' in metadata:
@@ -209,8 +209,8 @@ def nsalex_pq(filename,
     timestamps, detectors, nanotimes, metadata = load_pq[file_type](filename)
     print(" [DONE]\n")
 
-    software = str(metadata.pop('software'))
-    software_version = str(metadata.pop('software_version'))
+    software = metadata.pop('software')
+    software_version = metadata.pop('software_version')
     laser_repetition_rate = float(metadata.pop('laser_repetition_rate'))
     acquisition_duration = float(metadata.pop('acquisition_duration'))
     timestamps_unit = float(metadata.pop('timestamps_unit'))
@@ -297,7 +297,7 @@ def nsalex_ht3(filename,
     software = str(metadata['header']['CreatorName'][0])
     software_version = str(metadata['header']['CreatorVersion'][0])
 
-    # Estract the creation time from the HT3 file header as it will be
+    # Extract the creation time from the HT3 file header as it will be
     # more reliable than the creation time from the file system
     ctime_t = time.strptime(metadata['header']['FileTime'][0].decode(),
                             "%d/%m/%y %H:%M:%S")
@@ -379,7 +379,7 @@ def nsalex_pt3(filename,
     software = str(metadata['header']['CreatorName'][0])
     software_version = str(metadata['header']['CreatorVersion'][0])
 
-    # Estract the creation time from the PT3 file header as it will be
+    # Extract the creation time from the PT3 file header as it will be
     # more reliable than the creation time from the file system
     ctime_t = time.strptime(metadata['header']['FileTime'][0].decode(),
                             "%d/%m/%y %H:%M:%S")
@@ -461,7 +461,7 @@ def nsalex_t3r(filename,
     software = str(metadata['header']['SoftwareVersion'][0])
     software_version = str(metadata['header']['HardwareVersion'][0])
 
-    # Estract the creation time from the PT3 file header as it will be
+    # Extract the creation time from the PT3 file header as it will be
     # more reliable than the creation time from the file system
     ctime_t = time.strptime(metadata['header']['FileTime'][0].decode(),
                             "%d-%m-%y %H:%M:%S")
