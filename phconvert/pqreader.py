@@ -88,9 +88,17 @@ def load_ptu(filename, ovcfunc=None):
         raise NotImplementedError(msg)
 
     acquisition_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3
+    ctime_t = time.strptime(tags['File_CreatingTime']['value'],
+                            "%Y-%m-%d %H:%M:%S")
+    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
     meta = {'timestamps_unit': timestamps_unit,
             'nanotimes_unit': nanotimes_unit,
             'acquisition_duration': acquisition_duration,
+            'laser_repetition_rate': tags['TTResult_SyncRate']['value'],
+            'software': tags['CreatorSW_Name']['value'],
+            'software_version': tags['CreatorSW_Version']['value'],
+            'creation_time': creation_time,
+            'hardware_name': tags['HW_Type']['value'],
             'tags': tags}
     return timestamps, detectors, nanotimes, meta
 
@@ -115,9 +123,18 @@ def load_ht3(filename, ovcfunc=None):
     detectors, timestamps, nanotimes = process_t3records(
         t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
         ovcfunc=ovcfunc)
+    ctime_t = time.strptime(meta['header']['FileTime'][0].decode(),
+                            "%d/%m/%y %H:%M:%S")
+    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
     meta.update({'timestamps_unit': timestamps_unit,
-                 'nanotimes_unit': nanotimes_unit})
-
+                 'nanotimes_unit': nanotimes_unit,
+                 'acquisition_duration': meta['header']['Tacq'][0] * 1e-3,
+                 'laser_repetition_rate': meta['ttmode']['SyncRate'],
+                 'software': meta['header']['CreatorName'][0],
+                 'software_version': meta['header']['CreatorVersion'][0],
+                 'creation_time': creation_time,
+                 'hardware_name': meta['header']['Ident'][0],
+                 })
     return timestamps, detectors, nanotimes, meta
 
 
@@ -141,9 +158,19 @@ def load_pt3(filename, ovcfunc=None):
     detectors, timestamps, nanotimes = process_t3records(
         t3records, time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
         ovcfunc=ovcfunc)
+    acquisition_duration = meta['header']['AcquisitionTime'][0] * 1e-3
+    ctime_t = time.strptime(meta['header']['FileTime'][0].decode(),
+                            "%d/%m/%y %H:%M:%S")
+    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
     meta.update({'timestamps_unit': timestamps_unit,
-                 'nanotimes_unit': nanotimes_unit})
-
+                 'nanotimes_unit': nanotimes_unit,
+                 'acquisition_duration': acquisition_duration,
+                 'laser_repetition_rate': meta['ttmode']['InpRate0'],
+                 'software': meta['header']['CreatorName'][0],
+                 'software_version': meta['header']['CreatorVersion'][0],
+                 'creation_time': creation_time,
+                 'hardware_name': meta['header']['Ident'][0],
+                 })
     return timestamps, detectors, nanotimes, meta
 
 
@@ -169,7 +196,6 @@ def load_t3r(filename, ovcfunc=None):
         ch_bit=2, special_bit=False)
     meta.update({'timestamps_unit': timestamps_unit,
                  'nanotimes_unit': nanotimes_unit})
-
     return timestamps, detectors, nanotimes, meta
 
 
@@ -547,7 +573,7 @@ def t3r_reader(filename):
                 ('RepeatWaitTime',  'int32'),
                 ('ScriptName',      'S20'  )])
         repeatgroup = np.fromfile(f, repeat_dtype, count=1)
-        
+
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Hardware information header
         hw_dtype = np.dtype([
