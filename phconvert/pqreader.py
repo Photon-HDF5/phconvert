@@ -349,7 +349,7 @@ def pt3_reader(filename):
         repeat_dtype = np.dtype([
             ('RepeatMode',      'int32'),
             ('RepeatsPerCurve', 'int32'),
-            ('RepeatTime',       'int32'),
+            ('RepeatTime',      'int32'),
             ('RepeatWaitTime',  'int32'),
             ('ScriptName',      'S20'  )])
         repeatgroup = np.fromfile(f, repeat_dtype, count=1)
@@ -497,14 +497,14 @@ def t3r_reader(filename):
         # Binary file header
         header_dtype = np.dtype([
                 ('Ident',             'S16'   ),
-                ('SoftwareVersion',     'S6'    ),
-                ('HardwareVersion',     'S6'    ),
+                ('SoftwareVersion',   'S6'    ),
+                ('HardwareVersion',   'S6'    ),
                 ('FileTime',          'S18'   ),
                 ('CRLF',              'S2'    ),
                 ('Comment',           'S256'  ),
-                ('NumberOfChannels',   'int32'),
+                ('NumberOfChannels',  'int32'),
                 ('NumberOfCurves',    'int32' ),
-                ('BitsPerChannel',     'int32' ),   # bits in each T3 record
+                ('BitsPerChannel',    'int32' ),   # bits in each T3 record
                 ('RoutingChannels',   'int32' ),
                 ('NumberOfBoards',    'int32' ),
                 ('ActiveCurve',       'int32' ),
@@ -543,24 +543,24 @@ def t3r_reader(filename):
         repeat_dtype = np.dtype([
                 ('RepeatMode',      'int32'),
                 ('RepeatsPerCurve', 'int32'),
-                ('RepeatTime',       'int32'),
+                ('RepeatTime',      'int32'),
                 ('RepeatWaitTime',  'int32'),
                 ('ScriptName',      'S20'  )])
         repeatgroup = np.fromfile(f, repeat_dtype, count=1)
+        
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Hardware information header
         hw_dtype = np.dtype([
-
-                ('BoardSerial',     'int32'),
-                ('CFDZeroCross',   'int32'),
-                ('CFDDiscriminatorMin',   'int32'),
-                ('SYNCLevel',       'int32'),
-                ('CurveOffset',       'int32'),
-                ('Resolution',      'f4')])
+                ('BoardSerial',         'int32'),
+                ('CFDZeroCross',        'int32'),
+                ('CFDDiscriminatorMin', 'int32'),
+                ('SYNCLevel',           'int32'),
+                ('CurveOffset',         'int32'),
+                ('Resolution',          'f4')])
         hardware = np.fromfile(f, hw_dtype, count=1)
         # Time tagging mode specific header
         ttmode_dtype = np.dtype([
-                ('TTTRGlobclock',      'int32' ),
+                ('TTTRGlobclock',   'int32' ),
                 ('ExtDevices',      'int32' ),
                 ('Reserved1',       'int32' ),
                 ('Reserved2',       'int32' ),
@@ -568,7 +568,7 @@ def t3r_reader(filename):
                 ('Reserved4',       'int32' ),
                 ('Reserved5',       'int32' ),
                 ('SyncRate',        'int32' ),
-                ('AverageCFDRate',        'int32' ),
+                ('AverageCFDRate',  'int32' ),
                 ('StopAfter',       'int32' ),
                 ('StopReason',      'int32' ),
                 ('nRecords',        'int32' ),
@@ -583,12 +583,12 @@ def t3r_reader(filename):
         # The remainings are all T3 records
         t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'][0])
 
-        timestamps_unit = 100e-9 #1./ttmode['SyncRate']
+        timestamps_unit = 100e-9  # 1./ttmode['SyncRate']
         nanotimes_unit = 1e-9*hardware['Resolution']
 
         metadata = dict(header=header, dispcurve=dispcurve, params=params,
                         repeatgroup=repeatgroup, hardware=hardware,
-                         ttmode=ttmode, imghdr=ImgHdr)# router=router,
+                        ttmode=ttmode, imghdr=ImgHdr)
         return t3records, timestamps_unit, nanotimes_unit, metadata
 
 
@@ -602,8 +602,8 @@ def _ptu_print_tags(tags):
         endline = '\n'
         if tags[n]['type'] == 'tyAnsiString':
             endline = tags[n]['data'] + '\n'  # hic sunt leones
-        print((line % value_fmt).format(n, tags[n]['value'], tags[n]['idx'], tags[n]['type']),
-              end=endline)
+        print((line % value_fmt).format(n, tags[n]['value'], tags[n]['idx'],
+              tags[n]['type']), end=endline)
 
 
 def _ptu_read_tag(s, offset, tag_type_r):
@@ -650,7 +650,6 @@ def _ptu_read_tag(s, offset, tag_type_r):
     elif tag['type'] == 'tyBinaryBlob':
         tag['data'] = s[offset: offset + tag['value']]
         offset += tag['value']
-
     return tagname, tag, offset
 
 
@@ -732,9 +731,11 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     assert time_bit + dtime_bit + ch_bit == 32
 
     detectors = np.bitwise_and(
-        np.right_shift(t3records, time_bit + dtime_bit), 2**ch_bit - 1).astype('uint8')
+        np.right_shift(t3records, time_bit + dtime_bit),
+        2**ch_bit - 1).astype('uint8')
     nanotimes = np.bitwise_and(
-        np.right_shift(t3records, time_bit), 2**dtime_bit - 1).astype('uint16')
+        np.right_shift(t3records, time_bit),
+        2**dtime_bit - 1).astype('uint16')
 
     dt = np.dtype([('low16', 'uint16'), ('high16', 'uint16')])
     t3records_low16 = np.frombuffer(t3records, dt)['low16']     # View
@@ -749,8 +750,8 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     return detectors, timestamps, nanotimes
 
 
-def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime_bit=16,
-                      ch_bit=2, special_bit=False):
+def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12,
+                              dtime_bit=16, ch_bit=2, special_bit=False):
     """ For processing file.t3r format
     time_bit: nanotimes
     dtime_bit: TimeTag
@@ -764,19 +765,22 @@ def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12, dtime
     assert time_bit+reserved+valid+dtime_bit+ch_bit == 32
 
     detectors = np.bitwise_and(
-        np.right_shift(t3records, time_bit+dtime_bit+reserved+valid), 2**ch_bit-1).astype('uint8')
+        np.right_shift(t3records, time_bit+dtime_bit+reserved+valid),
+        2**ch_bit - 1).astype('uint8')
     nanotimes = np.bitwise_and(
-        np.right_shift(t3records, dtime_bit), 2**time_bit-1).astype('uint16')
+        np.right_shift(t3records, dtime_bit),
+        2**time_bit - 1).astype('uint16')
 
     valid = np.bitwise_and(
-        np.right_shift(t3records, time_bit+dtime_bit+reserved+valid), 2**valid-1).astype('uint8')
+        np.right_shift(t3records, time_bit+dtime_bit+reserved+valid),
+        2**valid - 1).astype('uint8')
 
     dt = np.dtype([('low16', 'uint16'), ('high16', 'uint16')])
     t3records_low16 = np.frombuffer(t3records, dt)['low16']     # View
     timestamps = t3records_low16.astype(np.int64)               # Copy
     np.bitwise_and(timestamps, 2**dtime_bit - 1, out=timestamps)
 
-    overflow_ch = 2**ch_bit - 1
+    # overflow_ch = 2**ch_bit - 1
     overflow = 2**dtime_bit
     _correct_overflow1(timestamps, valid, 0, overflow)
     return detectors, timestamps, nanotimes
@@ -812,11 +816,10 @@ def _correct_overflow_nsync(timestamps, detectors, overflow_ch, overflow):
     cum_overflows[index_overflows] = num_overflows
     np.cumsum(cum_overflows, out=cum_overflows)
     timestamps += (cum_overflows * overflow)
-    # put nsync back in the overflow timestamps
-    #timestamps[index_overflows] = cum_overflows
 
 
-def _correct_overflow_nsync_naive(timestamps, detectors, overflow_ch, overflow):
+def _correct_overflow_nsync_naive(timestamps, detectors, overflow_ch,
+                                  overflow):
     """Slow implementation of `_correct_overflow_nsync` used for testing.
     """
     overflow_correction = 0
