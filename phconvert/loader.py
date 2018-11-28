@@ -18,8 +18,6 @@ decode a new file format, these modules can provide useful examples.
 
 """
 
-from __future__ import print_function, absolute_import, division
-
 import os
 import time
 import numpy as np
@@ -515,6 +513,3 @@ def nsalex_t3r(filename,
         provenance = provenance)
 
     return data, metadata
-
-
-del print_function, absolute_import, division  # cleanup namespace

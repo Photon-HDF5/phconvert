@@ -96,8 +96,8 @@ The recommended way to install *phconvert* is using conda:
 
 If you don't have conda installed, please install the free python distribution
 [Anaconda](https://store.continuum.io/cshop/anaconda/) choosing the python 3
-version. The legacy python 2.7 is also supported, but if you can choose
-pick the latest python 3.
+version.
+Starting from version 0.8.3, the ancient python 2.7 is not supported anymore.
 
 Alternatively, you can install *phconvert* in any python installation using PIP:
 
@@ -111,7 +111,7 @@ See also:
 
 ## Dependencies
 
-- python 2.7 (legacy), 3.4 or greater (recommended)
+- python 3.4 or greater (3.6+ recommended)
 - future
 - numpy >=1.9
 - pytables >=3.1

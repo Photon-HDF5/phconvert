@@ -23,8 +23,6 @@ For more info see:
 
 """
 
-from __future__ import print_function, absolute_import, division
-
 import os
 import time
 import re
@@ -1282,6 +1280,3 @@ def print_children(group):
         print(name)
         print('    Content:     %s' % content)
         print('    Description: %s\n' % title)
-
-
-del print_function

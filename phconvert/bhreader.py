@@ -77,7 +77,6 @@ In the following drawing each char represents 2 bits::
 
 # TODO: automatic board model identification (in a new function?)
 
-from __future__ import print_function, division
 import numpy as np
 
 

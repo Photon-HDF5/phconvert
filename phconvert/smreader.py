@@ -4,8 +4,8 @@
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
-SM Format, written by a LV program in WeissLab us-ALEX setup
-------------------------------------------------------------
+SM Format written by Ted Laurence's LabVIEW program in WeissLab us-ALEX setup
+-----------------------------------------------------------------------------
 
 A SM file is composed by two parts:
 
@@ -36,6 +36,7 @@ it as a record array in which each element is 12 bytes.
 
 import numpy as np
 
+
 class Decoder:
     def __init__(self, buffer):
         self.buff = buffer
@@ -58,6 +59,7 @@ class Decoder:
         string = self.buff[self.cursor:self.cursor + size]
         self.cursor = orig_cursor if inplace else (self.cursor + size)
         return string
+
 
 def decode_header(data):
     """

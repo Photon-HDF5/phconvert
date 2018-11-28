@@ -29,10 +29,6 @@ can take advantage of numba, if installed, to significanly speed-up
 the processing.
 """
 
-from __future__ import print_function, division
-from past.builtins import xrange
-from builtins import zip
-
 import os
 import struct
 import time
@@ -816,7 +812,7 @@ def _correct_overflow1(timestamps, detectors, overflow_ch, overflow):
     """Apply overflow correction when each overflow has a special timestamp.
     """
     overflow_correction = 0
-    for i in xrange(detectors.size):
+    for i in range(detectors.size):
         if detectors[i] == overflow_ch:
             overflow_correction += overflow
         timestamps[i] += overflow_correction
