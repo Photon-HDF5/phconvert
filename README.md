@@ -49,7 +49,7 @@ Simply, download the
 [phconvert zip](https://github.com/Photon-HDF5/phconvert/archive/master.zip),
 which contains all the notebooks in the `notebooks` subfolder.
 
-###For questions or issues:
+### For questions or issues:
 
 - [Open an GitHub issue](https://github.com/Photon-HDF5/phconvert/issues) or
 - Ask a question on the [Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5).
@@ -115,7 +115,7 @@ See also:
 - future
 - numpy >=1.9
 - pytables >=3.1
-- numba (optional) *to enable a fast HT3 file reader*
+- numba (optional) *for faster PicoQuant files decoding*
 
 > **Note**
 > when installing via `conda` all the dependencies are automatically installed.
