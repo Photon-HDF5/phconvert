@@ -112,7 +112,6 @@ See also:
 ## Dependencies
 
 - python 3.4 or greater (3.6+ recommended)
-- future
 - numpy >=1.9
 - pytables >=3.1
 - numba (optional) *for faster PicoQuant files decoding*
