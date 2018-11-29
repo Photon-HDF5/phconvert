@@ -17,7 +17,7 @@ or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
 
 ## What's new
 
-**Jan. 2018:** Phconvert 0.8.1 relased, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/0.8.1).
+**Nov. 2018:** Phconvert 0.9 released, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/).
 
 
 ## Quick-start: Converting files to Photon-HDF5
@@ -97,7 +97,7 @@ The recommended way to install *phconvert* is using conda:
 If you don't have conda installed, please install the free python distribution
 [Anaconda](https://store.continuum.io/cshop/anaconda/) choosing the python 3
 version.
-Starting from version 0.8.3, the ancient python 2.7 is not supported anymore.
+Starting from version 0.9, the aging python 2.7 is not supported anymore.
 
 Alternatively, you can install *phconvert* in any python installation using PIP:
 
@@ -157,3 +157,5 @@ the PTU decoder in phconvert.
 
 ## Acknowledgements
 This work was supported by NIH Grant R01-GM95904.
+
+Release 0.9 was supported by Prof. Eitan Lerner.
