@@ -49,7 +49,7 @@ Simply, download the
 [phconvert zip](https://github.com/Photon-HDF5/phconvert/archive/master.zip),
 which contains all the notebooks in the `notebooks` subfolder.
 
-###For questions or issues:
+### For questions or issues:
 
 - [Open an GitHub issue](https://github.com/Photon-HDF5/phconvert/issues) or
 - Ask a question on the [Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5).
@@ -96,8 +96,8 @@ The recommended way to install *phconvert* is using conda:
 
 If you don't have conda installed, please install the free python distribution
 [Anaconda](https://store.continuum.io/cshop/anaconda/) choosing the python 3
-version. The legacy python 2.7 is also supported, but if you can choose
-pick the latest python 3.
+version.
+Starting from version 0.8.3, the ancient python 2.7 is not supported anymore.
 
 Alternatively, you can install *phconvert* in any python installation using PIP:
 
@@ -111,11 +111,10 @@ See also:
 
 ## Dependencies
 
-- python 2.7 (legacy), 3.4 or greater (recommended)
-- future
+- python 3.4 or greater (3.6+ recommended)
 - numpy >=1.9
 - pytables >=3.1
-- numba (optional) *to enable a fast HT3 file reader*
+- numba (optional) *for faster PicoQuant files decoding*
 
 > **Note**
 > when installing via `conda` all the dependencies are automatically installed.

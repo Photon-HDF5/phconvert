@@ -16,7 +16,7 @@ class TestBhReader(unittest.TestCase):
 
         data = bhreader.load_spc(input_file, 'SPC-150')
         check = pd.read_table(check_file, delimiter=' ', dtype='int64',
-            usecols=[0, 1], header=None).as_matrix().T  # Way faster than numpy
+            usecols=[0, 1], header=None).values.T  # Way faster than numpy
 
         # Same number of photons in both files
         self.assertTrue(data[2].size == check[1].size)
