@@ -23,8 +23,6 @@ For more info see:
 
 """
 
-from __future__ import print_function, absolute_import, division
-
 import os
 import time
 import re
@@ -53,6 +51,7 @@ _setup_mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
 _identity_mantatory_fields = ['format_name', 'format_version', 'format_url',
                               'software', 'software_version', 'creation_time']
 
+
 def _metapath(fullpath):
     """Normalize a HDF5 path by removing trailing digits after "photon_data".
     """
@@ -63,6 +62,7 @@ def _metapath(fullpath):
         metapath = ('/photon_data' +
                     re.match(pattern, fullpath).group(1))
     return metapath
+
 
 def _analyze_path(name, prefix_list):
     """
@@ -106,11 +106,13 @@ def _analyze_path(name, prefix_list):
     return dict(full_path=full_path, group_path=group_path,
                 meta_path=meta_path, is_phdata=is_phdata, is_user=is_user)
 
+
 def _is_structured_array(obj):
     if hasattr(obj, 'dtype') and obj.dtype.kind == 'V':
         return True
     else:
         return False
+
 
 def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     """Writes `obj` in the pytables HDF5 `group` with name `name`.
@@ -136,6 +138,7 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
     node = h5file.get_node(group)._f_get_child(name)
     node.title = descr.encode()  # saved as binary both on py2 and py3
+
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                     debug=False):
@@ -172,6 +175,7 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
             if debug:
                 print('End Group "%s"' % (item['full_path']))
 
+
 def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                            debug=False):
     """
@@ -200,6 +204,7 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
             _h5_write_array(item['group_path'], item['name'],
                             obj=item['value'], descr=item['description'],
                             chunked=item['is_phdata'], h5file=group._v_file)
+
 
 def save_photon_hdf5(data_dict,
                      h5_fname = None,
@@ -292,7 +297,7 @@ def save_photon_hdf5(data_dict,
     """
     comp_filter = tables.Filters(**compression)
 
-    ## Compute file names
+    # Compute file names
     if h5_fname is None:
         basename, extension = os.path.splitext(data_dict['_filename'])
         if compression['complib'] == 'blosc':
@@ -303,12 +308,12 @@ def save_photon_hdf5(data_dict,
         basename, extension = os.path.splitext(h5_fname)
         h5_fname = basename + '_new_copy.hdf5'
 
-    ## Prefill and fix user-provided data_dict
+    # Prefill and fix user-provided data_dict
     _populate_provenance(data_dict)
     _sanitize_data(data_dict, require_setup)
     _compute_acquisition_duration(data_dict)
 
-    ## Create the HDF5 file
+    # Create the HDF5 file
     print('Saving: %s' % h5_fname)
     title = official_fields_specs['/'][0].encode()
     h5file = tables.open_file(h5_fname, mode="w", title=title,
@@ -316,14 +321,14 @@ def save_photon_hdf5(data_dict,
     # Saving a file reference is useful in case of error
     data_dict.update(_data_file=h5file)
 
-    ## Identity info needs to be added after the file is created
+    # Identity info needs to be added after the file is created
     _populate_identity(data_dict, h5file)
 
-    ## Save root attributes
+    # Save root attributes
     for name, value in root_attributes.items():
         h5file.root._f_setattr(name, value)
 
-    ## Save everything else to disk
+    # Save everything else to disk
     fields_descr = {k: v[0] for k, v in official_fields_specs.items()}
     if user_descr is not None:
         fields_descr.update(user_descr)
@@ -331,13 +336,14 @@ def save_photon_hdf5(data_dict,
                            fields_descr=fields_descr, debug=debug)
     h5file.flush()
 
-    ## Validation
+    # Validation
     if validate:
         kwargs = dict(skip_measurement_specs=skip_measurement_specs,
                       warnings=warnings, require_setup=require_setup)
         assert_valid_photon_hdf5(h5file, **kwargs)
     if close:
         h5file.close()
+
 
 def _populate_identity(data_dict, h5file):
     """Populate identity metadata adding info from the newly created file.
@@ -348,6 +354,7 @@ def _populate_identity(data_dict, h5file):
     if 'identity' not in data_dict:
         data_dict['identity'] = {}
     data_dict['identity'].update(identity)
+
 
 def _populate_provenance(data_dict):
     """Try to find the original data file to fill provenance fields.
@@ -378,6 +385,7 @@ def _populate_provenance(data_dict):
         if orig_creation_time is not None:
             provenance['creation_time'] = orig_creation_time
 
+
 def _compute_acquisition_duration(data_dict):
     """Compute acquisition_duration if not present. Single-spot only.
     """
@@ -398,6 +406,7 @@ def _compute_acquisition_duration(data_dict):
                                 timestamps_unit)
         data_dict['acquisition_duration'] = np.round(acquisition_duration, 1)
 
+
 def _get_identity(h5file):
     """Return a dict with identity information for `h5file`.
     """
@@ -411,6 +420,7 @@ def _get_identity(h5file):
                     format_version=FORMAT_VERSION,
                     format_url=root_attributes['format_url'])
     return identity
+
 
 def _get_file_metadata(fname):
     """Return a dict with file metadata.
@@ -451,6 +461,7 @@ def dict_from_group(group, read=True):
         out[node._v_name] = value
     return out
 
+
 def dict_to_group(group, dictionary):
     """Save `dictionary` into HDF5 format in `group`.
     """
@@ -472,6 +483,7 @@ def dict_to_group(group, dictionary):
             node.title = _EMPTY.encode()  # saved as binary both on py2 and py3
     h5file.flush()
 
+
 def load_photon_hdf5(filename, **kwargs):
     """Open a Photon-HDF5 file in pytables, validating it.
 
@@ -485,9 +497,11 @@ def load_photon_hdf5(filename, **kwargs):
     assert_valid_photon_hdf5(h5file, **kwargs)
     return h5file.root
 
+
 ##
 # Utility functions
 #
+
 
 def _get_version(h5file):
     """Return file format version string (unicode on both py2 and py3).
@@ -517,6 +531,7 @@ def _get_version(h5file):
         raise Invalid_PhotonHDF5('No version identification.')
     return version
 
+
 def _check_version(filename):
     """Return file format version string (unicode on both py2 and py3).
 
@@ -527,6 +542,7 @@ def _check_version(filename):
     with tables.open_file(filename) as h5file:
         version = _get_version(h5file)
     return version
+
 
 def _sorted_photon_data_tables(h5file):
     """Return a sorted list of keys "photon_dataN", sorted by N.
@@ -541,6 +557,7 @@ def _sorted_photon_data_tables(h5file):
     ph_datas.sort(key=lambda x: x._v_name[len(prefix):])
     return ph_datas
 
+
 def _sorted_photon_data(data_dict):
     """Return a sorted list of keys "photon_dataN", sorted by N.
 
@@ -553,6 +570,7 @@ def _sorted_photon_data(data_dict):
         sorted_channels = sorted([int(k[len(prefix):]) for k in keys])
         keys = ['%s%d' % (prefix, ch) for ch in sorted_channels]
     return keys
+
 
 def photon_data_mapping(h5file, name='timestamps'):
     """Return a mapping (OrderedDict) between ch and photon_data array.
@@ -567,6 +585,7 @@ def photon_data_mapping(h5file, name='timestamps'):
             mapping[ch] = ph
     return mapping
 
+
 def _is_sequence(obj):
     is_sequence = False
     if isinstance(obj, tuple) or isinstance(obj, list):
@@ -574,6 +593,7 @@ def _is_sequence(obj):
     elif isinstance(obj, np.ndarray):
         is_sequence = obj.ndim > 0
     return is_sequence
+
 
 def _normalize_bools(data_dict):
     """Cast bools (both scalars or in sequences) to integers."""
@@ -585,6 +605,7 @@ def _normalize_bools(data_dict):
                 data_dict[name] = int(value)
             elif _is_sequence(value) and isinstance(value[0], bool):
                 data_dict[name] = np.asarray(value, dtype='uint8')
+
 
 def _normalize_detectors_specs(data_dict):
     base = '/photon_data/measurement_specs/detectors_specs/'
@@ -601,6 +622,7 @@ def _normalize_detectors_specs(data_dict):
             cdict = item['curr_dict']
             cdict[item['name']] = np.array(item['value'], dtype=dtype, ndmin=1)
 
+
 def _normalize_setup_arrays(data_dict):
     """Make sure arrays of float in setup are arrays of floats."""
     if 'setup' not in data_dict:
@@ -615,6 +637,7 @@ def _normalize_setup_arrays(data_dict):
     for name in names_aof:
         if name in setup:
             setup[name] = np.array([float(v) for v in setup[name]], dtype=float)
+
 
 def _convert_scalar_item(item):
     """Cast a scalar item (from _iter_hdf5_dict) to scalar."""
@@ -647,6 +670,7 @@ def _convert_scalar_item(item):
                                      % item['meta_path'])
     return scalar_value
 
+
 def _normalize_scalars(data_dict):
     """Make sure all scalar fields are scalars."""
     ## scalar fields conversions
@@ -657,6 +681,7 @@ def _normalize_scalars(data_dict):
             scalar_value = _convert_scalar_item(item)
             curr_dict = item['curr_dict']
             curr_dict[item['name']] = scalar_value
+
 
 def _sanitize_data(data_dict, require_setup=True):
     """Perform type conversions to strictly conform to Photon-HDF5 specs.
@@ -698,13 +723,16 @@ def _sanitize_data(data_dict, require_setup=True):
     # Cast scalar fields to scalar
     _normalize_scalars(data_dict)
 
+
 ##
 # Validation functions
 #
+
 class Invalid_PhotonHDF5(Exception):
     """Error raised when a file is not a valid Photon-HDF5 file.
     """
     pass
+
 
 def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
     """Assert `condition` and raise Invalid_PhotonHDF5(msg) on fail.
@@ -735,6 +763,7 @@ def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
         else:
             print('Photon-HDF5 WARNING: %s' % msg)
     return condition
+
 
 def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
                       norepeat=False, pool=None, verbose=False):
@@ -829,6 +858,7 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
             _assert_has_field('tcspc_unit', nt_specs, verbose=verbose)
             _assert_has_field('tcspc_num_bins', nt_specs, verbose=verbose)
 
+
 def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
     """Assert that setup exists and contains the mandatory fields.
     """
@@ -843,6 +873,7 @@ def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
         for name in optional_fields:
             _assert_has_field(name, h5file.root.setup, mandatory=False,
                               verbose=verbose)
+
 
 def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
     """Assert that identity group exists and contains the mandatory fields.
@@ -859,6 +890,7 @@ def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
             _assert_has_field(name, h5file.root.identity, mandatory=False,
                               verbose=verbose)
 
+
 def _assert_valid_fields(h5file, strict_description=True, verbose=False):
     """Assert compliance of field names, descriptions and data types.
 
@@ -872,15 +904,15 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
         if verbose:
             print('- Checking name, description and type: "%s".' % pathname)
 
-        ## Test non empty title string
+        # Test non empty title string
         msg = 'Empty TITLE attribute for "%s"' % pathname
         _assert_valid(len(title) > 0, msg, strict=strict_description)
 
-        ## Test description is a binary string
+        # Test description is a binary string
         # This depends on how pytbales loads the string and fails for some
         # fields (e.g. user fields in BH file) under python 3.
         # The test is disable for the time being.
-        #msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
+        # msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
         #_assert_valid(isinstance(title, bytes), msg, strict=strict_description)
 
         if pathname.endswith('/user') or '/user/' in pathname:
@@ -914,6 +946,7 @@ def _assert_valid_fields(h5file, strict_description=True, verbose=False):
                 _assert_valid(node.ndim >= 1, msg)
             else:
                 raise ValueError('Wrong type in JSON specs.')
+
 
 def _check_photon_data_tables(ph_data, norepeat=False, pool=None,
                               skip_measurement_specs=False, verbose=False):
@@ -994,6 +1027,3 @@ def print_children(group):
         print(name)
         print('    Content:     %s' % content)
         print('    Description: %s\n' % title)
-
-
-del print_function

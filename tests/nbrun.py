@@ -11,7 +11,7 @@ Usage:
     nbrun.py notebook_folder ouput_folder
 
 """
-from __future__ import print_function
+
 import os
 import time
 import nbformat
@@ -65,6 +65,7 @@ def run_notebook(notebook_name, nb_suffix='-out', out_path='.', timeout=3600,
         # Save the notebook even when it raises an error
         nbformat.write(nb, nb_name_output)
         print('* Output: ', nb_name_output)
+
 
 if __name__ == '__main__':
     from pathlib import Path
