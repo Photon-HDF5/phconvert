@@ -17,7 +17,7 @@ or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
 
 ## What's new
 
-**Nov. 2018:** Phconvert 0.9 released, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/).
+**Nov. 2018:** Phconvert 0.9 released, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/0.9).
 
 
 ## Quick-start: Converting files to Photon-HDF5

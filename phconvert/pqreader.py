@@ -12,6 +12,7 @@ The three main functions to decode PTU, HT3 and PT3 files are respectively:
 - :func:`load_ptu`
 - :func:`load_ht3`
 - :func:`load_pt3`
+- :func:`load_t3r`
 
 These functions return the arrays timestamps, detectors, nanotimes and an
 additional metadata dict.
@@ -23,6 +24,7 @@ Other lower level functions are:
 - :func:`pt3_reader` which loads metadata and raw t3 records from PT3 files
 - :func:`process_t3records` which decodes the t3 records returning
   timestamps (after overflow correction), detectors and TCSPC nanotimes.
+- :func:`process_t3records_t3rfile` decodes the t3 records for t3r files.
 
 Note that the functions performing overflow/rollover correction
 can take advantage of numba, if installed, to significanly speed-up
@@ -774,11 +776,32 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
 
 def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12,
                               dtime_bit=16, ch_bit=2, special_bit=False):
-    """ For processing file.t3r format
-    time_bit: nanotimes
-    dtime_bit: TimeTag
-    if valid==1 the Data == Channel
-    else Data = Overflow[1], Reserved[8], Marker[3]
+    """ Decode t3records from .T3R files.
+
+    See also :func:`process_t3records`.
+
+    Arguments:
+        reserved (int): reserved bit
+        valid (int): valid bit. If valid==1 the Data == Channel
+            else Data = Overflow[1], Reserved[8], Marker[3]
+        time_bit (int): bits for nanotimes
+        dtime_bit (int): bits for TimeTag (timestamps)
+        ch_bit (int): number of bits encoding channel
+        special_bit (bool): True if the record contatins the special bit.
+
+    Returns:
+        A 3-element tuple containing the following 1D arrays (all of the same
+        length):
+
+        - **timestamps** (*array of int64*): the macro-time (or number of sync)
+          of each photons after overflow correction. Units are specified in
+          the file header.
+        - **nanotimes** (*array of uint16*): the micro-time (TCSPC time), i.e.
+          the time lag between the photon detection and the previous laser
+          sync. Units (i.e. the bin width) are specified in the file header.
+        - **detectors** (*arrays of uint8*): detector number. When
+          `special_bit = True` the highest bit in `detectors` will be
+          the special bit.
     """
     if special_bit:
         ch_bit += 1
@@ -802,7 +825,6 @@ def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12,
     timestamps = t3records_low16.astype(np.int64)               # Copy
     np.bitwise_and(timestamps, 2**dtime_bit - 1, out=timestamps)
 
-    # overflow_ch = 2**ch_bit - 1
     overflow = 2**dtime_bit
     _correct_overflow1(timestamps, valid, 0, overflow)
     return detectors, timestamps, nanotimes
