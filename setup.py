@@ -3,7 +3,7 @@ import versioneer
 
 project_name = 'phconvert'
 
-## Metadata
+# Metadata
 long_description = """
 phconvert
 ==========
@@ -41,6 +41,7 @@ setup(name = project_name,
                    'Topic :: Scientific/Engineering',
                    ],
       install_requires = ['numpy', 'setuptools', 'tables'],
+      python_requires='>=3.5',
       packages=find_packages('.'),
       package_data = {'': ['specs/*.json', 'v04/specs/*.json']},
       keywords = ('single-molecule FRET smFRET biophysics file-format HDF5 '
