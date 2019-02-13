@@ -434,4 +434,86 @@ def nsalex_t3r(filename,
     return data, metadata
 
 
+def corellation_ptu(filename,
+               donor = 0,
+               acceptor = 1,
+               alex_period_donor = (150, 1500),
+               alex_period_acceptor = (1540, 3050),
+               excitation_wavelengths = (523e-9, 628e-9),
+               detection_wavelengths = (580e-9, 680e-9)):
+    """Load a .ptu file containing ns-correlation data and return a dict.
+
+    This dictionary can be passed to the :func:`phconvert.hdf5.save_photon_hdf5`
+    function to save the data in Photon-HDF5 format.
+    """
+    assert os.path.isfile(filename), "File '%s' not found." % filename
+    print(" - Loading '%s' ... " % filename)
+    timestamps, detectors, nanotimes, metadata = pqreader.load_ptu(filename)
+    print(" [DONE]\n")
+
+    timestamps_unit = float(metadata.pop('timestamps_unit'))
+    tcspc_unit = float(metadata.pop('nanotimes_unit'))
+    tcspc_num_bins = 4096
+    tcspc_range = tcspc_num_bins * tcspc_unit
+    laser_repetition_rate = float(metadata['ttmode']['InpRate0'])
+    acquisition_duration = float(metadata['header']['AcquisitionTime'][0] * 1e-3)
+    software = str(metadata['header']['CreatorName'][0])
+    software_version = str(metadata['header']['CreatorVersion'][0])
+
+    # Estract the creation time from the PT3 file header as it will be
+    # more reliable than the creation time from the file system
+    ctime_t = time.strptime(metadata['header']['FileTime'][0].decode(),
+                            "%d/%m/%y %H:%M:%S")
+    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
+
+    provenance = dict(
+        filename = filename,
+        creation_time = creation_time,
+        software = software,
+        software_version = software_version,
+    )
+
+    photon_data = dict(
+        timestamps = timestamps,
+        timestamps_specs = dict(timestamps_unit=timestamps_unit),
+        detectors = detectors,
+        nanotimes = nanotimes,
+
+        nanotimes_specs = dict(
+            tcspc_unit = tcspc_unit,
+            tcspc_range = tcspc_range,
+            tcspc_num_bins = tcspc_num_bins),
+
+        measurement_specs = dict(
+            measurement_type = 'smFRET-nsALEX',
+            laser_repetition_rate = laser_repetition_rate,
+            alex_excitation_period1 = alex_period_donor,
+            alex_excitation_period2 = alex_period_acceptor,
+            detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
+                                   spectral_ch2 = np.atleast_1d(acceptor)))
+    )
+
+    setup = dict(
+        num_pixels = 2,
+        num_spots = 1,
+        num_spectral_ch = 2,
+        num_polarization_ch = 1,
+        num_split_ch = 1,
+        modulated_excitation = True,
+        lifetime = True,
+        excitation_wavelengths = excitation_wavelengths,
+        excitation_cw = [False, False],
+        detection_wavelengths = detection_wavelengths,
+        excitation_alternated = [False, False])
+
+    data = dict(
+        _filename=filename,
+        acquisition_duration = acquisition_duration,
+        photon_data = photon_data,
+        setup = setup,
+        provenance = provenance)
+
+    return data, metadata
+
+
 del print_function, absolute_import, division  # cleanup namespace
