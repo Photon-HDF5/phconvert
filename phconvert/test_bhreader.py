@@ -15,7 +15,7 @@ class TestBhReader(unittest.TestCase):
             'test_files/test_noise.asc')
 
         data = bhreader.load_spc(input_file, 'SPC-150')
-        check = pd.read_table(check_file, delimiter=' ', dtype='int64',
+        check = pd.read_csv(check_file, delimiter=' ', dtype='int64',
             usecols=[0, 1], header=None).values.T  # Way faster than numpy
 
         # Same number of photons in both files
