@@ -45,8 +45,7 @@ before_test:
   - ps: wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip -OutFile Cy3.Cy5_diff_PIE-FRET.ptu.zip
   - 7z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
   - ps: wget https://ndownloader.figshare.com/files/6955091 -OutFile 161128_DM1_50pM_pH74.ptu
-  - curl -fsSLO  https://www.dropbox.com/s/s8zzxcq7d2nfqe0/20161027_DM1_1nM_pH7_20MHz1.ptu.zip
-  - 7z e 20161027_DM1_1nM_pH7_20MHz1.ptu.zip
+  - ps: wget https://ndownloader.figshare.com/files/14828594 -O 20161027_DM1_1nM_pH7_20MHz1.ptu
   - ps: wget https://ndownloader.figshare.com/files/13675271 -OutFile TestFile_2.ptu
   - ps: wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3 -OutFile topfluorPE_2_1_1_1.pt3
   - ps: wget https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip -OutFile DNA_FRET_0.5nM.pt3.zip
