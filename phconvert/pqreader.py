@@ -534,7 +534,7 @@ def ptu_reader(filename):
     while offset < tag_end_offset:
         tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
         #it is possible that a tag is being present multiple times (as many as blocks of saved histograms)
-        #so if this tag appears a second time, one makes it a list and we affect the new tag
+        #so if this tag appears a second time, one makes it a list and we append the new tag
         #in the appended list
         if tagname in tags.keys():
             if not isinstance(tags[tagname], list):
