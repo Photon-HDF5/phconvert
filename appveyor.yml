@@ -63,7 +63,7 @@ after_test:
   - cd %APPVEYOR_BUILD_FOLDER%
   - python setup.py bdist_wheel
   - echo %PATH%
-  - deactivate
+  - conda deactivate
   - path
   - where python
   - where git
