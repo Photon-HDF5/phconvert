@@ -143,7 +143,7 @@ For more details see our [contribution policy](http://photon-hdf5.readthedocs.or
 
 ## Authors & Contributors
 
-List of contributors (by lines of code):
+List of contributors:
 
 - Antonino Ingargiola (@tritemio) <tritemio AT gmail.com>
 - Ted Laurence (@talaurence) <laurence2 AT llnl.gov>
@@ -151,6 +151,7 @@ List of contributors (by lines of code):
 - Xavier Michalet (@smXplorer) <michalet AT chem.ucla.edu>
 - Anders Barth (@AndersBarth) <anders.barth AT gmail.com>
 - Biswajit Pradhan (@biswajitSM) <biswajitp145 AT gmail.com.
+- Sébastien Weber (@seb5g) <sebastien.weber AT cemes.fr>
 
 We thank also @ncodina for providing PTU files and helping in testing
 the PTU decoder in phconvert.
