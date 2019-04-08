@@ -93,6 +93,9 @@ def load_ptu(filename, ovcfunc=None):
     ctime_t = time.strptime(tags['File_CreatingTime']['value'],
                             "%Y-%m-%d %H:%M:%S")
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
+    hw_type = tags['HW_Type']
+    if isinstance(hw_type, list):
+        hw_type = hw_type[0] 
     meta = {'timestamps_unit': timestamps_unit,
             'nanotimes_unit': nanotimes_unit,
             'acquisition_duration': acquisition_duration,
@@ -100,9 +103,10 @@ def load_ptu(filename, ovcfunc=None):
             'software': tags['CreatorSW_Name']['data'],
             'software_version': tags['CreatorSW_Version']['data'],
             'creation_time': creation_time,
-            'hardware_name': tags['HW_Type']['data'],
+            'hardware_name': hw_type['data'],
             'tags': tags}
     return timestamps, detectors, nanotimes, meta
+
 
 def load_phu(filename, ovcfunc=None):
     """Load data from a PicoQuant .phu file.
@@ -132,6 +136,8 @@ def load_phu(filename, ovcfunc=None):
     meta = {'acquisition_duration': acquisition_duration,
             'tags': tags}
     return histograms, histo_resolution, meta
+
+
 def load_ht3(filename, ovcfunc=None):
     """Load data from a PicoQuant .ht3 file.
 
@@ -750,16 +756,22 @@ def t3r_reader(filename):
 
 def _ptu_print_tags(tags):
     """Print a table of tags from a PTU file header."""
-    line = '{:30s} %s {:8}  {:12} '
     for n in tags:
-        value_fmt = '{:>20}'
-        if tags[n]['type'] == 'tyFloat8':
-            value_fmt = '{:20.4g}'
-        endline = '\n'
-        if tags[n]['type'] == 'tyAnsiString':
-            endline = tags[n]['data'] + '\n'  # hic sunt leones
-        print((line % value_fmt).format(n, tags[n]['value'], tags[n]['idx'],
-              tags[n]['type']), end=endline)
+        start = 'D'  # mark for duplicated tags
+        tags_n = tags[n]
+        if not isinstance(tags[n], list):
+            tags_n = [tags_n]
+            start = ' '
+        for tag in tags_n:
+            if tag['type'] == 'tyFloat8':
+                value = f'{tag["value"]:20.4g}'
+            else:
+                value = f'{tag["value"]:>20}'
+            endline = '\n'
+            if tag['type'] == 'tyAnsiString':
+                endline = tag['data'] + '\n'
+            line = f'{start} {tag["offset"]:4} {n:28s} {value} {tag["idx"]:8}  {tag["type"]:12} '
+            print(line, end=endline)
 
 
 def _ptu_read_tag(s, offset, tag_type_r):
@@ -776,6 +788,7 @@ def _ptu_read_tag(s, offset, tag_type_r):
     tagname = tag_struct[0].rstrip(b'\0').decode()
     keys = ('idx', 'type', 'value')
     tag = {k: v for k, v in zip(keys, tag_struct[1:])}
+    tag['offset'] = offset
     # Recover the name of the type (a string)
     tag['type'] = tag_type_r[tag['type']]
 
