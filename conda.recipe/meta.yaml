@@ -16,6 +16,8 @@ requirements:
     - numpy >=1.9
     - hdf5
     - pytables
+    - mock
+    - pbr
 
   run:
     - python

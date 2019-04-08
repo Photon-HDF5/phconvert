@@ -659,7 +659,13 @@ def _ptu_read_tag(s, offset, tag_type_r):
 
     # Some tag types have additional data
     if tag['type'] == 'tyAnsiString':
-        tag['data'] = s[offset: offset + tag['value']].rstrip(b'\0').decode()
+        byte_string = s[offset: offset + tag['value']].rstrip(b'\0')
+        try:
+            tag['data'] = byte_string.decode()  # try decoding from UTF-8
+        except UnicodeDecodeError:
+            # Not UTF-8, trying 'latin1'
+            # See https://github.com/Photon-HDF5/phconvert/issues/35
+            tag['data'] = byte_string.decode('latin1')
         offset += tag['value']
     elif tag['type'] == 'tyFloat8Array':
         tag['data'] = np.frombuffer(s, dtype='float', count=tag['value'] / 8)
