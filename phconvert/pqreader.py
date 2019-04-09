@@ -104,7 +104,7 @@ def load_ptu(filename, ovcfunc=None):
             'software_version': tags['CreatorSW_Version']['data'],
             'creation_time': creation_time,
             'hardware_name': hw_type['data'],
-            'tags': tags}
+            'tags': _convert_multi_tags(tags)}
     return timestamps, detectors, nanotimes, meta
 
 
@@ -833,6 +833,35 @@ def _ptu_TDateTime_to_time_t(TDateTime):
     EpochDiff = 25569  # days between 30/12/1899 and 01/01/1970
     SecsInDay = 86400  # number of seconds in a day
     return (TDateTime - EpochDiff) * SecsInDay
+
+
+def _convert_multi_tags(tags_dict):
+    """Convert format of `tags_dict` from list of dict to dict of lists.
+    
+    When a tag in the file header is present multiple times, the values are
+    accumulated in a list of dicts. This function replace the list-of-dicts
+    with a dict-of-lists to facilitate saving to Photon-HDF5.
+    """
+    new_tags = tags_dict.copy()
+    for tagname, tag in tags_dict.items():
+        if isinstance(tag, list):
+            new_tags[tagname] = _lod_to_dol(tag)
+    return new_tags
+
+
+def _lod_to_dol(lod):
+    """Convert a list-of-dicts into a dict-of-lists.
+    
+    All the dicts in the input list must have the same keys.
+    """
+    assert isinstance(lod, list)
+    assert len(lod) > 0
+    keys = lod[0].keys()
+    dol = {k: [] for k in keys}
+    for d in lod:
+        for k in keys:
+            dol[k].append(d[k])
+    return dol
 
 
 def process_t3records(t3records, time_bit=10, dtime_bit=15,
