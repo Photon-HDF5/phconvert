@@ -43,6 +43,42 @@ try:
 except ImportError:
     has_numba = False
 
+ 
+# Constants used to decode the PQ file headers
+# Tag Types
+_ptu_tag_type = dict(
+    tyEmpty8      = 0xFFFF0008,
+    tyBool8       = 0x00000008,
+    tyInt8        = 0x10000008,
+    tyBitSet64    = 0x11000008,
+    tyColor8      = 0x12000008,
+    tyFloat8      = 0x20000008,
+    tyTDateTime   = 0x21000008,
+    tyFloat8Array = 0x2001FFFF,
+    tyAnsiString  = 0x4001FFFF,
+    tyWideString  = 0x4002FFFF,
+    tyBinaryBlob  = 0xFFFFFFFF,
+    )
+
+# Record Types
+_ptu_rec_type = dict(
+    rtPicoHarpT3     = 0x00010303,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $03 (PicoHarp)
+    rtPicoHarpT2     = 0x00010203,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $03 (PicoHarp)
+    rtHydraHarpT3    = 0x00010304,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $04 (HydraHarp)
+    rtHydraHarpT2    = 0x00010204,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $04 (HydraHarp)
+    rtHydraHarp2T3   = 0x01010304,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $03 (T3), HW: $04 (HydraHarp)
+    rtHydraHarp2T2   = 0x01010204,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $02 (T2), HW: $04 (HydraHarp)
+    rtTimeHarp260NT3 = 0x00010305,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $05 (TimeHarp260N)
+    rtTimeHarp260NT2 = 0x00010205,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
+    rtTimeHarp260PT3 = 0x00010306,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
+    rtTimeHarp260PT2 = 0x00010206,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
+    )
+
+# Reverse mappings
+_ptu_tag_type_r = {v: k for k, v in _ptu_tag_type.items()}
+_ptu_rec_type_r = {v: k for k, v in _ptu_rec_type.items()}
+
+
 
 def load_ptu(filename, ovcfunc=None):
     """Load data from a PicoQuant .ptu file.
@@ -108,21 +144,16 @@ def load_ptu(filename, ovcfunc=None):
     return timestamps, detectors, nanotimes, meta
 
 
-def load_phu(filename, ovcfunc=None):
+def load_phu(filename):
     """Load data from a PicoQuant .phu file.
 
     Arguments:
-        filename (string): the path of the PTU file to be loaded.
-        ovcfunc (function or None): function to use for overflow/rollover
-            correction of timestamps. If None, it defaults to the
-            fastest available implementation for the current machine.
-
+        filename (string): the path of the PHU file to be loaded.
+ 
     Returns:
-        A tuple of timestamps, detectors, nanotimes (integer arrays) and a
-        dictionary with metadata containing the keys
-        'timestamps_unit', 'nanotimes_unit', 'acquisition_duration' and
-        'tags'. The value of 'tags' is an OrderedDict of tags contained
-        in the PTU file header. Each item in the OrderedDict has 'idx', 'type'
+        A tuple of histograms, histogram resolution, and tags.
+        The latter is an OrderedDict of tags contained
+        in the file header. Each item in the OrderedDict has 'idx', 'type'
         and 'value' keys. Some tags also have a 'data' key.
 
     """
@@ -476,41 +507,6 @@ def ptu_reader(filename):
     # All the info about the PTU format has been inferred from PicoQuant demo:
     # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PTU/cc/ptudemo.cc
 
-    # Constants used to decode the header
-    FileTagEnd = "Header_End"  # Last tag of the header (BLOCKEND)
-    # Tag Types
-    _ptu_tag_type = dict(
-        tyEmpty8      = 0xFFFF0008,
-        tyBool8       = 0x00000008,
-        tyInt8        = 0x10000008,
-        tyBitSet64    = 0x11000008,
-        tyColor8      = 0x12000008,
-        tyFloat8      = 0x20000008,
-        tyTDateTime   = 0x21000008,
-        tyFloat8Array = 0x2001FFFF,
-        tyAnsiString  = 0x4001FFFF,
-        tyWideString  = 0x4002FFFF,
-        tyBinaryBlob  = 0xFFFFFFFF,
-        )
-
-    # Record Types
-    _ptu_rec_type = dict(
-        rtPicoHarpT3     = 0x00010303,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $03 (PicoHarp)
-        rtPicoHarpT2     = 0x00010203,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $03 (PicoHarp)
-        rtHydraHarpT3    = 0x00010304,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $04 (HydraHarp)
-        rtHydraHarpT2    = 0x00010204,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $04 (HydraHarp)
-        rtHydraHarp2T3   = 0x01010304,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $03 (T3), HW: $04 (HydraHarp)
-        rtHydraHarp2T2   = 0x01010204,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $02 (T2), HW: $04 (HydraHarp)
-        rtTimeHarp260NT3 = 0x00010305,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $05 (TimeHarp260N)
-        rtTimeHarp260NT2 = 0x00010205,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
-        rtTimeHarp260PT3 = 0x00010306,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
-        rtTimeHarp260PT2 = 0x00010206,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
-        )
-
-    # Reverse mappings
-    _ptu_tag_type_r = {v: k for k, v in _ptu_tag_type.items()}
-    _ptu_rec_type_r = {v: k for k, v in _ptu_rec_type.items()}
-
     # Load only the first few bytes to see is file is valid
     with open(filename, 'rb') as f:
         magic = f.read(8).rstrip(b'\0')
@@ -522,17 +518,36 @@ def ptu_reader(filename):
     # Now load the entire file
     with open(filename, 'rb') as f:
         s = f.read()
+    tags, offset = _read_header_tags(s)
 
-    # Decode the header and save data in the OrderedDict `tags`
-    # Each item in `tags` is a dict as returned by _ptu_read_tag()
-    offset = 16
+    # A view of the t3records as a numpy array (no new memory is allocated)
+    num_records = tags['TTResult_NumberOfRecords']['value']
+    t3records = np.frombuffer(s, dtype='uint32', count=num_records,
+                              offset=offset)
+
+    
+    # Get some metadata
+    timestamps_unit = 1 / tags['TTResult_SyncRate']['value']
+    nanotimes_unit = tags['MeasDesc_Resolution']['value']
+    record_type = _ptu_rec_type_r[tags['TTResultFormat_TTTRRecType']['value']]
+    return t3records, timestamps_unit, nanotimes_unit, record_type, tags
+
+
+def _read_header_tags(s):
+    """Read the header tags and return an OrderedDict.
+
+    Each item in `tags` is a dict as returned by _ptu_read_tag().
+    The input `s` is a binary-string containing the raw binary data file.
+    """
+    offset = 16                # initial bytes to skip
+    FileTagEnd = "Header_End"  # Last tag of the header (BLOCKEND)
     tag_end_offset = s.find(FileTagEnd.encode()) + len(FileTagEnd)
 
     tags = OrderedDict()
-    tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
+    tagname, tag, offset = _ptu_read_tag(s, offset)
     tags[tagname] = tag
     while offset < tag_end_offset:
-        tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
+        tagname, tag, offset = _ptu_read_tag(s, offset)
         #it is possible that a tag is being present multiple times (as many as blocks of saved histograms)
         #so if this tag appears a second time, one makes it a list and we append the new tag
         #in the appended list
@@ -545,111 +560,45 @@ def ptu_reader(filename):
 
     # Make sure we have read the last tag
     assert list(tags.keys())[-1] == FileTagEnd
+    return tags, offset
 
-    # A view of the t3records as a numpy array (no new memory is allocated)
-    num_records = tags['TTResult_NumberOfRecords']['value']
-    t3records = np.frombuffer(s, dtype='uint32', count=num_records,
-                              offset=offset)
-
-    # Get some metadata
-    timestamps_unit = 1 / tags['TTResult_SyncRate']['value']
-    nanotimes_unit = tags['MeasDesc_Resolution']['value']
-    record_type = _ptu_rec_type_r[tags['TTResultFormat_TTTRRecType']['value']]
-    return t3records, timestamps_unit, nanotimes_unit, record_type, tags
 
 def phu_reader(filename):
     """Load histogram records and metadata from a PHU file.
     """
     # All the info about the PHU format has been inferred from PicoQuant demo:
     # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PHU/Matlab/Read_PHU.m
-    #this format header is simalarly encoded as ptu files see ptu_reader
-
-    # Constants used to decode the header
-    FileTagEnd = "Header_End"  # Last tag of the header (BLOCKEND)
-    # Tag Types
-    _ptu_tag_type = dict(
-        tyEmpty8      = 0xFFFF0008,
-        tyBool8       = 0x00000008,
-        tyInt8        = 0x10000008,
-        tyBitSet64    = 0x11000008,
-        tyColor8      = 0x12000008,
-        tyFloat8      = 0x20000008,
-        tyTDateTime   = 0x21000008,
-        tyFloat8Array = 0x2001FFFF,
-        tyAnsiString  = 0x4001FFFF,
-        tyWideString  = 0x4002FFFF,
-        tyBinaryBlob  = 0xFFFFFFFF,
-        )
-
-    # Record Types
-    _ptu_rec_type = dict(
-        rtPicoHarpT3     = 0x00010303,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $03 (PicoHarp)
-        rtPicoHarpT2     = 0x00010203,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $03 (PicoHarp)
-        rtHydraHarpT3    = 0x00010304,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $04 (HydraHarp)
-        rtHydraHarpT2    = 0x00010204,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $04 (HydraHarp)
-        rtHydraHarp2T3   = 0x01010304,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $03 (T3), HW: $04 (HydraHarp)
-        rtHydraHarp2T2   = 0x01010204,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $02 (T2), HW: $04 (HydraHarp)
-        rtTimeHarp260NT3 = 0x00010305,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $05 (TimeHarp260N)
-        rtTimeHarp260NT2 = 0x00010205,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
-        rtTimeHarp260PT3 = 0x00010306,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
-        rtTimeHarp260PT2 = 0x00010206,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
-        )
-
-    # Reverse mappings
-    _ptu_tag_type_r = {v: k for k, v in _ptu_tag_type.items()}
-    _ptu_rec_type_r = {v: k for k, v in _ptu_rec_type.items()}
+    # this format header is simalarly encoded as ptu files see ptu_reader
 
     # Load only the first few bytes to see is file is valid
     with open(filename, 'rb') as f:
         magic = f.read(8).rstrip(b'\0')
         version = f.read(8).rstrip(b'\0')
-    if magic!= b'PQHISTO':
+    if magic != b'PQHISTO':
         raise IOError("This file is not a valid PHU file. "
                       "Magic: '%s'." % magic)
 
     # Now load the entire file
     with open(filename, 'rb') as f:
         s = f.read()
+    tags, _ =  _read_header_tags(s)
 
-    # Decode the header and save data in the OrderedDict `tags`
-    # Each item in `tags` is a dict as returned by _ptu_read_tag()
-    offset = 16
-    tag_end_offset = s.find(FileTagEnd.encode()) + len(FileTagEnd)
+    # one as to loop over the different curves (histogram) stored in the phu file
+    Ncurves = tags['HistoResult_NumberOfCurves']['value']
+    # all Nbins should be equal between the Ncurves but there is as many tags as curves
+    Nbins = tags['HistResDscr_HistogramBins'][0]['value'] 
+    histograms = np.zeros((Nbins,Ncurves), dtype='uint32')
 
-    tags = OrderedDict()
-    tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
-    tags[tagname] = tag
-    while offset < tag_end_offset:
-        tagname, tag, offset = _ptu_read_tag(s, offset, _ptu_tag_type_r)
-        #it is possible that a tag is being present multiple times (as many as blocks of saved histograms)
-        #so if this tag appears a second time, one makes it a list and we affect the new tag
-        #in the appended list
-        if 'HistResDscr' in tagname: #there is as many of these as number of saved curves/histograms
-            if tagname not in tags.keys():#creata the list of the given tagname
-                tags[tagname]=[]
-            tags[tagname].append(tag)
-        else:
-            tags[tagname] = tag
-
-    # Make sure we have read the last tag
-    assert list(tags.keys())[-1] == FileTagEnd
-
-    #one as to loop over the different curves (histogram) stored in the phu file
-    Ncurves=tags['HistoResult_NumberOfCurves']['value']
-    Nbins=tags['HistResDscr_HistogramBins'][0]['value'] # all Nbins should be equa between the Ncurves but there is as many tags as curves
-    histograms=np.zeros((Nbins,Ncurves), dtype='uint32')
-
-    #populate histograms  and Get some metadata
-
+    # populate histograms and get some metadata
     histo_resolution=[]
     for ind_curve in range(Ncurves):
-        histograms[:,ind_curve]=np.frombuffer(s, dtype='uint32',
-                  count=tags['HistResDscr_HistogramBins'][ind_curve]['value'],
-                              offset=tags['HistResDscr_DataOffset'][ind_curve]['value'])
-        histo_resolution.append(tags['HistResDscr_MDescResolution'][ind_curve]['value'])
-
-
+        histograms[:, ind_curve] = np.frombuffer(s, dtype='uint32',
+            count=tags['HistResDscr_HistogramBins'][ind_curve]['value'],
+            offset=tags['HistResDscr_DataOffset'][ind_curve]['value'])
+        histo_resolution.append(
+            tags['HistResDscr_MDescResolution'][ind_curve]['value'])
     return histograms, histo_resolution, tags
+
 
 def t3r_reader(filename):
     """Load raw t3 records and metadata from a PT3 file.
@@ -754,27 +703,7 @@ def t3r_reader(filename):
         return t3records, timestamps_unit, nanotimes_unit, metadata
 
 
-def _ptu_print_tags(tags):
-    """Print a table of tags from a PTU file header."""
-    for n in tags:
-        start = 'D'  # mark for duplicated tags
-        tags_n = tags[n]
-        if not isinstance(tags[n], list):
-            tags_n = [tags_n]
-            start = ' '
-        for tag in tags_n:
-            if tag['type'] == 'tyFloat8':
-                value = f'{tag["value"]:20.4g}'
-            else:
-                value = f'{tag["value"]:>20}'
-            endline = '\n'
-            if tag['type'] == 'tyAnsiString':
-                endline = tag['data'] + '\n'
-            line = f'{start} {tag["offset"]:4} {n:28s} {value} {tag["idx"]:8}  {tag["type"]:12} '
-            print(line, end=endline)
-
-
-def _ptu_read_tag(s, offset, tag_type_r):
+def _ptu_read_tag(s, offset):
     """Decode a single tag from the PTU header struct.
 
     Returns:
@@ -790,7 +719,7 @@ def _ptu_read_tag(s, offset, tag_type_r):
     tag = {k: v for k, v in zip(keys, tag_struct[1:])}
     tag['offset'] = offset
     # Recover the name of the type (a string)
-    tag['type'] = tag_type_r[tag['type']]
+    tag['type'] = _ptu_tag_type_r[tag['type']]
 
     # Some tag types need conversion
     if tag['type'] == 'tyFloat8':
@@ -862,6 +791,59 @@ def _lod_to_dol(lod):
         for k in keys:
             dol[k].append(d[k])
     return dol
+
+def _dol_to_lod(dol):
+    """Convert a dict-of-lists into a list-of-dicts.
+    
+    Reverse transformation of :func:`_lod_to_dol()`.
+    """
+    keys = list(dol.keys())
+    lod = []
+    for i in range(len(dol[keys[0]])):
+        lod.append({k: v[i] for k, v in dol.items()})
+    return lod
+
+def _unconvert_multi_tags(tags_dict):
+    new_tags = tags_dict.copy()
+    for tagname, tag in tags_dict.items():
+        keys = list(tag.keys())
+        if isinstance(tag[keys[0]], list):
+            new_tags[tagname] = _dol_to_lod(tag)
+    return new_tags
+
+
+def _ptu_print_tags(tags):
+    """Print a table of tags from a PTU file header."""
+    def _byte_to_str(x):
+        if isinstance(x, bytes):
+            # When loading from HDF5 string are binary
+            x = x.decode()
+        return x
+
+    is_dol = True
+    for tagname, tag in tags.items():
+        if isinstance(tag, list):
+            is_dol = False
+            break
+    if is_dol:
+        tags = _unconvert_multi_tags(tags)
+    for n in tags:
+        start = 'D'  # mark for duplicated tags
+        tags_n = tags[n]
+        if not isinstance(tags[n], list):
+            tags_n = [tags_n]
+            start = ' '
+        for tag in tags_n:
+            tag_type = _byte_to_str(tag["type"])
+            if tag_type == 'tyFloat8':
+                value = f'{tag["value"]:20.4g}'
+            else:
+                value = f'{tag["value"]:>20}'
+            endline = '\n'
+            if tag_type == 'tyAnsiString':
+                endline = _byte_to_str(tag['data']) + '\n'
+            line = f'{start} {tag["offset"]:4} {n:28s} {value} {tag["idx"]:8}  {tag_type:12} '
+            print(line, end=endline)
 
 
 def process_t3records(t3records, time_bit=10, dtime_bit=15,
