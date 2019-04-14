@@ -879,8 +879,6 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     is potentially expensive for big data files). Under normal usage the
     additional detectors take negligible space and can be safely ignored.
 
-    **Detectors**:
-
     Arguments:
         t3records (array): raw array of t3records as saved in the
             PicoQuant file.
