@@ -7,7 +7,7 @@
 This module contains functions to load and decode files from PicoQuant
 hardware.
 
-The three main functions to decode PTU, HT3, PT3  and T3R files are respectively:
+The main functions to decode PicoQuant files (PTU, HT3, PT3, T3R) are respectively:
 
 - :func:`load_ptu`
 - :func:`load_ht3`
