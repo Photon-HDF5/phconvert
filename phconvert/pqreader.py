@@ -7,26 +7,29 @@
 This module contains functions to load and decode files from PicoQuant
 hardware.
 
-The three main functions to decode PTU, HT3 and PT3 files are respectively:
+The three main functions to decode PTU, HT3, PT3  and T3R files are respectively:
 
 - :func:`load_ptu`
 - :func:`load_ht3`
 - :func:`load_pt3`
 - :func:`load_t3r`
 
-These functions return the arrays timestamps, detectors, nanotimes and an
+These functions return the arrays timestamps (also called macro-time or timetag), 
+detectors (or channel), nanotimes (also called micro-time or TCSPC time) and an
 additional metadata dict.
 
 Other lower level functions are:
 
-- :func:`ptu_reader` which loads metadata and raw t3 records from PTU files
-- :func:`ht3_reader` which loads metadata and raw t3 records from HT3 files
-- :func:`pt3_reader` which loads metadata and raw t3 records from PT3 files
-- :func:`process_t3records` which decodes the t3 records returning
+- :func:`ptu_reader` to load metadata and raw t3 records from PTU files
+- :func:`ht3_reader` to load metadata and raw t3 records from HT3 files
+- :func:`pt3_reader` to load metadata and raw t3 records from PT3 files
+- :func:`process_t3records` to decode the t3 records and return
   timestamps (after overflow correction), detectors and TCSPC nanotimes.
-- :func:`process_t3records_t3rfile` decodes the t3 records for t3r files.
+- :func:`process_t3records_t3rfile` to decode the t3 records for t3r files.
+- :func:`process_t2records` to decode the t3 records and return
+  timestamps (after overflow correction) and detectors.
 
-Note that the functions performing overflow/rollover correction
+The functions performing overflow/rollover correction
 can take advantage of numba, if installed, to significanly speed-up
 the processing.
 """
@@ -854,10 +857,10 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     It packs all the information of each detected photons. This function
     decodes the different fields and returns 3 arrays
     containing the timestamps (i.e. macro-time or number of sync,
-    ns resolution), the nanotimes (i.e. the micro-time or TCSPC time,
+    few-ns resolution), the nanotimes (i.e. the micro-time or TCSPC time,
     ps resolution) and the detectors.
 
-    t3records have these fields (in little-endian order::
+    t3records have these fields (in little-endian order)::
 
         | Optional special bit | detectors | nanotimes | timestamps |
           MSB                                                   LSB
@@ -979,11 +982,11 @@ def  process_t2records(t2records, time_bit=25,
 
     The input array of t2records is an array of "records" (a C struct).
     It packs all the information of each detected photons. This function
-    decodes the different fields and returns 3 arrays
-    containing the timestamps (i.e. from start of experiment),
-    an array with 0s (to match nanotimes return types of other process) and the detectors.
+    decodes the different fields and returns 2 arrays
+    containing the timestamps (also called macro-time or timetag) and 
+    the detectors (or channel).
 
-    t3records have these fields (in little-endian order::
+    t2records have these fields (in little-endian order)::
 
         | Optional special bit | detectors |  timestamps |
           MSB                                        LSB
