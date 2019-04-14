@@ -509,8 +509,7 @@ def ptu_reader(filename):
     """Read the header and the raw t3 or t2 records from a PTU file.
     """
     # All the info about the PTU format has been inferred from PicoQuant demo:
-    # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PTU/cc/ptudemo.cc
-
+    # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PTU/C/ptudemo.cc
     # Load only the first few bytes to see is file is valid
     with open(filename, 'rb') as f:
         magic = f.read(8).rstrip(b'\0')
@@ -791,6 +790,7 @@ def _lod_to_dol(lod):
             dol[k].append(d[k])
     return dol
 
+
 def _dol_to_lod(dol):
     """Convert a dict-of-lists into a list-of-dicts.
     
@@ -801,6 +801,7 @@ def _dol_to_lod(dol):
     for i in range(len(dol[keys[0]])):
         lod.append({k: v[i] for k, v in dol.items()})
     return lod
+
 
 def _unconvert_multi_tags(tags_dict):
     new_tags = tags_dict.copy()
@@ -856,18 +857,19 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     ns resolution), the nanotimes (i.e. the micro-time or TCSPC time,
     ps resolution) and the detectors.
 
-    Assuming the t3records are in little-endian order, the fields are assumed
-    in the following order::
+    t3records have these fields (in little-endian order::
 
         | Optional special bit | detectors | nanotimes | timestamps |
           MSB                                                   LSB
 
-    - the lowest `time_bit` bits contain the timestamps
-    - the next `dtime_bit` bits contain the nanotimes
-    - the next `ch_bit` contain the detector number
-    - if `special_bit = True`, the highest bit is the special bit.
+    Bit allocation of these fields, starting from the MSB:
 
-    The returned timestamps are overflow-corrected, and therefore
+    - **special bit**: 1 bit if `special_bit = True` (default), else no special bit.
+    - **channel**: default 6 bit, (argument `ch_bit`), detector or special marker
+    - **nanotimes**: default 15 bit (argument `dtime_bit`), nanotimes (TCSPC time)
+    - **timestamps**: default 10 bit, (argument `time_bit`), the timestamps (macro-time)
+    
+    **Timestamps**: The returned timestamps are overflow-corrected, and therefore
     should be monotonically increasing. Each overflow event is marked by
     a special detector (or a special bit) and this information is used for
     the correction. These overflow "events" **are not removed** in the returned
@@ -876,6 +878,8 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     efficiency (removing a few elements requires allocating a new array that
     is potentially expensive for big data files). Under normal usage the
     additional detectors take negligible space and can be safely ignored.
+
+    **Detectors**:
 
     Arguments:
         t3records (array): raw array of t3records as saved in the
@@ -908,18 +912,41 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
         - **detectors** (*arrays of uint8*): detector number. When
           `special_bit = True` the highest bit in `detectors` will be
           the special bit.
-    
-    Notes:
-    The bit allocation in the record is, starting from the MSB:
-    special: 1
-    channel: 6
-    dtime: 15
-    nsync: 10
-    If the special bit is clear, it's a regular event record.
-    If the special bit is set, the following interpretation of the channel code is given:
+    """
 
-    code 63 (all bits ones) identifies a sync count overflow, increment the sync count overflow accumulator. For HydraHarp V1 ($00010304) it means always one overflow. For all other types the number of overflows can be read from nsync value.
-    codes from 1 to 15 identify markers, the individual bits are external markers.
+    """
+    Notes on detectors:
+
+        The bit allocation in the record is, starting from the MSB::
+
+            special: 1
+            channel: 6
+            dtime: 15
+            nsync: 10
+        
+        If the special bit is clear, it's a regular event record.
+        If the special bit is set, the following interpretation of 
+        the channel code is given:
+
+        - code 63 (all bits ones) identifies a sync count overflow, 
+          increment the sync count overflow accumulator. For 
+          HydraHarp V1 ($00010304) it means always one overflow. 
+          For all other types the number of overflows can be read from nsync value.
+        - codes from 1 to 15 identify markers, the individual bits are external markers.
+
+        If detectors is above 64 then it is a special record.
+            
+            detectors==127 =>overflow
+            detectors==65 => Marker 1 event
+            detectors==66 => Marker 2 event
+            ...
+            detectors==79 => Marker 15 event
+        else if
+            detectors==0 => regular event regular detector 0
+            detectors==1 => regular event regular detector 1
+            detectors==2 => regular event regular detector 2
+            ...
+
     """
 
     if special_bit:
@@ -935,20 +962,6 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
         np.right_shift(t3records, time_bit),
         2**dtime_bit - 1).astype('uint16')
 
-    """
-    if detectors is above 64 then it is a special record.
-        
-        detectors==127 =>overflow
-        detectors==65 => Marker 1 event
-        detectors==66 => Marker 2 event
-        ...
-        detectors==79 => Marker 15 event
-    else if
-        detectors==0 => regular event regular detector 0
-        detectors==1 => regular event regular detector 1
-        detectors==2 => regular event regular detector 2
-        ...
-    """
     dt = np.dtype([('low16', 'uint16'), ('high16', 'uint16')])
     t3records_low16 = np.frombuffer(t3records, dt)['low16']     # View
     timestamps = t3records_low16.astype(np.int64)               # Copy
@@ -972,15 +985,14 @@ def  process_t2records(t2records, time_bit=25,
     containing the timestamps (i.e. from start of experiment),
     an array with 0s (to match nanotimes return types of other process) and the detectors.
 
-    Assuming the t2records are in little-endian order, the fields are assumed
-    in the following order::
+    t3records have these fields (in little-endian order::
 
         | Optional special bit | detectors |  timestamps |
-          MSB                                                   LSB
+          MSB                                        LSB
 
-    - the lowest `time_bit` bits contain the timestamps
-    - the next `ch_bit` contain the detector number
-    - if `special_bit = True`, the highest bit is the special bit.
+    - **special bit**: 1 bit if `special_bit = True` (default), else no special bit.
+    - **channel**: default 6 bit, (argument `ch_bit`), detector or special marker
+    - **timestamps**: default 25 bit, (argument `time_bit`), the timestamps (macro-time)
 
     The returned timestamps are overflow-corrected, and therefore
     should be monotonically increasing. Each overflow event is marked by
@@ -1018,46 +1030,21 @@ def  process_t2records(t2records, time_bit=25,
           `special_bit = True` the highest bit in `detectors` will be
           the special bit.
     """
-
-    """
-    The bit allocation in the record is, starting from the MSB:
-    special: 1
-    channel: 6
-    timetag: 25
-    If the special bit is clear, it's a regular event record.
-    If the special bit is set, the following interpretation of the channel code is given:
-
-    code 63 (all bits ones) identifies a timetag overflow, increment the overflow timetag accumulator. For HydraHarp V1 ($00010204) it always means one overflow. For all other types the number of overflows can be read from timetag value.
-    code 0 (all bits zeroes) identifies a sync event,
-    codes from 1 to 15 identify markers, the individual bits are external markers.
-    """
     if special_bit:
         ch_bit += 1
     assert ch_bit <= 8
     assert time_bit <= 25
     assert time_bit + ch_bit== 32
 
-    timestamps = np.bitwise_and(t2records,2**time_bit - 1).astype('int64') #dtime in picoquant library
+    # called "dtime" in picoquant library
+    timestamps = np.bitwise_and(t2records,2**time_bit - 1).astype('int64')
 
+    # called "channel" in picoquant library
     detectors = np.bitwise_and(
-        np.right_shift(t2records, time_bit), 2**(ch_bit) - 1).astype('uint8') #channel in picoquant library
-
-    """
-    if detectors is above 64 then it is a special record.
-        detectors==127 =>overflow
-        detectors==64 => sync event
-        detectors==65 => Marker 1 event
-        detectors==66 => Marker 2 event
-        ...
-        detectors==79 => Marker 15 event
-    else if
-        detectors==0 => regular event regular detector 0 (not sync but the one labelled 1 on the card)
-        detectors==1 => regular event regular detector 1
-        detectors==2 => regular event regular detector 2
-        ...
-    """
+        np.right_shift(t2records, time_bit), 2**(ch_bit) - 1).astype('uint8') 
+        
     overflow_ch = 2**ch_bit - 1
-    overflow = 2**time_bit #overflow encoded using 25bits
+    overflow = 2**time_bit
     if ovcfunc is None:
         ovcfunc = _correct_overflow
     ovcfunc(timestamps, detectors, overflow_ch, overflow)
