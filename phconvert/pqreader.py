@@ -100,8 +100,7 @@ def load_ptu(filename, ovcfunc=None):
     """
     assert os.path.isfile(filename), "File '%s' not found." % filename
 
-    t3records, timestamps_unit, nanotimes_unit, record_type, tags = \
-        ptu_reader(filename)
+    t3records, record_type, tags = ptu_reader(filename)
 
     if record_type == 'rtPicoHarpT3':
         detectors, timestamps, nanotimes = process_t3records(
@@ -117,30 +116,35 @@ def load_ptu(filename, ovcfunc=None):
             t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
             ovcfunc=_correct_overflow_nsync)
     elif record_type in ('rtTimeHarp260NT2','rtTimeHarp260PT2'):
-        detectors, timestamps, nanotimes = process_t2records(t3records,
+        detectors, timestamps = process_t2records(t3records,
                 time_bit=25, ch_bit=6, special_bit=True,
                 ovcfunc=_correct_overflow_nsync)
+        nanotimes = None
     else:
         msg = ('Sorry, decoding "%s" record type is not implemented!' %
                record_type)
         raise NotImplementedError(msg)
 
+    # Get the metadata
     acquisition_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3
     ctime_t = time.strptime(tags['File_CreatingTime']['value'],
                             "%Y-%m-%d %H:%M:%S")
     creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
     hw_type = tags['HW_Type']
     if isinstance(hw_type, list):
-        hw_type = hw_type[0] 
-    meta = {'timestamps_unit': timestamps_unit,
-            'nanotimes_unit': nanotimes_unit,
-            'acquisition_duration': acquisition_duration,
-            'laser_repetition_rate': tags['TTResult_SyncRate']['value'],
-            'software': tags['CreatorSW_Name']['data'],
-            'software_version': tags['CreatorSW_Version']['data'],
-            'creation_time': creation_time,
-            'hardware_name': hw_type['data'],
-            'tags': _convert_multi_tags(tags)}
+        hw_type = hw_type[0]
+    meta = {
+        'timestamps_unit': tags['MeasDesc_GlobalResolution']['value'], # both T3 and T2
+        'acquisition_duration': acquisition_duration,
+        'software': tags['CreatorSW_Name']['data'],
+        'software_version': tags['CreatorSW_Version']['data'],
+        'creation_time': creation_time,
+        'hardware_name': hw_type['data'],
+        'record_type': record_type,
+        'tags': _convert_multi_tags(tags)}
+    if record_type.endswith('T3'):
+        meta['nanotimes_unit'] = tags['MeasDesc_Resolution']['value']
+        meta['laser_repetition_rate'] = tags['TTResult_SyncRate']['value']
     return timestamps, detectors, nanotimes, meta
 
 
@@ -502,7 +506,7 @@ def pt3_reader(filename):
 
 
 def ptu_reader(filename):
-    """Load raw t3 or t2  records and metadata from a PTU file.
+    """Read the header and the raw t3 or t2 records from a PTU file.
     """
     # All the info about the PTU format has been inferred from PicoQuant demo:
     # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PTU/cc/ptudemo.cc
@@ -524,13 +528,8 @@ def ptu_reader(filename):
     num_records = tags['TTResult_NumberOfRecords']['value']
     t3records = np.frombuffer(s, dtype='uint32', count=num_records,
                               offset=offset)
-
-    
-    # Get some metadata
-    timestamps_unit = 1 / tags['TTResult_SyncRate']['value']
-    nanotimes_unit = tags['MeasDesc_Resolution']['value']
     record_type = _ptu_rec_type_r[tags['TTResultFormat_TTTRRecType']['value']]
-    return t3records, timestamps_unit, nanotimes_unit, record_type, tags
+    return t3records, record_type, tags
 
 
 def _read_header_tags(s):
@@ -997,7 +996,6 @@ def  process_t2records(t2records, time_bit=25,
         t2records (array): raw array of t2records as saved in the
             PicoQuant file.
         time_bit (int): number of bits in the t2record used for timestamps
-
         ch_bit (int): number of bits in the t2record used for the detector
             number.
         special_bit (bool): if True the t2record contains a special bit
@@ -1010,15 +1008,12 @@ def  process_t2records(t2records, time_bit=25,
             otherwise it is function using plain numpy.
 
     Returns:
-        A 3-element tuple containing the following 1D arrays (all of the same
+        A 2-element tuple containing the following 1D arrays (all of the same
         length):
 
         - **timestamps** (*array of int64*): the macro-time (or number of sync)
           of each photons after overflow correction. Units are specified in
           the file header.
-        - **nanotimes** (*array of uint16*): the micro-time (TCSPC time), i.e.
-          the time lag between the photon detection and the previous laser
-          sync. Units (i.e. the bin width) are specified in the file header.
         - **detectors** (*arrays of uint8*): detector number. When
           `special_bit = True` the highest bit in `detectors` will be
           the special bit.
@@ -1043,7 +1038,6 @@ def  process_t2records(t2records, time_bit=25,
     assert time_bit + ch_bit== 32
 
     timestamps = np.bitwise_and(t2records,2**time_bit - 1).astype('int64') #dtime in picoquant library
-    nanotimes = np.zeros(timestamps.size, dtype='uint8') #there is no nanotimes in T2 modes only timestamps from start with full resolution
 
     detectors = np.bitwise_and(
         np.right_shift(t2records, time_bit), 2**(ch_bit) - 1).astype('uint8') #channel in picoquant library
@@ -1067,7 +1061,8 @@ def  process_t2records(t2records, time_bit=25,
     if ovcfunc is None:
         ovcfunc = _correct_overflow
     ovcfunc(timestamps, detectors, overflow_ch, overflow)
-    return detectors, timestamps, nanotimes
+    return detectors, timestamps
+
 
 def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12,
                               dtime_bit=16, ch_bit=2, special_bit=False):

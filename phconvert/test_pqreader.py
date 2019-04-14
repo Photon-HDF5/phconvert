@@ -30,9 +30,14 @@ def dataset4():
     fname = DATADIR + fn
     return fname
 
+def dataset5():
+    fn = 'trace_T2_300s_1_coincidence.ptu'  # 'rtTimeHarp260PT2'
+    fname = DATADIR + fn
+    return fname
+
 
 @pytest.fixture(scope="module",
-                params=[dataset1, dataset2, dataset3, dataset4])
+                params=[dataset1, dataset2, dataset3, dataset4, dataset5])
 def filename(request):
     fname = request.param()
     return fname
@@ -41,14 +46,13 @@ def filename(request):
 def test_read_ptu_recordtype(filename):
     """Test for PTU header decoding."""
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    t3records, timestamps_unit, nanotimes_unit, record_type, tags = \
+    t3records, record_type, tags = \
         phc.pqreader.ptu_reader(filename)
     assert list(tags.keys())[-1] == "Header_End"
-    assert timestamps_unit == 1 / tags['TTResult_SyncRate']['value']
-    assert nanotimes_unit == tags['MeasDesc_Resolution']['value']
     ptu_rec_code = {0x00010304: 'rtHydraHarpT3',
                     0x01010304: 'rtHydraHarp2T3',
                     0x00010303: 'rtPicoHarpT3',
+                    0x00010206: 'rtTimeHarp260PT2'
                     }
     rec_type2 = ptu_rec_code[tags['TTResultFormat_TTTRRecType']['value']]
     assert rec_type2 == record_type
@@ -58,7 +62,7 @@ def test_ptu_rtHydraHarp2T3_overflow_correction():
     """Test PTU overflow correction for rtHydraHarp2T3 records."""
     filename = dataset2()
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    t3records, timestamps_unit, nanotimes_unit, record_type, tags = \
+    t3records, record_type, tags = \
         phc.pqreader.ptu_reader(filename)
     if record_type == 'rtHydraHarp2T3':
         det, ts, nanot = phc.pqreader.process_t3records(
@@ -92,17 +96,18 @@ def test_load_ptu(filename):
     acq_duration_exp = ((timestamps[-1] - timestamps[0])
                         * meta['timestamps_unit'])
     assert abs(acq_duration - acq_duration_exp) < 0.1
-    assert 'laser_repetition_rate' in meta
-    assert 1e6 < meta['laser_repetition_rate'] > 10e6
     for field in ('software', 'software_version', 'creation_time',
                   'hardware_name'):
         assert field in meta
         assert isinstance(field, str)
     # Test photon data
-    assert ((nanotimes >= 0) * (nanotimes < 4096)).all()
     valid = detectors != 127
     timestamps = timestamps[valid]
     assert (np.diff(timestamps) >= 0).all()
+    if nanotimes is not None:
+        assert 'laser_repetition_rate' in meta
+        assert 1e6 < meta['laser_repetition_rate'] > 10e6
+        assert ((nanotimes >= 0) * (nanotimes < 4096)).all()
 
 
 def test_load_ht3():
