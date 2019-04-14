@@ -28,3 +28,5 @@ files:
 .. autofunction:: phconvert.pqreader.pt3_reader
 
 .. autofunction:: phconvert.pqreader.process_t3records
+
+.. autofunction:: phconvert.pqreader.process_t2records

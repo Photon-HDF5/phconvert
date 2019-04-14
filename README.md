@@ -15,6 +15,8 @@ For questions or issues running this software please use the
 [Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5)
 or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
 
+- [Phconvert Documentation](https://phconvert.readthedocs.io)
+
 ## What's new
 
 **Nov. 2018:** Phconvert 0.9 released, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/0.9).
