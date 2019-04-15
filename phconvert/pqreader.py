@@ -96,9 +96,11 @@ def load_ptu(filename, ovcfunc=None):
         A tuple of timestamps, detectors, nanotimes (integer arrays) and a
         dictionary with metadata containing the keys
         'timestamps_unit', 'nanotimes_unit', 'acquisition_duration' and
-        'tags'. The value of 'tags' is an OrderedDict of tags contained
-        in the PTU file header. Each item in the OrderedDict has 'idx', 'type'
-        and 'value' keys. Some tags also have a 'data' key.
+        'tags'. The data in the PTU file header is returned as a
+        dictionary of "tags". Each item in the dictionary has 'idx', 'type', 
+        'value' and 'offset' keys. Some tags also have a 'data' key.
+        Use :func:`_ptu_print_tags` to print the tags as an easy-to-read 
+        table.
 
     """
     assert os.path.isfile(filename), "File '%s' not found." % filename
@@ -159,20 +161,17 @@ def load_phu(filename):
  
     Returns:
         A tuple of histograms, histogram resolution, and tags.
-        The latter is an OrderedDict of tags contained
-        in the file header. Each item in the OrderedDict has 'idx', 'type'
-        and 'value' keys. Some tags also have a 'data' key.
-
+        The latter is an dictionary of tags contained
+        in the file header. Each item in the dictionary has 'idx', 'type',
+        'value' amd 'offset' keys. Some tags also have a 'data' key.
+        Use :func:`_ptu_print_tags` to print the tags as an easy-to-read 
+        table.
     """
     assert os.path.isfile(filename), "File '%s' not found." % filename
-
-    histograms, histo_resolution, tags = \
-        phu_reader(filename)
-
-
-    acquisition_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3 #in s
-    meta = {'acquisition_duration': acquisition_duration,
-            'tags': tags}
+    histograms, histo_resolution, tags = phu_reader(filename)
+    acquisition_duration = tags['MeasDesc_AcquisitionTime']['value'] 
+    acquisition_duration *= 1e-3  # in seconds
+    meta = {'acquisition_duration': acquisition_duration, 'tags': tags}
     return histograms, histo_resolution, meta
 
 
