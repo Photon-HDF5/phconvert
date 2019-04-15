@@ -44,6 +44,7 @@ before_script:
     - wget https://ndownloader.figshare.com/files/14828594 -O 20161027_DM1_1nM_pH7_20MHz1.ptu
     - wget https://ndownloader.figshare.com/files/13675271 -O TestFile_2.ptu
     - wget https://ndownloader.figshare.com/files/14850533 -O trace_T2_300s_1_coincidence.ptu
+    - wget https://ndownloader.figshare.com/files/14890535 -O nanodiamant_histo.phu
     - wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
     - wget https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
     - unzip DNA_FRET_0.5nM.pt3.zip

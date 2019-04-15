@@ -163,7 +163,7 @@ def load_phu(filename):
         A tuple of histograms, histogram resolution, and tags.
         The latter is an dictionary of tags contained
         in the file header. Each item in the dictionary has 'idx', 'type',
-        'value' amd 'offset' keys. Some tags also have a 'data' key.
+        'value' and 'offset' keys. Some tags also have a 'data' key.
         Use :func:`_ptu_print_tags` to print the tags as an easy-to-read 
         table.
     """
@@ -583,16 +583,16 @@ def phu_reader(filename):
         s = f.read()
     tags, _ =  _read_header_tags(s)
 
-    # one as to loop over the different curves (histogram) stored in the phu file
+    # one has to loop over the different curves (histogram) stored in the phu file
     Ncurves = tags['HistoResult_NumberOfCurves']['value']
-    # all Nbins should be equal between the Ncurves but there is as many tags as curves
+    # all Nbins should be equal between the Ncurves but there are as many tags as curves
     Nbins = tags['HistResDscr_HistogramBins'][0]['value'] 
-    histograms = np.zeros((Nbins,Ncurves), dtype='uint32')
+    histograms = np.zeros((Ncurves, Nbins), dtype='uint32')
 
     # populate histograms and get some metadata
     histo_resolution=[]
     for ind_curve in range(Ncurves):
-        histograms[:, ind_curve] = np.frombuffer(s, dtype='uint32',
+        histograms[ind_curve] = np.frombuffer(s, dtype='uint32',
             count=tags['HistResDscr_HistogramBins'][ind_curve]['value'],
             offset=tags['HistResDscr_DataOffset'][ind_curve]['value'])
         histo_resolution.append(
