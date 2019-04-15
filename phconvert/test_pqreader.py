@@ -131,3 +131,36 @@ def test_load_pt3():
     acq_duration2 = (timestamps[-1] - timestamps[0]) * meta['timestamps_unit']
     # The two acquisition times should match. TODO: find out why they don't
     #assert abs(acq_duration - acq_duration2) < 0.1   ## BROKEN TEST!
+
+
+def test_load_phu():
+    """Test loading PT3 files."""
+    fn = 'nanodiamant_histo.phu'
+    filename = DATADIR + fn
+    assert os.path.isfile(filename), 'File not found: %s' % filename
+    hist, bin_size, meta = phc.pqreader.load_phu(filename)
+    
+    # test acquisition duration
+    acq_duration = meta['tags']['MeasDesc_AcquisitionTime']['value'] * 1e-3
+    acq_duration2 = meta['acquisition_duration']
+    assert acq_duration == acq_duration2 == 10
+    
+    # test hist.shape
+    tags = meta['tags']
+    num_curves = tags['HistoResult_NumberOfCurves']['value']
+    num_bins = [tag['value'] for tag in tags['HistResDscr_HistogramBins']]
+    assert hist.shape[1] == num_bins[0]
+    assert hist.shape[0] == len(bin_size) == num_curves
+
+    # all value in `num_bins` and in `bin_size` must be the same
+    def all_values_equal(x):
+        return all(np.array(x) == x[0])
+    assert all_values_equal(num_bins)
+    assert all_values_equal(bin_size)
+
+    # test `bin_size`
+    bin_size2 = [tag['value'] for tag in tags['HistResDscr_MDescResolution']]
+    assert np.array_equal(bin_size, bin_size2)
+    
+
+   
