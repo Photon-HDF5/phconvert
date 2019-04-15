@@ -65,6 +65,7 @@ after_test:
   - python setup.py bdist_wheel
   - echo %PATH%
   - conda deactivate
+  - activate
   - path
   - where python
   - where git
