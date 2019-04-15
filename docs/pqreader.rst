@@ -14,6 +14,8 @@ High-level functions to load and decode several PicoQuant file formats:
 
 .. autofunction:: phconvert.pqreader.load_pt3
 
+.. autofunction:: phconvert.pqreader.load_phu
+
 
 Low-level functions
 '''''''''''''''''''
