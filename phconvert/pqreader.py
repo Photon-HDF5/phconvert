@@ -26,7 +26,7 @@ Other lower level functions are:
 - :func:`process_t3records` to decode the t3 records and return
   timestamps (after overflow correction), detectors and TCSPC nanotimes.
 - :func:`process_t3records_t3rfile` to decode the t3 records for t3r files.
-- :func:`process_t2records` to decode the t3 records and return
+- :func:`process_t2records` to decode the t2 records and return
   timestamps (after overflow correction) and detectors.
 
 The functions performing overflow/rollover correction
@@ -512,6 +512,7 @@ def ptu_reader(filename):
     """
     # All the info about the PTU format has been inferred from PicoQuant demo:
     # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PTU/C/ptudemo.cc
+    
     # Load only the first few bytes to see is file is valid
     with open(filename, 'rb') as f:
         magic = f.read(8).rstrip(b'\0')
@@ -548,9 +549,8 @@ def _read_header_tags(s):
     tags[tagname] = tag
     while offset < tag_end_offset:
         tagname, tag, offset = _ptu_read_tag(s, offset)
-        #it is possible that a tag is being present multiple times (as many as blocks of saved histograms)
-        #so if this tag appears a second time, one makes it a list and we append the new tag
-        #in the appended list
+        # In case a `tagname` appears multiple times, we make a list
+        # to hold all the tags with the same name
         if tagname in tags.keys():
             if not isinstance(tags[tagname], list):
                 tags[tagname]=[tags[tagname]]

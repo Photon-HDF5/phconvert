@@ -21,7 +21,7 @@ Low-level functions
 '''''''''''''''''''
 
 These functions are the building blocks for loading and decoding the different
-files:
+file formats:
 
 .. autofunction:: phconvert.pqreader.ptu_reader
 
