@@ -119,6 +119,7 @@ def test_load_ht3():
     acq_duration = meta['header']['Tacq'] * 1e-3
     acq_duration2 = (timestamps[-1] - timestamps[0]) * meta['timestamps_unit']
     assert abs(acq_duration - acq_duration2) < 0.1
+    assert (np.diff(timestamps) >= 0).all()
 
 
 def test_load_pt3():
@@ -131,6 +132,7 @@ def test_load_pt3():
     acq_duration2 = (timestamps[-1] - timestamps[0]) * meta['timestamps_unit']
     # The two acquisition times should match. TODO: find out why they don't
     #assert abs(acq_duration - acq_duration2) < 0.1   ## BROKEN TEST!
+    assert (np.diff(timestamps) >= 0).all()
 
 
 def test_load_phu():
