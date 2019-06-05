@@ -237,7 +237,7 @@ def bh_set_sys_params(fname_set):
     return sys_params
 
 def bh_decode(s):
-    """Replace code strings from .SET files with human readble label strings.
+    """Replace code strings from .SET files with human readable label strings.
     """
     s = s.replace('SP_', '')
     s = s.replace('_ZC', ' ZC Thresh.')
@@ -256,11 +256,15 @@ def bh_decode(s):
 def bh_print_sys_params(sys_params):
     """Print a summary of the Becker & Hickl system parameters (.SET file).
     """
-    for k, v in sys_params.iteritems():
-        if 'TAC' in k: print('%s\t %f' % (bh_decode(k), v))
-    print()
-    for k, v in sys_params.iteritems():
-        if 'CFD' in k: print('%s\t %f' % (bh_decode(k), v))
-    print()
-    for k, v in sys_params.iteritems():
-        if 'SYN' in k: print('%s\t %f' % (bh_decode(k), v))
+    if 'sys_params' in sys_params:
+        # Passed output of load_set().  Extract sys_params and retry
+        bh_print_sys_params(sys_params['sys_params'])
+    else:
+        for k, v in sys_params.items():
+            if 'TAC' in k: print('%s\t %g' % (bh_decode(k), v))
+        print()
+        for k, v in sys_params.items():
+            if 'CFD' in k: print('%s\t %g' % (bh_decode(k), v))
+        print()
+        for k, v in sys_params.items():
+            if 'SYN' in k: print('%s\t %g' % (bh_decode(k), v))
