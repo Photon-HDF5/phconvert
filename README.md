@@ -154,6 +154,7 @@ List of contributors:
 - Anders Barth (@AndersBarth) <anders.barth AT gmail.com>
 - Biswajit Pradhan (@biswajitSM) <biswajitp145 AT gmail.com.
 - Sébastien Weber (@seb5g) <sebastien.weber AT cemes.fr>
+- David Palmer (@dmopalmer)
 
 We thank also @ncodina for providing PTU files and helping in testing
 the PTU decoder in phconvert.
