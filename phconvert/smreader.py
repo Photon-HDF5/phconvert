@@ -35,6 +35,7 @@ it as a record array in which each element is 12 bytes.
 """
 
 import numpy as np
+from os.path import getsize
 
 
 class Decoder:
@@ -105,7 +106,8 @@ def load_sm(fname, return_labels=False):
         timestamps, detectors and optionally a list of detectors labels
     """
     with open(fname, 'rb') as f:
-        fulldata = f.read()
+        fulldata = bytearray(getsize(fname))
+        f.readinto(fulldata)
 
     header_size, labels = decode_header(fulldata)
     rawdata = fulldata[header_size:]
@@ -120,7 +122,7 @@ def load_sm(fname, return_labels=False):
     sm_dtype = np.dtype([('timestamp', '>i8'), ('detector', '>u4')])
 
     # View of the binary data as an array (no copy performed)
-    data = np.frombuffer(rawdata[:valid_size], dtype=sm_dtype).copy()
+    data = np.frombuffer(rawdata[:valid_size], dtype=sm_dtype)
 
     # Swap byte order inplace to little endian
     data = data.byteswap(True).newbyteorder()
