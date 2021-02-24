@@ -125,6 +125,11 @@ def load_ptu(filename, ovcfunc=None):
                 time_bit=25, ch_bit=6, special_bit=True,
                 ovcfunc=_correct_overflow_nsync)
         nanotimes = None
+    elif record_type in ('rtPicoHarpT2'):
+        detectors, timestamps = process_t2records(t3records,
+                time_bit=28, ch_bit=4, special_bit=False,
+                ovcfunc=ovcfunc)
+        nanotimes = None
     else:
         msg = ('Sorry, decoding "%s" record type is not implemented!' %
                record_type)
@@ -1033,9 +1038,11 @@ def  process_t2records(t2records, time_bit=25,
     if special_bit:
         ch_bit += 1
     assert ch_bit <= 8
-    assert time_bit <= 25
+    assert time_bit <= 28
     assert time_bit + ch_bit== 32
-
+    
+    print(t2records)
+    
     # called "dtime" in picoquant library
     timestamps = np.bitwise_and(t2records,2**time_bit - 1).astype('int64')
 
