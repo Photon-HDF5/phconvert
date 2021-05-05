@@ -1,0 +1,21 @@
+sample:
+    sample_name: 20dt ssDNA oligo doubly labeled with Cy3B and Atto647N
+    dye_names:  Cy3B, ATTO647N
+    buffer_name: TE50 + 0.5M GndCl
+
+description: >
+    us-ALEX measurement of a doubly-labeled ssDNA sample.
+
+identity:
+    author: Somebody in WeissLab
+    author_affiliation: UCLA
+
+setup:
+    excitation_wavelengths: [532e-9, 635e-9]
+
+measurement_specs:
+    measurement_type: smFRET-usALEX
+    alex_period: 4000
+    alex_offset: 700
+    alex_excitation_period1: [2180, 3900]
+    alex_excitation_period2: [200, 1800]

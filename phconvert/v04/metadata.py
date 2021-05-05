@@ -13,9 +13,9 @@ import pkg_resources
 from collections import OrderedDict
 import json
 
-LATEST_FORMAT_VERSION = b'0.5rc1'
+FORMAT_VERSION = b'0.4'
 
-_specs_file_fields = 'specs/photon-hdf5_specs.json'
+_specs_file_fields = 'v04/specs/photon-hdf5_specs.json'
 
 
 def _get_fields_descr():
@@ -27,9 +27,8 @@ def _get_fields_descr():
 # Metadata for the HDF5 root node
 root_attributes = OrderedDict([
     ('format_name', b'Photon-HDF5'),
-    ('format_version', LATEST_FORMAT_VERSION),
+    ('format_version', FORMAT_VERSION),
     ('format_url', b'http://photon-hdf5.org/'),
 ])
 
 official_fields_specs = _get_fields_descr()
-del OrderedDict

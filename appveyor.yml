@@ -1,0 +1,80 @@
+build: false
+
+environment:
+  matrix:
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "64"
+      MINICONDA: C:\Miniconda36-x64
+
+    - PYTHON: "C:\\Python37-x64"
+      PYTHON_VERSION: "3.7"
+      PYTHON_ARCH: "64"
+      MINICONDA: C:\Miniconda37-x64
+
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH% %MINICONDA%"
+
+install:
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - echo %PATH%
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda install -q conda-build
+  - conda info -a
+  - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy matplotlib pytables pytest seaborn numba nbconvert ipykernel pandas pyyaml"
+  - activate test-environment
+  - path
+  - python -m pip install --upgrade pip
+  - ps: 'if($env:PYTHON_VERSION -eq "2.7"){pip install pathlib}'
+  - python --version
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - dir
+  - python setup.py build
+  - pip install .
+  - python setup.py clean --all
+
+before_test:
+  - cd %APPVEYOR_BUILD_FOLDER%\notebooks\data
+  - dir
+  - ps: wget https://ndownloader.figshare.com/files/3350666 -OutFile dsdna_d7d17_50_50_1.set
+  - ps: wget https://ndownloader.figshare.com/files/3350669 -OutFile dsdna_d7d17_50_50_1.spc
+  - ps: wget https://ndownloader.figshare.com/files/3350672 -OutFile Pre.ht3
+  - ps: wget https://ndownloader.figshare.com/files/3350663 -OutFile 0023uLRpitc_NTP_20dT_0.5GndCl.sm
+  - ps: wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip -OutFile Cy3.Cy5_diff_PIE-FRET.ptu.zip
+  - 7z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
+  - ps: wget https://ndownloader.figshare.com/files/6955091 -OutFile 161128_DM1_50pM_pH74.ptu
+  - ps: wget https://ndownloader.figshare.com/files/14828594 -O 20161027_DM1_1nM_pH7_20MHz1.ptu
+  - ps: wget https://ndownloader.figshare.com/files/13675271 -OutFile TestFile_2.ptu
+  - ps: wget https://ndownloader.figshare.com/files/14850533 -O trace_T2_300s_1_coincidence.ptu
+  - ps: wget https://ndownloader.figshare.com/files/14890535 -O nanodiamant_histo.phu
+  - ps: wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3 -OutFile topfluorPE_2_1_1_1.pt3
+  - ps: wget https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip -OutFile DNA_FRET_0.5nM.pt3.zip
+  - 7z e DNA_FRET_0.5nM.pt3.zip
+  - ps: wget https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip -OutFile data.zip
+  - 7z e data.zip
+
+test_script:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - py.test -v
+  - cd %APPVEYOR_BUILD_FOLDER%\notebooks
+  - python %APPVEYOR_BUILD_FOLDER%/tests/nbrun.py
+
+after_test:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - python setup.py bdist_wheel
+  - echo %PATH%
+  - conda deactivate
+  - activate
+  - path
+  - where python
+  - where git
+  - conda build conda.recipe --python=%PYTHON_VERSION%  --quiet
+  - ps: cp $Env:MINICONDA\conda-bld\win-64\phconvert-*.tar.bz2 $Env:APPVEYOR_BUILD_FOLDER\dist
+
+artifacts:
+  # bdist_wheel puts your built wheel in the dist directory
+  - path: dist\*
+  - path: notebooks\*-out.ipynb
+  - path: notebooks\*.hdf5

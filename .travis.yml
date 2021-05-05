@@ -1,0 +1,61 @@
+language: python
+sudo: required
+dist: xenial
+
+python:
+    - "3.6"
+    - "3.7"
+
+before_install:
+    - echo $PATH
+    - deactivate
+    - echo $PATH
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+      else
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      fi
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - hash -r
+    - conda config --set always_yes yes --set changeps1 no
+    - conda update -q conda
+    # Useful for debugging any issues with conda
+    - conda info -a
+    - echo $PATH
+
+
+install:
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip numpy matplotlib pytables numba nbconvert ipykernel pytest pandas pyyaml
+    - source activate test-environment
+    - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install pathlib ; fi
+    - python setup.py build
+    - pip install .
+
+before_script:
+    - cd notebooks/data
+    - wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
+    - wget https://ndownloader.figshare.com/files/3350669 -O dsdna_d7d17_50_50_1.spc
+    - wget https://ndownloader.figshare.com/files/3350672 -O Pre.ht3
+    - wget https://ndownloader.figshare.com/files/3350663 -O 0023uLRpitc_NTP_20dT_0.5GndCl.sm
+    - wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
+    - unzip Cy3.Cy5_diff_PIE-FRET.ptu.zip
+    - wget https://ndownloader.figshare.com/files/6955091 -O 161128_DM1_50pM_pH74.ptu
+    - wget https://ndownloader.figshare.com/files/14828594 -O 20161027_DM1_1nM_pH7_20MHz1.ptu
+    - wget https://ndownloader.figshare.com/files/13675271 -O TestFile_2.ptu
+    - wget https://ndownloader.figshare.com/files/14850533 -O trace_T2_300s_1_coincidence.ptu
+    - wget https://ndownloader.figshare.com/files/14890535 -O nanodiamant_histo.phu
+    - wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
+    - wget https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
+    - unzip DNA_FRET_0.5nM.pt3.zip
+    - wget https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip
+    - unzip data.zip
+
+script:
+    - cd ../..
+    - pwd
+    - py.test -v
+    - cd notebooks
+    - python $TRAVIS_BUILD_DIR/tests/nbrun.py
+
+sudo: false

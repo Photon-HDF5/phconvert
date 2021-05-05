@@ -9,3 +9,13 @@ build/
 docs/docs_html
 *.bz2
 notebooks/out
+docs/_*
+notebooks/_*
+notebooks/data
+notebooks/*-out.ipynb
+*.pt3
+*.spc
+*.sm
+*.ht3
+*.ptu
+*.set

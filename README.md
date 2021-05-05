@@ -1,15 +1,26 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/l6ncuo9hwqiul36y/branch/master?svg=true)](https://ci.appveyor.com/project/tritemio/phconvert/branch/master)
+[![Build Status](https://travis-ci.org/Photon-HDF5/phconvert.svg?branch=master)](https://travis-ci.org/Photon-HDF5/phconvert)
+
 # phconvert
 
 *phconvert* is a python 2 & 3 library that helps writing valid
 <a href="http://photon-hdf5.org/" target="_blank">Photon-HDF5</a>
 files, a file format for time stamp-based single-molecule spectroscopy.
-Additionally, *phconvert* can convert a few common binary formats
-used in in single-molecule spectroscopy (PicoQuant .HT3,
-Becker & Hickl .SPC/.SET) to Photon-HDF5.
+Additionally, *phconvert* can convert to Photon-HDF5 all the common binary
+formats used in solution-based single-molecule spectroscopy. These includes
+PicoQuant's .HT3/.PT3/.PTU/.T3R, Becker & Hickl's .SPC/.SET and the .SM format
+used by WeissLab and others for µs-ALEX smFRET.
 
 For questions or issues running this software please use the
 [Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5)
 or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
+
+- [Phconvert Documentation](https://phconvert.readthedocs.io)
+
+## What's new
+
+**Nov. 2018:** Phconvert 0.9 released, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/0.9).
+
 
 ## Quick-start: Converting files to Photon-HDF5
 
@@ -33,14 +44,14 @@ A quick-start guide on installing and running the *Jupyter Notebook App* is avai
 Next, you need to install the *phconvert* library with the following command
 (type it in *Terminal* on OS X or Linux, or in the `cmd` prompt on Windows):
 
-    conda install -c tritemio phconvert
+    conda install -c conda-forge phconvert
 
 Finally, you can download one of the provided notebooks and run it on your machine.
 Simply, download the
 [phconvert zip](https://github.com/Photon-HDF5/phconvert/archive/master.zip),
 which contains all the notebooks in the `notebooks` subfolder.
 
-###For questions or issues:
+### For questions or issues:
 
 - [Open an GitHub issue](https://github.com/Photon-HDF5/phconvert/issues) or
 - Ask a question on the [Photon-HDF5 Google Group](https://groups.google.com/forum/#!forum/photon-hdf5).
@@ -61,7 +72,7 @@ We are willing add support for as many file formats as possible!
 ### Why phconvert?
 
 When writing Photon-HDF5 files, phconvert saves you time
-and protects you against common programming errors that risk
+and protects you against common errors that risk
 to make the file not a valid Photon-HDF5. Also a description
 is automatically added to each Photon-HDF5 field.
 The descriptions are extracted from a [JSON file](https://github.com/Photon-HDF5/phconvert/blob/master/phconvert/specs/photon-hdf5_specs.json)
@@ -81,14 +92,14 @@ in the Photon-HDF5 reference documentation.
 
 ## Installation
 
-The recommended way to install *phconvert* is by using conda:
+The recommended way to install *phconvert* is using conda:
 
-    conda install -c tritemio phconvert
+    conda install -c conda-forge phconvert
 
 If you don't have conda installed, please install the free python distribution
 [Anaconda](https://store.continuum.io/cshop/anaconda/) choosing the python 3
-version. The legacy python 2.7 is also supported, but if you can choose
-pick the latest python 3.
+version.
+Starting from version 0.9, the aging python 2.7 is not supported anymore.
 
 Alternatively, you can install *phconvert* in any python installation using PIP:
 
@@ -102,11 +113,10 @@ See also:
 
 ## Dependencies
 
-- python 2.7 (legacy), 3.3 or greater (recommended)
-- future
+- python 3.4 or greater (3.6+ recommended)
 - numpy >=1.9
 - pytables >=3.1
-- numba (optional) *to enable a fast HT3 file reader*
+- numba (optional) *for faster PicoQuant files decoding*
 
 > **Note**
 > when installing via `conda` all the dependencies are automatically installed.
@@ -133,5 +143,23 @@ as authors in the next software-paper publication.
 
 For more details see our [contribution policy](http://photon-hdf5.readthedocs.org/en/latest/contributing.html).
 
+## Authors & Contributors
+
+List of contributors:
+
+- Antonino Ingargiola (@tritemio) <tritemio AT gmail.com>
+- Ted Laurence (@talaurence) <laurence2 AT llnl.gov>
+- Marco Lamperti (@lampo808) <marco.lampo AT gmail.com>
+- Xavier Michalet (@smXplorer) <michalet AT chem.ucla.edu>
+- Anders Barth (@AndersBarth) <anders.barth AT gmail.com>
+- Biswajit Pradhan (@biswajitSM) <biswajitp145 AT gmail.com.
+- Sébastien Weber (@seb5g) <sebastien.weber AT cemes.fr>
+- David Palmer (@dmopalmer)
+
+We thank also @ncodina for providing PTU files and helping in testing
+the PTU decoder in phconvert.
+
 ## Acknowledgements
 This work was supported by NIH Grant R01-GM95904.
+
+Release 0.9 was supported by Prof. Eitan Lerner.

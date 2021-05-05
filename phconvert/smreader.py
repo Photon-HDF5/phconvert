@@ -4,8 +4,8 @@
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 """
-SM Format, written by a LV program in WeissLab us-ALEX setup
-------------------------------------------------------------
+SM Format written by Ted Laurence's LabVIEW program in WeissLab us-ALEX setup
+-----------------------------------------------------------------------------
 
 A SM file is composed by two parts:
 
@@ -36,6 +36,7 @@ it as a record array in which each element is 12 bytes.
 
 import numpy as np
 
+
 class Decoder:
     def __init__(self, buffer):
         self.buff = buffer
@@ -46,7 +47,7 @@ class Decoder:
         buffer = self.buff[self.cursor:self.cursor + size]
         if not inplace:
             self.cursor += size
-        return np.frombuffer(buffer=buffer, dtype=dtype)
+        return np.frombuffer(buffer=buffer, dtype=dtype).squeeze()
 
     def readstring(self, size_max=256, inplace=False, **kwargs):
         orig_cursor = self.cursor
@@ -58,6 +59,7 @@ class Decoder:
         string = self.buff[self.cursor:self.cursor + size]
         self.cursor = orig_cursor if inplace else (self.cursor + size)
         return string
+
 
 def decode_header(data):
     """
@@ -118,10 +120,9 @@ def load_sm(fname, return_labels=False):
     sm_dtype = np.dtype([('timestamp', '>i8'), ('detector', '>u4')])
 
     # View of the binary data as an array (no copy performed)
-    data = np.frombuffer(rawdata[:valid_size], dtype=sm_dtype)
+    data = np.frombuffer(rawdata[:valid_size], dtype=sm_dtype).copy()
 
     # Swap byte order inplace to little endian
-    data.setflags(write=True)
     data = data.byteswap(True).newbyteorder()
 
     if return_labels:

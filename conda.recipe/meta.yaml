@@ -7,22 +7,21 @@ source:
     #git_tag: dev
 
 build:
+    noarch: python
     number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+    script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
-  build:
+  host:
+    - pip
     - python
     - setuptools
-    - numpy >=1.9
-    - pytables
-    - future
 
   run:
     - python
     - setuptools
     - numpy >=1.9
     - pytables
-    - future
 
 test:
   imports:

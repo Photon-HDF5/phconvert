@@ -92,15 +92,7 @@
         "array"
     ],
     "/photon_data/measurement_specs/detectors_specs/spectral_ch2": [
-        "Pixel IDs for the second spectral channel (i.e. acceptor in a 2-color smFRET measurement).",
-        "array"
-    ],
-    "/photon_data/measurement_specs/detectors_specs/spectral_ch3": [
-        "Pixel IDs for the third spectral detection channel.",
-        "array"
-    ],
-    "/photon_data/measurement_specs/detectors_specs/spectral_ch4": [
-        "Pixel IDs for the fourth spectral detection channel.",
+        "Pixel IDs for the first spectral channel (i.e. acceptor in a 2-color smFRET measurement).",
         "array"
     ],
     "/photon_data/measurement_specs/detectors_specs/polarization_ch1": [
@@ -118,6 +110,10 @@
     "/photon_data/measurement_specs/detectors_specs/split_ch2": [
         "Pixel IDs for the second channel split through a non-polarizing beam splitter.",
         "array"
+    ],
+    "/photon_data/measurement_specs/detectors_specs/labels": [
+        "User defined labels for each pixel IDs. In smFRET it is suggested to use \"donor\" and \"acceptor\" for the respective pixel IDs.",
+        "string"
     ],
     "/setup": [
         "Information about the experimental setup.",
@@ -147,10 +143,6 @@
         "True (i.e. 1) if there is any form of excitation modulation of excitation wavelength (as in us-ALEX or PAX) or polarization. This field is also True for pulse-interleaved excitation (PIE) or ns-ALEX measurements.",
         "scalar"
     ],
-    "/setup/excitation_alternated": [
-        "New in version 0.5. Indicates whether each excitation source is alternated (True, or 1) or not alternated (False, or 0).",
-        "array"
-    ],
     "/setup/lifetime": [
         "True (i.e. 1) if the measurement includes a nanotimes array of photon arrival times with respect to a laser pulse (as in TCSPC measurements).",
         "scalar"
@@ -161,10 +153,6 @@
     ],
     "/setup/excitation_cw": [
         "For each excitation source, this field indicates whether excitation is continuous wave (CW), True (i.e. 1), or pulsed, False (i.e. 0).",
-        "array"
-    ],
-    "/setup/laser_repetition_rates": [
-        "Repetition rates in Hz for each laser. CW lasers have a value of 0.",
         "array"
     ],
     "/setup/excitation_polarizations": [
@@ -189,54 +177,6 @@
     ],
     "/setup/detection_split_ch_ratios": [
         "Power fraction detected by each \"beam-split\" channel (i.e. independent detection channels obtained through a non-polarizing beam splitter).",
-        "array"
-    ],
-    "/setup/detectors": [
-        "Metadata relative to each detector's pixel. Each field is an array with size equal to the number of the detectors.",
-        "group"
-    ],
-    "/setup/detectors/id": [
-        "Detector IDs as they appear on /photon_data/detectors.",
-        "array"
-    ],
-    "/setup/detectors/id_hardware": [
-        "Original IDs assigned by the acquisition hardware to each detector.",
-        "array"
-    ],
-    "/setup/detectors/label": [
-        "Labels (strings) describing each detector.",
-        "array"
-    ],
-    "/setup/detectors/counts": [
-        "Total number of counts detected by each detector.",
-        "array"
-    ],
-    "/setup/detectors/module": [
-        "The module's name each pixel belongs to.",
-        "array"
-    ],
-    "/setup/detectors/position": [
-        "2-D array of integers containing the X-Y coordinates of each pixel in the array.",
-        "array"
-    ],
-    "/setup/detectors/dcr": [
-        "Dark counts (cps) for each pixel.",
-        "array"
-    ],
-    "/setup/detectors/afterpulsing": [
-        "Afterpulsing probability for each pixel.",
-        "array"
-    ],
-    "/setup/detectors/spot": [
-        "Spot number for each pixel in the measurement.",
-        "array"
-    ],
-    "/setup/detectors/tcspc_units": [
-        "TCSPC bin size in seconds (i.e. nanotimes units) for each pixel.",
-        "array"
-    ],
-    "/setup/detectors/tcspc_num_bins": [
-        "Number of TCSPC bins for each pixel.",
         "array"
     ],
     "/identity": [
