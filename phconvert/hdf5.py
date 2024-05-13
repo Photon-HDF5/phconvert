@@ -397,12 +397,16 @@ def save_photon_hdf5(data_dict,
     h5file.flush()
 
     ## Validation
-    if validate:
-        kwargs = dict(skip_measurement_specs=skip_measurement_specs,
-                      warnings=warnings, require_setup=require_setup)
-        assert_valid_photon_hdf5(h5file, **kwargs)
-    if close:
-        h5file.close()
+    try:
+        if validate:
+            kwargs = dict(skip_measurement_specs=skip_measurement_specs,
+                          warnings=warnings, require_setup=require_setup)
+            assert_valid_photon_hdf5(h5file, **kwargs)
+    except Exception as e:
+        raise e
+    finally:
+        if close:
+            h5file.close()
 
 
 def _is_mutispot(h5root_or_dict):
