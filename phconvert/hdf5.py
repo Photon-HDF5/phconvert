@@ -33,10 +33,8 @@ import numpy as np
 
 from .metadata import (official_fields_specs, root_attributes,
                        LATEST_FORMAT_VERSION)
-from ._version import get_versions
 
-
-__version__ = str(get_versions()['version'])
+from phconvert.version import version as __version__
 
 # Empty description string (workaround for h5labview)
 _EMPTY = ' '

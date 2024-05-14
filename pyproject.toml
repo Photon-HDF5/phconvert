@@ -1,7 +1,6 @@
 [build-system]
 requires = [
     "setuptools>=42", 
-    "versioneer"
     ]
 build-backend = "setuptools.build_meta"
 
@@ -47,3 +46,10 @@ Homepage = "http://photon-hdf5.github.io/phconvert/"
 Documentation = "https://phconvert.readthedocs.io/en/latest/"
 Repositors = "https://github.com/Photon-HDF5/phconvert"
 Issues = "https://github.com/Photon-HDF5/phconvert/issues"
+
+[tool.setuptools.packages.find]
+include = ['phconvert']
+
+[tool.setuptools_scm]
+write_to = "phconvert/version.py"
+version_scheme = "post-release"
