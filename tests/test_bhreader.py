@@ -32,7 +32,7 @@ def test_import_SPC_150_nanotime():
     input_file = os.path.join(os.path.dirname(__file__), 'test_files/test_noise.spc')
     check_file = os.path.join(os.path.dirname(__file__), 'test_files/test_noise/asc')
 
-    data = bhreader.load_spc(inpug_file, 'SPC-150')
+    data = bhreader.load_spc(input_file, 'SPC-150')
     check = pd.read_csv(check_file, delimiter=' ', dtype='int64', usecols=[0,1], header=None).values.T
     
     assert data[2].size == check[1].size

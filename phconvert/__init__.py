@@ -16,4 +16,5 @@ if has_matplotlib:
     import phconvert.plotter
     del matplotlib
 
-from phconvert.version import version as __version__
+
+from phconvert._version import version as __version__

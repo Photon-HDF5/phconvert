@@ -34,7 +34,8 @@ import numpy as np
 from .metadata import (official_fields_specs, root_attributes,
                        LATEST_FORMAT_VERSION)
 
-from phconvert.version import version as __version__
+from phconvert._version import version as __version__
+# __version__ = '0.9.1.post-release'
 
 # Empty description string (workaround for h5labview)
 _EMPTY = ' '

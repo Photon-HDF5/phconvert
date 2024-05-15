@@ -37,7 +37,7 @@ except ImportError:
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 import phconvert
-version = phconvert._version.get_versions()['version']
+version = phconvert.__version__
 if on_rtd:
     # RTD modifies conf.py so the git repo becomes dirty
     # We strip the '-dirty' that would generate a wrong verion string

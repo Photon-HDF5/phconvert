@@ -1,12 +1,12 @@
 [build-system]
 requires = [
-    "setuptools>=42", 
+    "setuptools>=64", "setuptools_scm"
     ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "phconvert"
-dynamic = ["version"]
+dynamic = ["version", ]
 authors = [
     {name="Antonino Ingargiola", email="tritemio@gmail.com"}, 
     {name="Paul David Harris", email="harripd@gmail.com"}
@@ -50,6 +50,10 @@ Issues = "https://github.com/Photon-HDF5/phconvert/issues"
 [tool.setuptools.packages.find]
 include = ['phconvert']
 
+[tool.setuptools.package-data]
+"phconvert.specs" = ["*.json",]
+"phconvert.v04.specs" = ["*.json",]
+
 [tool.setuptools_scm]
-write_to = "phconvert/version.py"
 version_scheme = "post-release"
+write_to = "phconvert/_version.py"
