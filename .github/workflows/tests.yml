@@ -35,8 +35,8 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install setuptools build
-          conda install numpy pytables matplotlib pytest
+          python -m pip install setuptools build pytest
+          conda install numpy pytables matplotlib
       - name: build phconvert
         run: |
           # python -m build
