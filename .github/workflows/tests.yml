@@ -13,7 +13,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest,] # windows-latest, macos-13, maxos-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        # python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", ]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python ${{matrix.python-version}}
@@ -37,8 +38,9 @@ jobs:
           conda install numpy pytables matplotlib pytest
       - name: build phconvert
         run: |
-          python -m build
-          python -m pip install phconvert --find-links dist/
+          # python -m build
+          # python -m pip install phconvert --find-links dist/
+          pip install .
       - name: Download files Unix
         if: runner.os != 'Windows'
         run: |
