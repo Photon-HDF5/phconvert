@@ -34,7 +34,7 @@ jobs:
       #      python-version: ${{matrix.python-version}}
       #      activate-environment: test
       - name: Apple Silicon oddities
-        if: runn.os == 'macos-14'
+        if: runner.os == 'darwin'
         run: brew install c-blosc hdf5
       - name: Install Dependencies
         run: |
