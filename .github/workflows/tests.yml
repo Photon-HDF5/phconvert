@@ -21,8 +21,8 @@ jobs:
       #   uses: actions/setup-python@v4
       #   with:
       #     python-version: ${{matrix.python-version}}
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+      # - name: Upgrade pip
+      #   run: python -m pip install --upgrade pip
       # - name: Windows 3.6 Oddities
       #   if: matrix.python-version == 3.6 && runner.os == 'Windows'
       #   run: python -m pip install pwintypy==1.1.6
@@ -34,6 +34,7 @@ jobs:
            python-version: ${{matrix.python-version}}
       - name: Install Dependencies
         run: |
+          python -m pip install --upgrade pip
           python -m pip install setuptools build
           conda install numpy pytables matplotlib pytest
       - name: build phconvert
