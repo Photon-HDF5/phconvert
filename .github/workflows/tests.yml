@@ -12,9 +12,9 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13] # windows-latest, macos-13, macos-latest]
+        os: [ubuntu-latest, macos-14, windows-latest] # windows-latest, macos-13, macos-latest]
         # python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
-        python-version: ["3.8", ]
+        python-version: ["3.8", "3.11"]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python ${{matrix.python-version}}
@@ -33,6 +33,9 @@ jobs:
       #      channels: conda-forge
       #      python-version: ${{matrix.python-version}}
       #      activate-environment: test
+      - name: Apple Silicon oddities
+        if: runn.os == 'macos-14'
+        run: brew install c-blosc hdf5
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
@@ -68,7 +71,6 @@ jobs:
       - name: Test project
         run: |
           python -m pytest
-          # pip install pyyaml
-          # cd notebooks
-          # python -m ../tests/nbrun.py
+          pip install pyyaml
+          # python -m tests/nbrun.py /notebooks/*
         
