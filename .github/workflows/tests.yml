@@ -4,6 +4,7 @@ on:
   push:
     branch:
       - master
+      - setuptools_scm
     pull_request:
       branch:
         - master
