@@ -63,6 +63,7 @@ on:
         - name: Test project
           run: | 
             python -m pytest
+            pip install pyyaml
             cd notebooks
             python -m ../tests/nbrun.py
         
