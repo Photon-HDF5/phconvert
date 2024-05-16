@@ -17,7 +17,7 @@ python setup.py sdist
 Build universal wheel:
 
 ```
-python setup.py bdist_wheel --universal
+python -m build
 ```
 
 Upload distributions:
@@ -31,7 +31,6 @@ twine upload dist/*
 Form phconvert source folder:
 
 ```
-conda build conda.recipe --python=2.7
-conda build conda.recipe --python=3.4
+conda build conda.recipe --python=3.9
 ```
 
