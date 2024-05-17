@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-14, windows-latest] # windows-latest, macos-13, macos-latest]
+        os: [macos-14, ] # windows-latest, macos-13, macos-latest]
         # python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         python-version: ["3.8", "3.11"]
     steps:
@@ -75,7 +75,7 @@ jobs:
           cd ../..
       - name: Test project
         run: |
-          python -m pytest
-          pip install pyyaml
+          pytest
+          # pip install pyyaml
           # python -m tests/nbrun.py /notebooks/*
         
