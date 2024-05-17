@@ -97,8 +97,10 @@ jobs:
         shell: bash -l {0}
         if: runner.os == 'Windows'
         run: |
-          curl.exe -L --output Cy3.Cy5_diff_PIE-FRET.ptu.zip --url https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
-          tar.exe -xf Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip -OutFile Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
+        # curl.exe -L --output Cy3.Cy5_diff_PIE-FRET.ptu.zip --url https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
+        # tar.exe -xf Cy3.Cy5_diff_PIE-FRET.ptu.zip
         # curl.exe --output dsdna_d7d17_50_50_1.set --url https://ndownloader.figshare.com/files/3350666
         # curl.exe --output dsdna_d7d17_50_50_1.spc --url https://ndownloader.figshare.com/files/3350669
         # curl.exe --output Pre.ht3 --url https://ndownloader.figshare.com/files/3350672
