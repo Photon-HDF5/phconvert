@@ -54,7 +54,7 @@ jobs:
           # python -m pip install phconvert --find-links dist/
           pip install .
       - name: Download files Unix
-        if: runner.os != 'Windows'
+        if: runner.os!= 'Windows'
         shell: bash-l {0}
         run: |
           cd notebooks/data
@@ -76,7 +76,7 @@ jobs:
           unzip data.zip
           cd ../..
       - name: Downlid files Windows
-        if: runner.os == 'Windows
+        if: runner.os == 'Windows'
         run: |
           curl.exe --output dsdna_d7d17_50_50_1.set --url https://ndownloader.figshare.com/files/3350666
           curl.exe --output dsdna_d7d17_50_50_1.spc --url https://ndownloader.figshare.com/files/3350669
