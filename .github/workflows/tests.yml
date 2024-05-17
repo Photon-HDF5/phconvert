@@ -47,7 +47,6 @@ jobs:
           conda install numpy cython pytest
           conda install pytables matplotlib pandas numba
       - name: build phconvert
-        shell: bash -el {0}
         run: |
           pip install .
       - name: Download files Unix
