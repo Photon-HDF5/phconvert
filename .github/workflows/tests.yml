@@ -4,6 +4,7 @@ on:
   push:
     branch:
       - master
+      - setuptools_scm
     pull_request:
       branch:
         - master
@@ -12,7 +13,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [macos-14, ] # [ubuntu-latest, windows-lates, macos-13, macos-14, ]
+        os: [ubuntu-latest, windows-lates, macos-13, macos-14, ]
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         exclude:
           - os: macos-14
