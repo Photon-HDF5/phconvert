@@ -21,8 +21,8 @@ jobs:
       #   uses: actions/setup-python@v4
       #   with:
       #     python-version: ${{matrix.python-version}}
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+      # - name: Upgrade pip
+      #   run: python -m pip install --upgrade pip
       # - name: Windows 3.6 Oddities
       #   if: matrix.python-version == 3.6 && runner.os == 'Windows'
       #   run: python -m pip install pwintypy==1.1.6
@@ -40,20 +40,22 @@ jobs:
           export HDF5_DIR=/opt/homebrew/opt/hdf5
           export BLOSC_DIR=/opt/homebrew/opt/c-blosc
       - name: Install Dependencies
+        shell: bash -l {0}
         run: |
-          conda install -y python
           python -m pip install --upgrade pip
           # python -m pip install setuptools build pytest cython
           # python -m pip install numpy tables matplotlib pandas
           conda install numpy cython pytest
           conda install pytables matplotlib pandas numba
       - name: build phconvert
+        shell: bash -l {0}
         run: |
           # python -m build
           # python -m pip install phconvert --find-links dist/
           pip install .
       - name: Download files Unix
         if: runner.os != 'Windows'
+        shell: bash-l {0}
         run: |
           cd notebooks/data
           wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
@@ -73,7 +75,25 @@ jobs:
           wget https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip
           unzip data.zip
           cd ../..
+      - name: Downlid files Windows
+        if: runner.os == 'Windows
+        run: |
+          curl.exe --output dsdna_d7d17_50_50_1.set --url https://ndownloader.figshare.com/files/3350666
+          curl.exe --output dsdna_d7d17_50_50_1.spc --url https://ndownloader.figshare.com/files/3350669
+          curl.exe --output Pre.ht3 --url https://ndownloader.figshare.com/files/3350672
+          curl.exe --output 0023uLRpitc_NTP_20dT_0.5GndCl.sm --url https://ndownloader.figshare.com/files/3350663
+          curl.exe --output Cy3.Cy5_diff_PIE-FRET.ptu.zip --url https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          tar.exe -xf Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          curl.exe --output 161128_DM1_50pM_pH74.ptu --url https://ndownloader.figshare.com/files/6955091
+          curl.exe --output 20161027_DM1_1nM_pH7_20MHz1.ptu --url https://ndownloader.figshare.com/files/14828594
+          curl.exe --output TestFile_2.ptu --url https://ndownloader.figshare.com/files/13675271
+          curl.exe --output trace_T2_300s_1_coincidence.ptu --url https://ndownloader.figshare.com/files/14850533
+          curl.exe --output nanodiamant_histo.phu --url https://ndownloader.figshare.com/files/14890535
+          curl.exe --output topfluorPE_2_1_1_1.pt3 --url https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
+          curl.exe --output 1380341/DNA_FRET_0.5nM.pt3.zip --url https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
+          tar.exe -xf 1380341/DNA_FRET_0.5nM.pt3.zip
       - name: Test project
+        shell: bash -l {0}
         run: |
           pytest
           # pip install pyyaml
