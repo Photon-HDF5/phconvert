@@ -51,7 +51,6 @@ jobs:
           pip install .
       - name: Download files Unix
         if: runner.os!= 'Windows'
-        shell: bash-l {0}
         run: |
           cd notebooks/data
           wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
