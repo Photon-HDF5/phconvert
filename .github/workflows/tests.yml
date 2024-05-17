@@ -47,6 +47,7 @@ jobs:
           conda install numpy cython pytest
           conda install pytables matplotlib pandas numba
       - name: build phconvert
+        shell: bash -el {0}
         run: |
           pip install .
       - name: Download files Unix
@@ -88,7 +89,7 @@ jobs:
           curl.exe --output 1380341/DNA_FRET_0.5nM.pt3.zip --url https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
           tar.exe -xf 1380341/DNA_FRET_0.5nM.pt3.zip
       - name: Test project
-        shell: bash -l {0}
+        shell: bash -el {0}
         run: |
           pytest
           # pip install pyyaml
