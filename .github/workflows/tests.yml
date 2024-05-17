@@ -46,6 +46,7 @@ jobs:
           bash ~/miniconda.sh -b -p $HOME/miniconda
           export PATH="$HOME/miniconda/bin:$PATH"
           source $HOME/miniconda/bin/activate
+          conda config --set always_yes yes --set changeps1 no
           conda init --all
           conda create -n test python=${{matrix.python-version}}
           conda activate test
