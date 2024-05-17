@@ -12,9 +12,8 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [macos-14, ] # windows-latest, macos-13, macos-latest]
-        # python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
-        python-version: ["3.8", "3.11"]
+        os: [ubuntu-latest, windows-lates, macos-13, macos-14, ] # windows-latest, macos-13, macos-latest]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -91,6 +90,7 @@ jobs:
           unzip data.zip
           cd ../..
       - name: Downlid files Windows
+        shell: bash -l {0}
         if: runner.os == 'Windows'
         run: |
           curl.exe --output dsdna_d7d17_50_50_1.set --url https://ndownloader.figshare.com/files/3350666
