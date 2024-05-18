@@ -97,7 +97,7 @@ jobs:
         shell: bash -l {0}
         if: runner.os == 'Windows'
         run: |
-          curl.exe -L --output Cy3.Cy5_diff_PIE-FRET.ptu.zip --url https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip -OutFile Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          curl.exe -L --output Cy3.Cy5_diff_PIE-FRET.ptu.zip --url https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
           7z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
         # curl.exe -L --output Cy3.Cy5_diff_PIE-FRET.ptu.zip --url https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
         # tar.exe -xf Cy3.Cy5_diff_PIE-FRET.ptu.zip
