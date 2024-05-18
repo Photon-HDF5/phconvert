@@ -111,7 +111,7 @@ jobs:
           curl.exe --output nanodiamant_histo.phu --url https://ndownloader.figshare.com/files/14890535
           curl.exe -L --output topfluorPE_2_1_1_1.pt3 --url https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
           curl.exe -L --output 1380341/DNA_FRET_0.5nM.pt3.zip --url https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
-          7z e 1380341/DNA_FRET_0.5nM.pt3.zip
+          7z e DNA_FRET_0.5nM.pt3.zip
           cd ..
           cd ..
       - name: Test project
