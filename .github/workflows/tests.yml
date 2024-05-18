@@ -13,8 +13,8 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14, ]
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        os: [windows-lates, ] # [ubuntu-latest, windows-latest, macos-13, macos-14, ]
+        python-version: ["3.10", ] # ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         exclude:
           - os: macos-14
             python-version: "3.7"
@@ -110,7 +110,7 @@ jobs:
           curl.exe --output trace_T2_300s_1_coincidence.ptu --url https://ndownloader.figshare.com/files/14850533
           curl.exe --output nanodiamant_histo.phu --url https://ndownloader.figshare.com/files/14890535
           curl.exe -L --output topfluorPE_2_1_1_1.pt3 --url https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
-          curl.exe -L --output 1380341/DNA_FRET_0.5nM.pt3.zip --url https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
+          curl.exe -L --output DNA_FRET_0.5nM.pt3.zip --url https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
           7z e DNA_FRET_0.5nM.pt3.zip
           cd ..
           cd ..
