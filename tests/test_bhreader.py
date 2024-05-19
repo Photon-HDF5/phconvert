@@ -29,8 +29,8 @@ import pytest
 #         self.assertAlmostEqual(data[3]*1e9, 9.5, 1)         # Right timestamp
 
 def test_import_SPC_150_nanotime():
-    input_file = os.path.join(os.path.dirname(__file__), 'test_files/test_noise.spc')
-    check_file = os.path.join(os.path.dirname(__file__), 'test_files/test_noise/asc')
+    input_file = 'tests/test_files/test_noise.spc'
+    check_file = 'tests/test_files/test_noise.asc'
 
     data = bhreader.load_spc(input_file, 'SPC-150')
     check = pd.read_csv(check_file, delimiter=' ', dtype='int64', usecols=[0,1], header=None).values.T
