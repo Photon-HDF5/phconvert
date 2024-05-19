@@ -63,7 +63,7 @@ jobs:
         shell: bash -l {0}
         run: |
           python -m pip install --upgrade pip
-          python -m pip install setuptools build pytest cython
+          python -m pip install setuptools build
           # python -m pip install numpy tables matplotlib pandas
           conda install numpy cython pytest
           conda install pytables matplotlib pandas numba
