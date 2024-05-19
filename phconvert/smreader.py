@@ -35,6 +35,7 @@ it as a record array in which each element is 12 bytes.
 """
 
 import numpy as np
+from os.path import getsize
 
 
 class Decoder:
@@ -105,7 +106,8 @@ def load_sm(fname, return_labels=False):
         timestamps, detectors and optionally a list of detectors labels
     """
     with open(fname, 'rb') as f:
-        fulldata = f.read()
+        fulldata = bytearray(getsize(fname))
+        f.readinto(fulldata)
 
     header_size, labels = decode_header(fulldata)
     rawdata = fulldata[header_size:]

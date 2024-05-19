@@ -402,8 +402,6 @@ def save_photon_hdf5(data_dict,
             kwargs = dict(skip_measurement_specs=skip_measurement_specs,
                           warnings=warnings, require_setup=require_setup)
             assert_valid_photon_hdf5(h5file, **kwargs)
-    except Exception as e:
-        raise e
     finally:
         if close:
             h5file.close()
