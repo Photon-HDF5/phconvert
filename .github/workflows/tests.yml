@@ -1,0 +1,123 @@
+name: Tests
+
+on:
+  push:
+    branch:
+      - master
+      - setuptools_scm
+    pull_request:
+      branch:
+        - master
+jobs:
+  build:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14, ]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        exclude:
+          - os: macos-14
+            python-version: "3.7"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # # - name: Setup Python ${{matrix.python-version}}
+      # #   uses: actions/setup-python@v4
+      # #   with:
+      # #     python-version: ${{matrix.python-version}}
+      # # - name: Upgrade pip
+      # #   run: python -m pip install --upgrade pip
+      # # - name: Windows 3.6 Oddities
+      # #   if: matrix.python-version == 3.6 && runner.os == 'Windows'
+      # #   run: python -m pip install pwintypy==1.1.6
+      - name: Install Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+           auto-update-conda: true
+           channels: conda-forge
+           python-version: ${{matrix.python-version}}
+           activate-environment: test
+      - name: Apple Silicon oddities
+        if: matrix.os == 'macos-14'
+        run: |
+          brew install c-blosc hdf5
+          export HDF5_DIR=/opt/homebrew/opt/hdf5
+          export BLOSC_DIR=/opt/homebrew/opt/c-blosc
+      # # - name: Install Conda (old fashioned way)
+      # #   if: matrix.os == 'macos-14'
+      # #   run: |
+      # #     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
+      # #     bash ~/miniconda.sh -b -p $HOME/miniconda
+      # #     export PATH="$HOME/miniconda/bin:$PATH"
+      # #     source $HOME/miniconda/bin/activate
+      # #     conda config --set always_yes yes --set changeps1 no
+      # #     conda init --all
+      # #     conda create -n test python=${{matrix.python-version}}
+      # #     conda activate test
+      - name: Test conda instalation
+        shell: bash -l {0}
+        run: conda info
+      - name: Install Dependencies
+        shell: bash -l {0}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install setuptools build
+          # python -m pip install numpy tables matplotlib pandas
+          conda install numpy cython pytest
+          conda install pytables matplotlib pandas numba
+      - name: build phconvert
+        shell: bash -l {0}
+        run: |
+          pip install .
+      - name: Download files Unix
+        shell: bash -l {0}
+        if: runner.os!= 'Windows'
+        run: |
+          cd notebooks/data
+          wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
+          wget https://ndownloader.figshare.com/files/3350669 -O dsdna_d7d17_50_50_1.spc
+          wget https://ndownloader.figshare.com/files/3350672 -O Pre.ht3
+          wget https://ndownloader.figshare.com/files/3350663 -O 0023uLRpitc_NTP_20dT_0.5GndCl.sm
+          wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          unzip Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          wget https://ndownloader.figshare.com/files/6955091 -O 161128_DM1_50pM_pH74.ptu
+          wget https://ndownloader.figshare.com/files/14828594 -O 20161027_DM1_1nM_pH7_20MHz1.ptu
+          wget https://ndownloader.figshare.com/files/13675271 -O TestFile_2.ptu
+          wget https://ndownloader.figshare.com/files/14850533 -O trace_T2_300s_1_coincidence.ptu
+          wget https://ndownloader.figshare.com/files/14890535 -O nanodiamant_histo.phu
+          wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
+          wget https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
+          unzip DNA_FRET_0.5nM.pt3.zip
+          wget https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip
+          unzip data.zip
+          cd ../..
+      - name: Downlid files Windows
+        shell: bash -l {0}
+        if: runner.os == 'Windows'
+        run: |
+          cd notebooks/data
+          curl.exe -L --output Cy3.Cy5_diff_PIE-FRET.ptu.zip --url https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          7z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
+          curl.exe -L --output dsdna_d7d17_50_50_1.set --url https://ndownloader.figshare.com/files/3350666
+          curl.exe -L --output dsdna_d7d17_50_50_1.spc --url https://ndownloader.figshare.com/files/3350669
+          curl.exe -L --output Pre.ht3 --url https://ndownloader.figshare.com/files/3350672
+          curl.exe -L --output 0023uLRpitc_NTP_20dT_0.5GndCl.sm --url https://ndownloader.figshare.com/files/3350663
+          curl.exe -L --output 161128_DM1_50pM_pH74.ptu --url https://ndownloader.figshare.com/files/6955091
+          curl.exe -L --output 20161027_DM1_1nM_pH7_20MHz1.ptu --url https://ndownloader.figshare.com/files/14828594
+          curl.exe -L --output TestFile_2.ptu --url https://ndownloader.figshare.com/files/13675271
+          curl.exe -L --output trace_T2_300s_1_coincidence.ptu --url https://ndownloader.figshare.com/files/14850533
+          curl.exe -L --output nanodiamant_histo.phu --url https://ndownloader.figshare.com/files/14890535
+          curl.exe -L --output topfluorPE_2_1_1_1.pt3 --url https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
+          curl.exe -L --output DNA_FRET_0.5nM.pt3.zip --url https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
+          7z e DNA_FRET_0.5nM.pt3.zip
+          cd ..
+          cd ..
+      - name: Test project
+        shell: bash -l {0}
+        run: |
+          pytest
+          # pip install pyyaml
+          # python -m tests/nbrun.py /notebooks/*
+        

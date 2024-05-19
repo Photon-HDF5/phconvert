@@ -1,0 +1,49 @@
+[build-system]
+requires = [
+    "setuptools>=42", 
+    "versioneer"
+    ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phconvert"
+dynamic = ["version"]
+authors = [
+    {name="Antonino Ingargiola", email="tritemio@gmail.com"}, 
+    {name="Paul David Harris", email="harripd@gmail.com"}
+    ]
+description = "Convert Beker&Hickl, PicoQuant and other formats to Photon-HDF5."
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+keywords = [
+    "single-molecule FRET", 
+    "smFRET", 
+    "biophysics", 
+    "file-format", 
+    "HDF5", 
+    "Photon-HDF5"
+    ]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python:: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+    ]
+requires-python = ">= 3.6"
+dependencies = [
+    "numpy>=1.19",
+    "tables"
+    ]
+
+[project.urls]
+Homepage = "http://photon-hdf5.github.io/phconvert/"
+Documentation = "https://phconvert.readthedocs.io/en/latest/"
+Repositors = "https://github.com/Photon-HDF5/phconvert"
+Issues = "https://github.com/Photon-HDF5/phconvert/issues"
