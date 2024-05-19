@@ -65,7 +65,8 @@ jobs:
           conda install numpy cython pytest
           conda install pytables matplotlib pandas numba
       - name: Old Python dependencies
-        if: matrix.python-version <= "3.9"
+        if: matrix.python-version <= 3.9
+        shell: bash -l {0}
         run: pip install importlib_resources
       - name: build phconvert
         shell: bash -l {0}
