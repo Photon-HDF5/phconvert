@@ -119,6 +119,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pytest
-          # pip install pyyaml
-          # python -m tests/nbrun.py /notebooks/*
+          cd notebooks
+          pip install pyyaml
+          python ../tests/nbrun.py
         
