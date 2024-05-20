@@ -19,3 +19,4 @@ notebooks/*-out.ipynb
 *.ht3
 *.ptu
 *.set
+phconvert/_version.py

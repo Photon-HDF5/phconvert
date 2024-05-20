@@ -127,6 +127,11 @@ def load_ptu(filename, ovcfunc=None):
                 time_bit=25, ch_bit=6, special_bit=True,
                 ovcfunc=_correct_overflow_nsync)
         nanotimes = None
+    elif record_type in ('rtPicoHarpT2'):
+        detectors, timestamps = process_t2records(t3records,
+                time_bit=28, ch_bit=4, special_bit=False,
+                ovcfunc=ovcfunc)
+        nanotimes = None
     else:
         msg = ('Sorry, decoding "%s" record type is not implemented!' %
                record_type)

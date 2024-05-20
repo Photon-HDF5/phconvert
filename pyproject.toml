@@ -1,13 +1,12 @@
 [build-system]
 requires = [
-    "setuptools>=42", 
-    "versioneer"
+    "setuptools>=64", "setuptools_scm"
     ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "phconvert"
-dynamic = ["version"]
+dynamic = ["version", ]
 authors = [
     {name="Antonino Ingargiola", email="tritemio@gmail.com"}, 
     {name="Paul David Harris", email="harripd@gmail.com"}
@@ -39,7 +38,8 @@ classifiers = [
 requires-python = ">= 3.6"
 dependencies = [
     "numpy>=1.19",
-    "tables"
+    "tables",
+    'importlib_resources;python_version<"3.10"'
     ]
 
 [project.urls]
@@ -47,3 +47,14 @@ Homepage = "http://photon-hdf5.github.io/phconvert/"
 Documentation = "https://phconvert.readthedocs.io/en/latest/"
 Repositors = "https://github.com/Photon-HDF5/phconvert"
 Issues = "https://github.com/Photon-HDF5/phconvert/issues"
+
+[tool.setuptools.packages.find]
+include = ['phconvert']
+
+[tool.setuptools.package-data]
+"phconvert.specs" = ["*.json",]
+"phconvert.v04.specs" = ["*.json",]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+write_to = "phconvert/_version.py"

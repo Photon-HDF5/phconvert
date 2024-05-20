@@ -56,9 +56,6 @@ jobs:
       # #     conda init --all
       # #     conda create -n test python=${{matrix.python-version}}
       # #     conda activate test
-      - name: Test conda instalation
-        shell: bash -l {0}
-        run: conda info
       - name: Install Dependencies
         shell: bash -l {0}
         run: |
@@ -67,6 +64,10 @@ jobs:
           # python -m pip install numpy tables matplotlib pandas
           conda install numpy cython pytest
           conda install pytables matplotlib pandas numba
+      - name: Old Python dependencies
+        if: matrix.python-version <= 3.9
+        shell: bash -l {0}
+        run: pip install importlib_resources
       - name: build phconvert
         shell: bash -l {0}
         run: |
@@ -93,7 +94,7 @@ jobs:
           wget https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip
           unzip data.zip
           cd ../..
-      - name: Downlid files Windows
+      - name: Download files Windows
         shell: bash -l {0}
         if: runner.os == 'Windows'
         run: |
