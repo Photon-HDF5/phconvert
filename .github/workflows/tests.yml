@@ -113,7 +113,7 @@ jobs:
           7z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
           curl.exe -L --output DNA_FRET_0.5nM.pt3.zip --url https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
           7z e DNA_FRET_0.5nM.pt3.zip
-          culr.exe -L --output data.zip --url https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip
+          curl.exe -L --output data.zip --url https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip
           7z e data.zip
           cd ..
           cd ..
