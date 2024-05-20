@@ -1,4 +1,4 @@
-include versioneer.py
-include phconvert/_version.py
 include LICENSE.txt
 include README.md
+include phconvert/specs/*.json
+include phconvert/v04/specs/*.json

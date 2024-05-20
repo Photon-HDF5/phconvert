@@ -33,10 +33,8 @@ import numpy as np
 
 from .metadata import (official_fields_specs, root_attributes,
                        FORMAT_VERSION)
-from phconvert._version import get_versions
 
-
-__version__ = str(get_versions()['version'])
+from phconvert._version import version as __version__
 
 # Empty description string (workaround for h5labview)
 _EMPTY = ' '
@@ -337,12 +335,14 @@ def save_photon_hdf5(data_dict,
     h5file.flush()
 
     # Validation
-    if validate:
-        kwargs = dict(skip_measurement_specs=skip_measurement_specs,
-                      warnings=warnings, require_setup=require_setup)
-        assert_valid_photon_hdf5(h5file, **kwargs)
-    if close:
-        h5file.close()
+    try:
+        if validate:
+            kwargs = dict(skip_measurement_specs=skip_measurement_specs,
+                          warnings=warnings, require_setup=require_setup)
+            assert_valid_photon_hdf5(h5file, **kwargs)
+    finally:
+        if close:
+            h5file.close()
 
 
 def _populate_identity(data_dict, h5file):
