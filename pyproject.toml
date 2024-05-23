@@ -11,6 +11,7 @@ authors = [
     {name="Antonino Ingargiola", email="tritemio@gmail.com"}, 
     {name="Paul David Harris", email="harripd@gmail.com"}
     ]
+maintainers = [{name="Paul David Harris", email="harripd@gmail.com"}, ]
 description = "Convert Beker&Hickl, PicoQuant and other formats to Photon-HDF5."
 readme = "README.md"
 license = {file = "LICENSE.txt"}
@@ -39,17 +40,17 @@ requires-python = ">= 3.6"
 dependencies = [
     "numpy>=1.19",
     "tables",
-    'importlib_resources;python_version<"3.10"'
+    'importlib_resources;python_version<="3.10"'
     ]
 
 [project.urls]
 Homepage = "http://photon-hdf5.github.io/phconvert/"
 Documentation = "https://phconvert.readthedocs.io/en/latest/"
-Repositors = "https://github.com/Photon-HDF5/phconvert"
+Repositories = "https://github.com/Photon-HDF5/phconvert"
 Issues = "https://github.com/Photon-HDF5/phconvert/issues"
 
 [tool.setuptools.packages.find]
-include = ['phconvert']
+include = ['phconvert*']
 
 [tool.setuptools.package-data]
 "phconvert.specs" = ["*.json",]
