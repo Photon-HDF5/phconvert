@@ -791,7 +791,7 @@ def _convert_scalar_item(item):
     if not np.isscalar(item['value']):
         try:
             # sequences are converted to array then to scalar
-            scalar_value = np.asscalar(np.asarray(item['value']))
+            scalar_value = np.asarray(item['value']).item()
         except ValueError:
             raise Invalid_PhotonHDF5('Cannot convert "%s" to scalar.'
                                      % item['meta_path'])
