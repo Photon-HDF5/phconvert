@@ -35,6 +35,7 @@ the processing.
 """
 
 import os
+import warnings
 import struct
 import time
 from collections import OrderedDict
@@ -46,7 +47,11 @@ try:
 except ImportError:
     has_numba = False
 
- 
+
+class Invalid_PTU(Exception):
+    """Error indicating invalid or corrupted PTU file"""
+    pass
+
 # Constants used to decode the PQ file headers
 # Tag Types
 _ptu_tag_type = dict(
@@ -64,35 +69,64 @@ _ptu_tag_type = dict(
     )
 
 # Record Types
+# Record Types
 _ptu_rec_type = dict(
-    rtPicoHarpT3     = 0x00010303,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $03 (PicoHarp)
-    rtPicoHarpT2     = 0x00010203,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $03 (PicoHarp)
-    rtHydraHarpT3    = 0x00010304,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $04 (HydraHarp)
-    rtHydraHarpT2    = 0x00010204,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $04 (HydraHarp)
-    rtHydraHarp2T3   = 0x01010304,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $03 (T3), HW: $04 (HydraHarp)
-    rtHydraHarp2T2   = 0x01010204,  # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $02 (T2), HW: $04 (HydraHarp)
-    rtTimeHarp260NT3 = 0x00010305,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $05 (TimeHarp260N)
-    rtTimeHarp260NT2 = 0x00010205,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
-    rtTimeHarp260PT3 = 0x00010306,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
-    rtTimeHarp260PT2 = 0x00010206,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
-    rtMultiHarpNT3   = 0x00010307,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T3), HW: $07 (MultiHarp150N)
-    rtMultiHarpNT2   = 0x00010207,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $07 (MultiHarp150N))
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $03 (PicoHarp)
+    rtPicoHarp300T3     = dict(record_id=0x00010303, fmt='PT', T=3, channel_bit=4, time_bit=16, dtime_bit=12, WRAPAROUND=np.uint64(65536)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $03 (PicoHarp)
+    rtPicoHarp300T2     = dict(record_id=0x00010203, fmt='PT', T=2, channel_bit=4, time_bit=28, WRAPAROUND=np.uint64(210698240)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $04 (HydraHarp)
+    rtHydraHarpT3    = dict(record_id=0x00010304, fmt='HT', T=3, V=1, channel_bit=7, time_bit=10, dtime_bit=15, WRAPAROUND=np.uint64(1024)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $04 (HydraHarp)
+    rtHydraHarpT2    = dict(record_id=0x00010204, fmt='HT', T=2, V=1, channel_bit=7, time_bit=25, WRAPAROUND=np.uint64(33552000)),  
+    # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $03 (T3), HW: $04 (HydraHarp)
+    rtHydraHarp2T3   = dict(record_id=0x01010304, fmt='HT', T=3, V=2, channel_bit=7, time_bit=10, dtime_bit=15, WRAPAROUND=np.uint64(1024)),  
+    # (SubID = $01 ,RecFmt: $01) (V2), T-Mode: $02 (T2), HW: $04 (HydraHarp)
+    rtHydraHarp2T2   = dict(record_id=0x01010204, fmt='HT', T=2, V=2, channel_bit=7, time_bit=25, WRAPAROUND=np.uint64(33554432)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $05 (TimeHarp260N)
+    rtTimeHarp260NT3 = dict(record_id=0x00010305, fmt='HT', T=3, V=2, channel_bit=7, time_bit=10, dtime_bit=15, WRAPAROUND=np.uint64(1024)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
+    rtTimeHarp260NT2 = dict(record_id=0x00010205, fmt='HT', T=2, V=2, channel_bit=7, time_bit=25, WRAPAROUND=np.uint64(33554432)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
+    rtTimeHarp260PT3 = dict(record_id=0x00010306, fmt='HT', T=3, V=2, channel_bit=7, time_bit=10, dtime_bit=15, WRAPAROUND=np.uint64(1024)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
+    rtTimeHarp260PT2 = dict(record_id=0x00010206, fmt='HT', T=2, V=2, channel_bit=7, time_bit=25, WRAPAROUND=np.uint64(33554432)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T3), HW: $07 (MultiHarpXXX and PicoHarp330)
+    rtGenericT3      = dict(record_id=0x00010307, fmt='HT', T=3, V=2, channel_bit=7, time_bit=10, dtime_bit=15, WRAPAROUND=np.uint64(1024)),  
+    # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $07 (MultiHarpXXX and PicoHarp330))
+    rtGenericT2      = dict(record_id=0x00010207, fmt='HT', T=2, V=2, channel_bit=7, time_bit=25, WRAPAROUND=np.uint64(33554432)),  
     )
 
 # Reverse mappings
 _ptu_tag_type_r = {v: k for k, v in _ptu_tag_type.items()}
-_ptu_rec_type_r = {v: k for k, v in _ptu_rec_type.items()}
 
+def _record_dict_invert(dct):
+    new = dict()
+    for key, val in dct.items():
+        temp = {k:v for k, v in val.items()}
+        temp['record_type'] = key
+        new[val['record_id']] = temp
+    return new
 
+_ptu_rec_map = _record_dict_invert(_ptu_rec_type)
 
-def load_ptu(filename, ovcfunc=None):
+def load_ptu(filename, return_marker=False, ovcfunc='auto', check_valid=False):
     """Load data from a PicoQuant .ptu file.
 
     Arguments:
         filename (string): the path of the PTU file to be loaded.
-        ovcfunc (function or None): function to use for overflow/rollover
-            correction of timestamps. If None, it defaults to the
-            fastest available implementation for the current machine.
+        return_marker (bool): whether or not to return information
+        on markers
+        ovcfunc (string): 'auto', 'base', 'numba', 'loop' 'none', or callable, 
+            which type of overflow function to use. 'auto' will use the fastest 
+            available function 'base' will use the numpy parrallelized version, 
+            'numba' will used the numba accelerated version (requires numba to 
+             be installed), 'loop' will use the non-numba accelerated of loop 
+            based function, 'none' will not applay any sort of correction, 
+            thus allowing inspectection and direct manipulation of marker/
+            overflow photons after the fact.
+        check_valid (bool): passed to process_pturecords, whether or not to raise
+            an error if an invalid/unknown marker type is found in the records.
 
     Returns:
         A tuple of timestamps, detectors, nanotimes (integer arrays) and a
@@ -103,40 +137,14 @@ def load_ptu(filename, ovcfunc=None):
         'value' and 'offset' keys. Some tags also have a 'data' key.
         Use :func:`_ptu_print_tags` to print the tags as an easy-to-read 
         table.
+        If return_marker = True
+        'marker_loc', index before which marker is inserted
+        'marker_time', timestamp of marker
+        'marker_det', pseudo-detector of marker
+        'marker_dtime', the nanotime of the marker
 
     """
-    assert os.path.isfile(filename), "File '%s' not found." % filename
-
-    t3records, record_type, tags = ptu_reader(filename)
-
-    if record_type == 'rtPicoHarpT3':
-        detectors, timestamps, nanotimes = process_t3records(
-            t3records, time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
-            ovcfunc=ovcfunc)
-    elif record_type == 'rtHydraHarpT3':
-        detectors, timestamps, nanotimes = process_t3records(
-            t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
-            ovcfunc=ovcfunc)
-    elif record_type in ('rtHydraHarp2T3', 'rtTimeHarp260NT3',
-                         'rtTimeHarp260PT3'):
-        detectors, timestamps, nanotimes = process_t3records(
-            t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
-            ovcfunc=_correct_overflow_nsync)
-    elif record_type in ('rtHydraHarp2T2', 'rtTimeHarp260NT2','rtTimeHarp260PT2', 'rtMultiHarpNT3'):
-        detectors, timestamps = process_t2records(t3records,
-                time_bit=25, ch_bit=6, special_bit=True,
-                ovcfunc=_correct_overflow_nsync)
-        nanotimes = None
-    elif record_type in ('rtPicoHarpT2'):
-        detectors, timestamps = process_t2records(t3records,
-                time_bit=28, ch_bit=4, special_bit=False,
-                ovcfunc=ovcfunc)
-        nanotimes = None
-    else:
-        msg = ('Sorry, decoding "%s" record type is not implemented!' %
-               record_type)
-        raise NotImplementedError(msg)
-
+    records, spec, tags = ptu_reader(filename)
     # Get the metadata
     acquisition_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3
     ctime_t = time.strptime(tags['File_CreatingTime']['value'],
@@ -152,12 +160,16 @@ def load_ptu(filename, ovcfunc=None):
         'software_version': tags['CreatorSW_Version']['data'],
         'creation_time': creation_time,
         'hardware_name': hw_type['data'],
-        'record_type': record_type,
+        'record_type': spec['record_type'],
         'tags': _convert_multi_tags(tags)}
-    if record_type.endswith('T3'):
+    if spec['T'] == 3:
         meta['nanotimes_unit'] = tags['MeasDesc_Resolution']['value']
         meta['laser_repetition_rate'] = tags['TTResult_SyncRate']['value']
-    return timestamps, detectors, nanotimes, meta
+    times, dets, dtime, marker_loc, marker_time, marker_det, marker_dtime = \
+        process_pturecords(records, spec, ovcfunc=ovcfunc, check_valid=check_valid)
+    if return_marker:
+        return times, dets, dtime, meta, marker_loc, marker_time, marker_det, marker_dtime
+    return times, dets, dtime, meta 
 
 
 def load_phu(filename):
@@ -515,30 +527,47 @@ def pt3_reader(filename):
 
 
 def ptu_reader(filename):
-    """Read the header and the raw t3 or t2 records from a PTU file.
-    """
-    # All the info about the PTU format has been inferred from PicoQuant demo:
-    # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PTU/C/ptudemo.cc
-    
-    # Load only the first few bytes to see is file is valid
     with open(filename, 'rb') as f:
-        magic = f.read(8).rstrip(b'\0')
-        version = f.read(8).rstrip(b'\0')
-    if magic != b'PQTTTR':
-        raise IOError("This file is not a valid PTU file. "
-                      "Magic: '%s'." % magic)
-
-    # Now load the entire file
-    with open(filename, 'rb') as f:
+        # TODO: re-configure so whole file does not need to be read into memory at once
         s = f.read()
-    tags, offset = _read_header_tags(s)
+        tags, offset = _read_header_tags(s)
+        spec = _ptu_rec_map[tags['TTResultFormat_TTTRRecType']['value']]
+        # check that all bits sum to 32 bits
+        bsize = spec['channel_bit'] + spec['time_bit']
+        bsize += spec['dtime_bit'] if spec['T'] == 3 else 0
+        if bsize != 32:
+            raise ValueError("Incorrect configuration, bit widths must sum to 32, raise issue on GitHub")
+        num_records = tags['TTResult_NumberOfRecords']['value'] # get size of record
+        # read reacords as bit array
+        records = np.frombuffer(s, dtype='<u4', count=num_records,
+                                offset=offset)
+    return records, spec, tags
 
-    # A view of the t3records as a numpy array (no new memory is allocated)
-    num_records = tags['TTResult_NumberOfRecords']['value']
-    t3records = np.frombuffer(s, dtype='uint32', count=num_records,
-                              offset=offset)
-    record_type = _ptu_rec_type_r[tags['TTResultFormat_TTTRRecType']['value']]
-    return t3records, record_type, tags
+# def ptu_reader(filename):
+#     """Read the header and the raw t3 or t2 records from a PTU file.
+#     """
+#     # All the info about the PTU format has been inferred from PicoQuant demo:
+#     # https://github.com/PicoQuant/PicoQuant-Time-Tagged-File-Format-Demos/blob/master/PTU/C/ptudemo.cc
+    
+#     # Load only the first few bytes to see is file is valid
+#     with open(filename, 'rb') as f:
+#         magic = f.read(8).rstrip(b'\0')
+#         version = f.read(8).rstrip(b'\0')
+#     if magic != b'PQTTTR':
+#         raise IOError("This file is not a valid PTU file. "
+#                       "Magic: '%s'." % magic)
+
+#     # Now load the entire file
+#     with open(filename, 'rb') as f:
+#         s = f.read()
+#     tags, offset = _read_header_tags(s)
+
+#     # A view of the t3records as a numpy array (no new memory is allocated)
+#     num_records = tags['TTResult_NumberOfRecords']['value']
+#     t3records = np.frombuffer(s, dtype='uint32', count=num_records,
+#                               offset=offset)
+#     record_type = _ptu_rec_type_r[tags['TTResultFormat_TTTRRecType']['value']]
+#     return t3records, record_type, tags
 
 
 def _read_header_tags(s):
@@ -855,6 +884,423 @@ def _ptu_print_tags(tags):
             print(line, end=endline)
 
 
+def _overflow_correction_HT3_loop(times, dets, dtime, channel_bit, wraparound, version):
+    """ Process overflows and markers of HT3 type records in a loop, ideal for 
+    numba acceleration"""
+    
+    ovferflow = 0 # counter for overflow number
+    loc = 0 # counter for current location excluding markers/overflows
+    mask = np.ones(dets.shape, dtype=np.bool_)
+    ch_bt = 2**(channel_bit-1)
+    obit = 2**channel_bit - 1
+    mbit = 2**(channel_bit-1) - 1
+    marker_loc = list()
+    marker_id = list()
+    marker_time = list()
+    marker_dtime = list() 
+    # loop over each photon
+    for i in range(dets.size):
+        if dets[i] & ch_bt: # if largest bit is 1, then marker, not real photon
+            mask[i] = False
+            if dets[i] == obit: # case were all channel bits 1 -> overflow
+                if times[i] == 0 or version == 1: # 2 different types of overflow depending on version
+                    ovferflow += wraparound 
+                else:
+                    ovferflow += times[i] * wraparound
+            else: # other type of marker, need to ask picoquant
+                marker_loc.append(loc)
+                marker_id.append((dets[i]&mbit))
+                marker_time.append(times[i])
+                marker_dtime.append(dtime[i])
+        else:
+            loc += 1
+            times[i] += ovferflow
+    times = times[mask]
+    dets = dets[mask]
+    dtime = dtime[mask]
+    # cast markers to arrays
+    marker_loc = np.array(marker_loc)
+    marker_time = np.array(marker_time)
+    marker_id = np.array(marker_id)
+    marker_dtime = np.array(marker_dtime)
+    return times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime
+
+    
+def _overflow_correction_HT2_loop(times, dets, channel_bit, wraparound, version):
+    """ Process overflows and markers of HT2 type records in a loop, ideal for 
+    numba acceleration"""
+    
+    overflow = 0 # counter for overflow number
+    loc = 0 # counter for current location excluding markers/overflows
+    mask = np.ones(dets.shape, dtype=np.bool_)
+    ch_bt = 2**(channel_bit-1)
+    obit = 2**channel_bit - 1
+    mbit = 2**(channel_bit-1) - 1
+    marker_loc = list()
+    marker_id = list()
+    marker_time = list()
+    # loop over each photon
+    for i in range(dets.size):
+        if dets[i] & ch_bt: # if largest bit is 1, then marker, not real photon
+            mask[i] = False
+            if dets[i] == obit: # case were all channel bits 1 -> overflow
+                if times[i] == 0 or version == 1: # 2 different types of overflow depending on version
+                    overflow += wraparound 
+                else:
+                    overflow += times[i] * wraparound
+            else: # other type of marker, need to ask picoquant
+                marker_loc.append(loc)
+                marker_id.append((dets[i]&mbit))
+                marker_time.append(times[i]+overflow)
+        else:
+            loc += 1
+            times[i] += overflow
+    times = times[mask]
+    dets = dets[mask]
+    # cast markers to arrays
+    marker_loc = np.array(marker_loc)
+    marker_time = np.array(marker_time)
+    marker_id = np.array(marker_id)
+    return times, dets, marker_loc, marker_time, marker_id
+
+
+def _overflow_correction_PT3_loop(times, dets, dtime, channel_bit, wraparound, version):
+    """ Process overflows and markers of PT3 type records in a loop, ideal for 
+    numba acceleration"""
+    
+    overflow = 0
+    loc = 0
+    mask = np.ones(dets.shape, dtype=np.bool_)
+    marker_loc = list()
+    marker_time = list()
+    marker_id = list()
+    ch_bit = 2**channel_bit - 1
+    for i in range(dets.size):
+        if dets[i] == ch_bit: # is a marker or overflow
+            mask[i] = False
+            if dtime[i] == 0:
+                overflow += wraparound
+            else:
+                times[i] += overflow
+                marker_loc.append(loc)
+                marker_id.append(dtime[i])
+                marker_time.append(times[i])
+        else:
+            loc += 1
+            times[i] += overflow
+    times = times[mask]
+    dets = dets[mask]
+    dtime = dtime[mask]
+    marker_loc = np.array(marker_loc)
+    marker_time = np.array(marker_time)
+    marker_id = np.array(marker_id)
+    return times, dets, dtime, marker_loc, marker_time, marker_id, None
+
+
+def _overflow_correction_PT2_loop(times, dets, channel_bit, wraparound, version):
+    """ Process overflows and markers of PT2 type records in a loop, ideal for 
+    numba acceleration"""
+    
+    overflow = 0
+    loc = 0
+    mask = np.ones(dets.shape, dtype=np.bool_)
+    marker_loc = list()
+    marker_time = list()
+    marker_id = list()
+    ch_bit = 2**channel_bit - 1
+    for i in range(dets.size):
+        if dets[i] == ch_bit: # is a marker or overflow
+            mask[i] = False
+            mk_id = times[i] & 0b1111
+            if mk_id == 0:
+                overflow += wraparound
+            else:
+                times[i] += overflow - (times[i] & 0b1111) # picoquant didn't take off unused time bits, but we will
+                marker_loc.append(loc)
+                marker_id.append(mk_id)
+                marker_time.append(times[i])
+        else:
+            loc += 1
+            times[i] += overflow
+    marker_loc = np.array(marker_loc)
+    marker_time = np.array(marker_time)
+    marker_id = np.array(marker_id)
+    times = times[mask]
+    dets = dets[mask]
+    return times, dets, marker_loc, marker_time, marker_id
+
+
+def _overflow_correction_HT3_base(times, dets, dtime, channel_bit, wraparound, version):
+    """ Process overflows and markers of HT3 type records using numpy functions
+    more memory intensive but faster for non-numba systems"""
+    
+    overflows = (2**channel_bit - 1) == dets
+    if version == 1:
+        overflow_correction = overflows*wraparound
+    else:
+        overflow_correction = times * overflows * wraparound
+        overflow_correction[(times==0)*overflows] += wraparound
+    np.cumsum(overflow_correction, out=overflow_correction)
+    # to reduce memory usage
+    overflow_correction = overflow_correction[~overflows]
+    times = times[~overflows]
+    dets = dets[~overflows]
+    dtime = dtime[~overflows]
+    times += overflow_correction
+    markers = np.bitwise_and(dets, 2**(channel_bit-1)).astype(bool)
+    marker_loc = np.where(markers)[0] - np.arange(0,markers.sum(), 1)
+    marker_time = times[markers]
+    marker_id = dets[markers]
+    marker_dtime = dtime[markers]
+    times = times[~markers]
+    dets = dets[~markers]
+    dtime = dtime[~markers]
+    return times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime
+
+
+def _overflow_correction_HT2_base(times, dets, channel_bit, wraparound, version):
+    """ Process overflows and markers of HT2 type records using numpy functions
+    more memory intensive but faster for non-numba systems"""
+    
+    overflows = (2**channel_bit - 1) == dets
+    if version == 1:
+        overflow_correction = overflows*wraparound
+    else:
+        overflow_correction = times * overflows * wraparound
+        overflow_correction[(times==0)*overflows] += wraparound
+    np.cumsum(overflow_correction, out=overflow_correction)
+    # to reduce memory usage
+    overflow_correction = overflow_correction[~overflows]
+    times = times[~overflows]
+    dets = dets[~overflows]
+    times += overflow_correction
+    markers = np.bitwise_and(dets, 2**(channel_bit-1)).astype(bool)
+    marker_loc = np.where(markers)[0] - np.arange(0,markers.sum(), 1)
+    marker_time = times[markers]
+    marker_id = dets[markers]
+    times = times[~markers]
+    dets = dets[~markers]
+    return times, dets, marker_loc, marker_time, marker_id
+
+    
+def _overflow_correction_PT3_base(times, dets, dtime, channel_bit, wraparound, version):
+    """ Process overflows and markers of PT3 type records using numpy functions
+    more memory intensive but faster for non-numba systems"""
+    mask = (dets==2**channel_bit-1)
+    overflow_mask = (dtime == 0) * mask
+    times += np.cumsum(overflow_mask, dtype=np.uint64)*wraparound
+    times = times[~overflow_mask]
+    dets = dets[~overflow_mask]
+    dtime = dtime[~overflow_mask]
+    mask = mask[~overflow_mask]
+    marker_loc = np.where(mask)[0] - np.arange(0,mask.sum(), 1)
+    marker_time = times[mask]
+    marker_id = dtime[mask]
+    times = times[~mask]
+    dets = dets[~mask]
+    dtime = dtime[~mask]
+    return times, dets, dtime, marker_loc, marker_time, marker_id, None    
+
+
+def _overflow_correction_PT2_base(times, dets, channel_bit, wraparound, version):
+    """ Process overflows and markers of PT2 type records using numpy functions
+    more memory intensive but faster for non-numba systems"""
+    mask = (dets==2**channel_bit-1)
+    tover = np.bitwise_and(times, 0xF)
+    overflow_mask = (tover == 0)*mask
+    times += np.cumsum(overflow_mask, dtype=np.uint64)*wraparound
+    times = times[overflow_mask]
+    dets = dets[overflow_mask]
+    tover = tover[overflow_mask]
+    mask = mask[overflow_mask]
+    marker_loc = np.where(mask)[0] - np.arange(0,mask.sum(), 1)
+    marker_time = times[mask]
+    marker_id = tover[mask]
+    times = times[~mask]
+    dets = dets[~mask]
+    return times, dets, marker_loc, marker_time, marker_id
+    
+    
+if has_numba:
+    _overflow_correction_PT2_numba = numba.jit((numba.uint64[:], numba.uint8[:], numba.int8, 
+                                          numba.uint64, numba.uint64))(_overflow_correction_PT2_loop)
+    _overflow_correction_HT2_numba = numba.jit((numba.uint64[:], numba.uint8[:], numba.int8, 
+                                          numba.uint64, numba.uint64))(_overflow_correction_HT2_loop)
+    _overflow_correction_PT3_numba = numba.jit((numba.uint64[:], numba.uint8[:], numba.uint16[:], 
+                                          numba.int8, numba.uint64, numba.uint64))(_overflow_correction_PT3_loop)
+    _overflow_correction_HT3_numba = numba.jit((numba.uint64[:], numba.uint8[:], numba.uint16[:], 
+                                          numba.int8, numba.uint64, numba.uint64))(_overflow_correction_HT3_loop)
+    _overflow_correction_PT2 = _overflow_correction_PT2_numba
+    _overflow_correction_HT2 = _overflow_correction_HT2_numba
+    _overflow_correction_PT3 = _overflow_correction_PT3_numba
+    _overflow_correction_HT3 = _overflow_correction_HT3_numba
+
+else:
+    _overflow_correction_PT2_numba = None
+    _overflow_correction_HT2_numba = None
+    _overflow_correction_PT3_numba = None
+    _overflow_correction_HT3_numba = None
+    _overflow_correction_PT2 = _overflow_correction_PT2_base
+    _overflow_correction_HT2 = _overflow_correction_HT2_base
+    _overflow_correction_PT3 = _overflow_correction_PT3_base
+    _overflow_correction_HT3 = _overflow_correction_HT3_base
+
+def _PT2_warning(times, dets, marker_loc, marker_time, marker_id):
+    """Determines if PT2 records has any bad marker records"""
+    err = str()
+    if np.any(dets == 0) or np.any(dets > 4):
+        warnings.warn("Illegal channel")
+        err = "Illegal channel for PT2 format"
+    return times, dets, marker_loc, marker_time, marker_id, err
+
+
+def _PT3_warning(times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime):
+    """Determines if PT3 records has any bad marker records"""
+    err = str()
+    if np.any(dets == 0) or np.any(dets > 4):
+        warnings.warn("Illegal channel")
+        err = "Illegal channel for PT3 format"
+    return times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime, err
+
+
+def _HT2_warning(times, dets, marker_loc, marker_time, marker_id):
+    """Determines if HT2 records has any bad marker records"""
+    err = str()
+    if np.any(marker_id<1) or np.any(marker_id>15):
+        warnings.warn("Invalid marker id")
+        err = "Invalid marker channel"
+    return times, dets, marker_loc, marker_time, marker_id, err
+
+
+def _HT3_warning(times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime):
+    """Determines if HT3 records has any bad marker records"""
+    err = str()
+    if np.any(marker_id<1) or np.any(marker_id>15):
+        warnings.warn("Invalid marker channel")
+        err = "Invalid marker_id"
+    return times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime, err
+
+_ptu_fmt = {('PT', 2):(_overflow_correction_PT2, _overflow_correction_PT2_base, _overflow_correction_PT2_loop, _overflow_correction_PT2_numba, _PT2_warning),
+            ('PT', 3):(_overflow_correction_PT3, _overflow_correction_PT3_base, _overflow_correction_PT3_loop, _overflow_correction_PT3_numba, _PT3_warning),
+            ('HT', 2):(_overflow_correction_HT2, _overflow_correction_HT2_base, _overflow_correction_HT2_loop, _overflow_correction_HT2_numba, _HT2_warning),
+            ('HT', 3):(_overflow_correction_HT3, _overflow_correction_HT3_base, _overflow_correction_HT3_loop, _overflow_correction_HT3_numba, _HT3_warning),
+                        }    
+
+def _no_warn(*args):
+    """
+    Dummy function for warning of invlaid ptu records, that never produces a
+    warning
+    """
+    args += (str(), )
+    return args
+
+def _no_ovcfunc(*args):
+    """
+    Dummy function used when ovcfunct = None, echos arrays passed without
+    performating any corrections
+    """
+    if len(args) == 5: 
+        out = args[:2] + (np.array([], dtype=np.int64), )*3
+    else:
+        out = args[:3] + (np.array([], dtype=np.int64), )*4
+    return out
+        
+
+def process_pturecords(records, spec, extract_markers=True, ovcfunc='auto', check_valid=False):
+    """
+    Take records and convert to photons in HDF5 compatible arrays
+
+    Parameters
+    ----------
+    records : numpy array
+        Array of records read from buffer of ptu file.
+    spec : dict
+        Format spec of ptu version (generally take from _ptu_rec_map).
+    extract_markers : bool, optional
+        Whether to return marker information in separte arrays. The default is True.
+    ovcfunc : str, optional
+        'auto', 'base', 'numba', 'loop' 'none', or callable, 
+        which type of overflow function to use. 'auto' will use the fastest 
+        available function 'base' will use the numpy parrallelized version, 
+        'numba' will used the numba accelerated version (requires numba to 
+         be installed), 'loop' will use the non-numba accelerated of loop 
+        based function, 'none' will not applay any sort of correction, 
+        thus allowing inspectection and direct manipulation of marker/
+        overflow photons after the fact.. The default is 'auto'.
+    check_valid : bool, optional
+        Whether or not to raise an error is an issue is found in the markers. 
+        **Note** markers are less consistent accross versions, and not all are
+        fully supported, so it is better to pass False, and catch potential
+        problems afterwards.
+        The default is False.
+
+    Raises
+    ------
+    ValueError
+        Trying to access a numba accelerated function when numba is not available.
+        Install numba or use different ovcfunc option
+    Invalid_PTU
+        File being processed has invalid markers, check_valid=False if you wish
+        to supress error and proceed.
+
+    Returns
+    -------
+    times : numpy array
+        The raw arrival times of photons
+    dets : numpy array
+        The detectors of photons
+    dtime : numpy array
+        The nanotimes of photons, None if T2 record
+    marker_loc : numpy array (optional)
+        The index where the marker should be inserted before (ie, a marker of
+        loc = 1 shoudl be placed between the 0th and 1st photon)
+    marker_time : numpy array (optional)
+        The timestamp of the marker
+    marker_id : numpy array (optional)
+        The maker type (channel) of marker
+    marker_dtime : numpy array (optional)
+        the apparent nanotime of the marker, None if T2 records.
+
+    """
+    # Extract relevant time/det/nanotime stamps
+    dets = np.right_shift(records, 32-spec['channel_bit']).astype(np.uint8)
+    times = np.bitwise_and(records, 2**spec['time_bit']-1).astype(np.uint64)
+    if spec['T'] == 3:
+        dtime = np.bitwise_and(np.right_shift(records, spec['time_bit']), 
+                               2**spec['dtime_bit']-1).astype(np.uint16)
+    else:
+        dtime = None
+        marker_dtime = None
+    # correct for overflows
+    ch_bt, wrap, version = spec['channel_bit'], spec['WRAPAROUND'], spec.get('V', 0)
+    if callable(ovcfunc):
+        over_func = ovcfunc
+        warn_func = _no_warn
+    elif not ovcfunc or ovcfunc in ('None', 'none'):
+        over_func = _no_ovcfunc
+        warn_func = _no_warn
+    else:
+        idx = {'auto':0, 'base':1, 'loop':2, 'numba':3}[ovcfunc]
+        over_func = _ptu_fmt[(spec['fmt'], spec['T'])][idx]
+        warn_func = _ptu_fmt[(spec['fmt'], spec['T'])][4]
+    if over_func is None:
+        raise ValueError("Numba not installed, cannot use numba accelerated version")
+    if spec['T'] == 3:
+        times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime = \
+            over_func(times, dets, dtime, ch_bt, wrap, version)
+        times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime, err = \
+            warn_func(times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime)
+    else:
+        times, dets, marker_loc, marker_time, marker_id = over_func(times, dets, ch_bt, wrap, version)
+        times, dets, marker_loc, marker_time, marker_id, err = \
+            warn_func(times, dets, marker_loc, marker_time, marker_id)
+    if check_valid and err:
+        raise Invalid_PTU(err)
+    if  extract_markers:
+        return times, dets, dtime, marker_loc, marker_time, marker_id, marker_dtime
+    return times, dets, dtime
+
+
 def process_t3records(t3records, time_bit=10, dtime_bit=15,
                       ch_bit=6, special_bit=True, ovcfunc=None):
     """Extract the different fields from the raw t3records array.
@@ -1110,7 +1556,7 @@ def process_t3records_t3rfile(t3records, reserved=1, valid=1, time_bit=12,
     np.bitwise_and(timestamps, 2**dtime_bit - 1, out=timestamps)
 
     overflow = 2**dtime_bit
-    _correct_overflow1(timestamps, valid, 0, overflow)
+    _correct_overflow(timestamps, valid, 0, overflow)
     return detectors, timestamps, nanotimes
 
 

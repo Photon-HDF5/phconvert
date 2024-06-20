@@ -42,49 +42,62 @@ def filename(request):
     fname = request.param()
     return fname
 
+# TODO:consider fixture with everything loaded so files not constantly opeing/closing
 
 def test_read_ptu_recordtype(filename):
     """Test for PTU header decoding."""
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    t3records, record_type, tags = \
+    t3records, spec, tags = \
         phc.pqreader.ptu_reader(filename)
     assert list(tags.keys())[-1] == "Header_End"
+    record_type = spec['record_type']
     ptu_rec_code = {0x00010304: 'rtHydraHarpT3',
                     0x01010304: 'rtHydraHarp2T3',
-                    0x00010303: 'rtPicoHarpT3',
-                    0x00010206: 'rtTimeHarp260PT2'
+                    0x00010303: 'rtPicoHarp300T3',
+                    0x00010203: 'rtPicoHarp300T2',
+                    0x00010206: 'rtTimeHarp260PT2',
+                    0x00010307: 'rtGenericT3',
+                    0x00010207: 'rtGenericT2'
                     }
     rec_type2 = ptu_rec_code[tags['TTResultFormat_TTTRRecType']['value']]
     assert rec_type2 == record_type
 
 
-def test_ptu_rtHydraHarp2T3_overflow_correction():
-    """Test PTU overflow correction for rtHydraHarp2T3 records."""
-    filename = dataset2()
-    assert os.path.isfile(filename), 'File not found: %s' % filename
-    t3records, record_type, tags = \
-        phc.pqreader.ptu_reader(filename)
-    if record_type == 'rtHydraHarp2T3':
-        det, ts, nanot = phc.pqreader.process_t3records(
-            t3records[:1000000], time_bit=10, dtime_bit=15, ch_bit=6,
-            special_bit=True, ovcfunc=phc.pqreader._correct_overflow_nsync)
-        det2, ts2, nanot2 = phc.pqreader.process_t3records(
-            t3records[:1000000], time_bit=10, dtime_bit=15, ch_bit=6,
-            special_bit=True, ovcfunc=phc.pqreader._correct_overflow_nsync_naive)
-        assert (det == det2).all()
-        assert (ts == ts2).all()
-        assert (nanot == nanot2).all()
+# following two tests combined to test_ptu_overflow_correction
+# also overflow coorrections handeled differently now
+# def test_ptu_rtHydraHarp2T3_overflow_correction():
+#     """Test PTU overflow correction for rtHydraHarp2T3 records."""
+#     filename = dataset2()
+#     assert os.path.isfile(filename), 'File not found: %s' % filename
+#     t3records, spec, tags = \
+#         phc.pqreader.ptu_reader(filename)
+#     if spec['record_type'] == 'rtHydraHarp2T3':
+#         det, ts, nanot = phc.pqreader.process_t3records(
+#             t3records[:1000000], time_bit=10, dtime_bit=15, ch_bit=6,
+#             special_bit=True, ovcfunc=phc.pqreader._correct_overflow_nsync)
+#         det2, ts2, nanot2 = phc.pqreader.process_t3records(
+#             t3records[:1000000], time_bit=10, dtime_bit=15, ch_bit=6,
+#             special_bit=True, ovcfunc=phc.pqreader._correct_overflow_nsync_naive)
+#         assert (det == det2).all()
+#         assert (ts == ts2).all()
+#         assert (nanot == nanot2).all()
 
+# def test_ptu_rtHydraHarpT3_overflow_correction():
+#     """Test PTU overflow correction for rtHydraHarpT3 records."""
+#     filename = dataset4()
+#     assert os.path.isfile(filename), 'File not found: %s' % filename
+#     timestamps, detectors, nanotimes, meta = phc.pqreader.load_ptu(filename)
+#     timestamps2, detectors2, nanotimes2, meta2 = phc.pqreader.load_ptu(
+#         filename, ovcfunc=phc.pqreader._correct_overflow2)
+#     assert (timestamps == timestamps2).all()
 
-def test_ptu_rtHydraHarpT3_overflow_correction():
+def test_ptu_overflow_correction(filename):
     """Test PTU overflow correction for rtHydraHarpT3 records."""
-    filename = dataset4()
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_ptu(filename)
+    timestamps, detectors, nanotimes, meta = phc.pqreader.load_ptu(filename, ovcfunc='base')
     timestamps2, detectors2, nanotimes2, meta2 = phc.pqreader.load_ptu(
-        filename, ovcfunc=phc.pqreader._correct_overflow2)
+        filename, ovcfunc='numba')
     assert (timestamps == timestamps2).all()
-
 
 def test_load_ptu(filename):
     """Test consistency of data loaded from PTU files."""
