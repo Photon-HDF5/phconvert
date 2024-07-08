@@ -41,6 +41,8 @@ import time
 from collections import OrderedDict
 import numpy as np
 
+from ._time_conversion import _normalize_time
+
 has_numba = True
 try:
     import numba
@@ -147,9 +149,7 @@ def load_ptu(filename, return_marker=False, ovcfunc='auto', check_valid=False):
     records, spec, tags = ptu_reader(filename)
     # Get the metadata
     acquisition_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3
-    ctime_t = time.strptime(tags['File_CreatingTime']['value'],
-                            "%Y-%m-%d %H:%M:%S")
-    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
+    creation_time = _normalize_time(tags['File_CreatingTime']['value'], year_first=True)
     hw_type = tags['HW_Type']
     if isinstance(hw_type, list):
         hw_type = hw_type[0]
@@ -214,9 +214,8 @@ def load_ht3(filename, ovcfunc=None):
     detectors, timestamps, nanotimes = process_t3records(
         t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
         ovcfunc=ovcfunc)
-    ctime_t = time.strptime(meta['header']['FileTime'][0].decode(),
-                            "%d/%m/%y %H:%M:%S")
-    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
+    creation_time = _normalize_time(meta['header']['FileTime'][0].decode(), year_first=False, year_width=2)
+    
     meta.update({'timestamps_unit': timestamps_unit,
                  'nanotimes_unit': nanotimes_unit,
                  'acquisition_duration': meta['header']['Tacq'][0] * 1e-3,
@@ -250,9 +249,7 @@ def load_pt3(filename, ovcfunc=None):
         t3records, time_bit=16, dtime_bit=12, ch_bit=4, special_bit=False,
         ovcfunc=ovcfunc)
     acquisition_duration = meta['header']['AcquisitionTime'][0] * 1e-3
-    ctime_t = time.strptime(meta['header']['FileTime'][0].decode(),
-                            "%d/%m/%y %H:%M:%S")
-    creation_time = time.strftime("%Y-%m-%d %H:%M:%S", ctime_t)
+    creation_time = _normalize_time(meta['header']['FileTime'][0].decode(), year_first=False, year_width=2)
     meta.update({'timestamps_unit': timestamps_unit,
                  'nanotimes_unit': nanotimes_unit,
                  'acquisition_duration': acquisition_duration,
