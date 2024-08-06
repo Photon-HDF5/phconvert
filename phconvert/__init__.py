@@ -3,9 +3,10 @@
 #
 # Copyright (C) 2015 Antonino Ingargiola <tritemio@gmail.com>
 #
-import phconvert.loader
-import phconvert.hdf5
-import phconvert.v04
+from . import loader
+from . import hdf5
+from . import v04
+from . import helperfuncs
 
 has_matplotlib = True
 try:
@@ -13,7 +14,7 @@ try:
 except ImportError:
     has_matplotlib = False
 if has_matplotlib:
-    import phconvert.plotter
+    from . import plotter
     del matplotlib
 
 

@@ -4,38 +4,311 @@
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
 
-import matplotlib.pyplot as plt
+import re
+from itertools import chain
 import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+has_numba = True
+try:
+    import numba
+except ImportError:
+    has_numba = False
 
 _green = 'g'
 _red = 'r'
+_ch_rgx = re.compile(r'(spectral|polarization|split)_ch(1-9]\d*)')
+_spec_rgx = re.compile(r'(spectral)_ch([1-9]\d*)')
+_pol_rgx = re.compile(r'(polarization)_ch([1-9]\d*)')
+_split_rgx = re.compile(r'(split)_ch([1-9]\d*)')
+_mk_rgx = re.compile(r'markers([1-9]\d*)')
+_al_rgx = re.compile(r'(alex_excitation_period)([1-9]\d*)')
 
 
-def alternation_hist(d, bins=None, ich=0, ax=None, **kwargs):
+def _mask_phot(times:np.ndarray, dets:np.ndarray, dgroup:np.ndarray|set)->np.ndarray:
+    """
+    Return only times of photons with a detector in dgroup
+
+    Parameters
+    ----------
+    times : np.ndarray
+        Values to mask.
+    dets : np.ndarray
+        Array of detectors to match with the values in dgroup.
+    dgroup : np.ndarray|set
+        Values to include in time.
+
+    Returns
+    -------
+    filt : np.ndarray
+        Filtered array of times.
+
+    """
+    dgroup = np.atleast_1d(dgroup)
+    mask = np.zeros(times.size, dtype=np.bool_)
+    for d in dgroup:
+        mask += dets == d
+    filt = times[mask]
+    return filt
+
+if has_numba:
+    _mask_phot = numba.jit(_mask_phot)
+
+
+def _toint(nstr:str)->int:
+    """Convert a string with variable leading zeros into an int"""
+    nstr = nstr.lstrip('0')
+    return int(nstr) if nstr else '0'
+
+
+def _unions(args:list[set])->set:
+    """Union of a list of sets"""
+    comp = args[0]
+    for arg in args[1:]:
+        comp = comp | arg # do not use |= b/c cause side effect
+    return comp
+
+
+def _intersects(args:list[set])->set:
+    """Common elements across all sets in list of sets"""
+    comp = args[0]
+    for arg in args[1:]:
+        comp &= arg
+    return comp
+
+def _pos_in(idx:int, subs:list[set]|tuple[set])->int|None:
+    """Find index in subs where idx is present in list of sets"""
+    for i, s in enumerate(subs):
+        if idx in subs:
+            return i
+    return None
+
+def _get_detector_arrays(idxs:dict, det_spec:dict, rgx:re.Pattern, sort:bool)->None:
+    groups = list()
+    for key, val in det_spec.items():
+        mch = rgx.fullmatch(key)
+        if mch is None:
+            continue
+        i = _toint(mch.group(2))
+        name = mch.group(1)
+        groups.append((i,  set(val)))
+    if groups:
+        groups = sorted(groups)
+        idxs[name] = groups
+    if sort and not groups:
+        raise ValueError(f"No {name} groups specified in detectors_specs")
+
+
+def _get_det_combos(det_groups:dict, det_id:set, markers:set):
+    # generate single set with all ids in it
+    det_all = _unions(tuple(d for _, d in chain.from_iterable(det_groups.values())))
+    det_all |= det_id - markers # add any uncategorized markers
+    sets = dict() # final output
+    det_types = tuple(det_groups.keys())
+    for d in det_all:
+        idx = [None for _ in det_types]
+        for i, det_t in enumerate(det_types):
+            for j, s in det_groups[det_t]:
+                if d in s:
+                    idx[i] = j
+                    break
+        idx = tuple(idx)
+        if idx not in sets:
+            sets[idx] = list()
+        sets[idx].append(d)
+    # convert idx into names, and lists of idx into sets
+    out_groups = dict()
+    blank = tuple(None for _ in det_types)
+    for idx, det_set in sets.items():
+        if idx == blank:
+            for j in det_set:
+                out_groups[f'Unassigned id:{j}'] = np.array([j, ])
+        else:
+            name = ' '.join(f'{name} {i}' for name, i in zip(det_types, idx))
+            out_groups[name] = np.array(det_set)
+    out_groups = {(key if 'Unassigned' in key else f'{key} {list(val)}'):val 
+                  for key, val in out_groups.items()}
+    return out_groups
+
+
+def _get_detectors_specs(ph_data:dict, group_dets:bool, sort_spectral:bool, 
+                         sort_polarization:bool, sort_split:bool):
+    detectors = ph_data['detectors'][:]
+    det_id = set(np.unique(detectors))
+    
+    det_spec = ph_data['measurement_specs']['detectors_specs']
+    
+    markers = [val for key, val in det_spec.items() if _mk_rgx.fullmatch(key)]
+    if markers:
+        markers = list(chain(*markers))
+    markers = set(markers)
+    
+    det_groups = dict()
+    if group_dets:
+        _get_detector_arrays(det_groups, det_spec, _spec_rgx, sort_spectral)
+        _get_detector_arrays(det_groups, det_spec, _pol_rgx, sort_polarization)
+        _get_detector_arrays(det_groups, det_spec, _split_rgx, sort_split)
+        det_groups = _get_det_combos(det_groups, det_id, markers)
+    else:
+        det_groups = {f'Detector id:{i}':np.array([i,]) for i in 
+                      det_id if i not in markers}
+    return detectors, det_groups
+
+
+def _plot_histograms(ax:mpl.axes.Axes, values:np.ndarray, detectors:np.ndarray, 
+                     dgroups:dict, hist_style:dict)->None:
+    if len(dgroups) == 2 and all('spectral' in key for key in dgroups.keys()):
+        for label, dgroup in dgroups.items():
+            c = _green if 'spectral 1' in label else _red
+            label = "Donor" if 'spectral 1' in label else "Acceptor"
+            ax.hist(_mask_phot(values, detectors, dgroup), color=c, 
+                    label=label, **hist_style)
+    else:
+        for label, dgroup in dgroups.items():
+            ax.hist(_mask_phot(values, detectors, dgroup), label=label, **hist_style)
+
+
+def _plot_spans(ax:mpl.axes.Axes, meas_spec:dict, span_style:dict):
+    spans = sorted([(_toint(_al_rgx.fullmatch(name).group(2)), span) 
+                    for name, span in meas_spec.items() 
+                    if _al_rgx.fullmatch(name)])
+    
+    if len(spans) == 2:
+        for (i, span), color, label in zip(spans, (_green, _red), ('Donor Ex ', 'Acceptor Ex ')):
+            label = label + ' '.join(f'{b}-{e}' for b, e in zip(span[::2], span[1::2]))
+            ax.axvspan(span[0], span[1], color=color, label=label, **span_style)
+            for b, e in zip(span[2::2], span[3::2]):
+                ax.axvspan(b, e, color=color, **span_style)
+    else:
+        for j, (i, span) in enumerate(spans):
+            label = f'Excitation period {i} ' + ', '.join(f'{b}-{e}' for b, e in zip(span[::2], span[1::2]))
+            r = ax.axvspan(span[0], span[1], label=label, color=mpl.colormaps['Spectral_r']((j+1)/(len(spans)+1)), **span_style)
+            for b, e in zip(span[2::2], span[3::2]):
+                ax.axvspan(b, e, color=r.color, **span_style)
+
+
+def alternation_hist(d:dict, bins:np.ndarray=None, ich:int=0, 
+                     ax:mpl.axes.Axes=None, **kwargs)->None:
     """Plot the alternation histogram for the the data in dictionary `d`.
     """
     setup = d['setup']
 
-    ph_data = d.get('photon_data', d.get('photon_data%d' % ich))
-    measurement_type = ph_data['measurement_specs']['measurement_type']
-    if ((measurement_type == 'generic' and not setup['lifetime']) or
-            measurement_type == 'smFRET-usALEX'):
-        TYPE = 'CW'
-    elif ((measurement_type == 'generic' and setup['lifetime']) or
-            measurement_type == 'smFRET-nsALEX'):
+    if setup['lifetime']:
         TYPE = 'lifetime'
     else:
-        msg = ('Alternation histogram for measurement %s not supported.' %
-               measurement_type)
-        raise ValueError(msg)
-
-    plot_alex = {'CW': alternation_hist_usalex,
-                 'lifetime': alternation_hist_nsalex}
+        TYPE = 'CW'
+    plot_alex = {'CW': alternation_hist_cw,
+                 'lifetime': alternation_hist_pulsed}
     plot_alex[TYPE](d, bins=bins, ich=ich, ax=ax, **kwargs)
 
 
+
+def alternation_hist_cw(d:dict, bins:np.ndarray=None, ich:int=0, group_dets:bool=False,
+                        sort_spectral:bool=False, sort_polarization:bool=False,
+                        sort_split:bool=False, ax:mpl.axes.Axes=None, 
+                        hist_style:dict=None, span_style:dict=None)->None:
+    """
+    Plot the laser alternation histogram for the data dictionary d assuming
+    d uses continuous wave alternating laser excitation
+
+    Parameters
+    ----------
+    d : dict
+        Raw data dictionary of loaded photon information.
+    bins : np.ndarray, optional
+        Time bins for alternation period. The default is None.
+    ich : int, optional
+        Which photon_data spot to use (multispot only, ignored for single spot).
+        The default is 0.
+    use_spectral : bool, optional
+        If true, use definition from ``measurement_specs/detectors`` instead of 
+        plotting detectors independently. The default is False.
+    ax : mpl.axes.Axes, optional
+        Matplotlib axes in which to plot alternation histogram. If None, calls
+        plt.figure() and then plt.gca() to get new axes. The default is None.
+    hist_style : dict, optional
+        Keyword arguments passed to ax.hist for alternation histogram.
+        If None, generates defautlt dictionary. The default is None.
+    span_style : dict, optional
+        Keyword arguments passed to ax.axvspan for alternation period.
+        If None, generates defautlt dictionary. The default is None.
+
+    """
+    if ax is None:
+        plt.figure()
+        ax = plt.gca()
+    bins = 101 if bins is None else bins
+    hist_style_ = dict(bins=bins, alpha=0.5, histtype='stepfilled', lw=1.3)
+    hist_style_.update(dict() if hist_style is None else hist_style)
+    
+    span_style_ = dict(alpha=0.1)
+    span_style_.update(dict() if span_style is None else span_style)
+    
+    # extract fields from d dictionary, use [:] in case fields are tables arrays
+    ph_data = d.get('photon_data', d.get('photon_data%d' % ich))
+    detectors, det_groups = _get_detectors_specs(ph_data, group_dets, sort_spectral, 
+                                                 sort_polarization, sort_split)
+    ph_times_t = ph_data['timestamps'][:]
+    meas_specs = ph_data['measurement_specs']
+    # Calculate the periods
+    period = meas_specs['alex_period']
+    offset = meas_specs.get('alex_offset', 0)
+    ph_times_mod = (ph_times_t - offset) % period
+    # Plot the spans of the alex periodss
+    _plot_spans(ax, meas_specs, span_style_)
+    # Plot the histograms of detectors
+    _plot_histograms(ax, ph_times_mod, detectors, det_groups, hist_style_)
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
+    
+    
+def alternation_hist_pulsed(d:dict, ich:int=0, bins:np.ndarray=None, 
+                            group_dets:bool=False, sort_spectral:bool=False, 
+                            sort_polarization:bool=False, sort_split:bool=False, 
+                            ax:mpl.axes.Axes=None, hist_style:dict=None, 
+                            span_style:dict=None)->None:
+    if ax is None:
+        plt.figure()
+        ax = plt.gca()
+    hist_style_ = dict(histtype='step', lw=1.2, alpha=0.5)
+    hist_style_.update(dict() if hist_style is None else hist_style)
+    span_style_ = dict(alpha=0.3)
+    span_style_.update(dict() if span_style is None else span_style)
+    
+    multispot = 'photon_data' not in d 
+    ich = ich if multispot else 0
+    ph_data = d['photon_data%d'%ich] if multispot else d['photon_data']
+    
+    detectors, det_groups = _get_detectors_specs(ph_data, group_dets, 
+                                                 sort_spectral, 
+                                                 sort_polarization, 
+                                                 sort_split)
+    meas_spec = ph_data['measurement_specs']
+    nanotimes = ph_data['nanotimes'][:]
+    setup_det = d['setup'].get('detectors', dict())
+    if 'tcspc_offsets' in setup_det and np.any(setup_det['tcspc_offsets']!= 0):
+        idxs = setup_det['id']
+        spots = setup_det['spot'] if multispot else np.zeros(idxs.shape, dtype=idxs.dtype)
+        nanotimes = nanotimes.copy().astype(np.int16)
+        for idx, offset, sp in zip(idxs, setup_det['tcspc_offsets'], spots):
+            if sp != ich:
+                continue
+            nanotimes[detectors==idx] -= offset
+            
+    # if 'tcspc_offset' in d['setup'].get('detectors', dict()):
+    #     # code to extract offsets
+    hist_style_.update(bins=np.arange(0,nanotimes.max()+1,1) if bins is None else bins)
+    _plot_spans(ax, meas_spec, span_style_)
+    _plot_histograms(ax, nanotimes, detectors, det_groups, hist_style_)
+    
+    # Final plotting niceties
+    ax.set_xlabel('TCSPC nanotimes bins')
+    ax.set_yscale('log')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
+
+
 def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
-                            hist_style={}, span_style={}):
+                            hist_style=None, span_style=None):
     """Plot the us-ALEX alternation histogram for the data in dictionary `d`.
     """
     msg = ("At least one source needs to be alternated "
@@ -69,10 +342,10 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
     A_label += 'no selection' if A_ON is None else ('%d-%d' % tuple(A_ON))
 
     hist_style_ = dict(bins=bins, alpha=0.5, histtype='stepfilled', lw=1.3)
-    hist_style_.update(hist_style)
+    hist_style_.update(dict() if hist_style is None else hist_style)
 
     span_style_ = dict(alpha=0.1)
-    span_style_.update(span_style)
+    span_style_.update(dict() if span_style is None else span_style)
 
     ax.hist((ph_times_t[d_em_t] - offset) % period, color=_green, label=D_label,
             **hist_style_)

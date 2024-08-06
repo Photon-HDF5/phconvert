@@ -19,17 +19,20 @@ del python_version
 from collections import OrderedDict
 import json
 
+
 LATEST_FORMAT_VERSION = b'0.5rc1'
 
-_specs_file_fields = 'specs/photon-hdf5_specs.json'
+_specs_file = 'specs/photon-hdf5_specs.json'
 
 
 def _get_fields_descr():
-    s = files('phconvert').joinpath(_specs_file_fields).read_text(encoding='utf8')
-    # s = pkg_resources.resource_string('phconvert',
-    #                                   _specs_file_fields).decode('utf8')
-    descr = json.loads(s)
-    return descr
+    """
+    Build two related dictionaries, one with keys as simple descriptions
+    Second builds re.Match objects with keys.
+    """
+    s = files('phconvert').joinpath(_specs_file).read_text(encoding='utf8')
+    specs_dict = json.loads(s)
+    return specs_dict
 
 # Metadata for the HDF5 root node
 root_attributes = OrderedDict([
@@ -38,5 +41,9 @@ root_attributes = OrderedDict([
     ('format_url', b'http://photon-hdf5.org/'),
 ])
 
+        
+        
+
+
 official_fields_specs = _get_fields_descr()
-del OrderedDict
+

@@ -94,15 +94,15 @@ def test_read_ptu_recordtype(filename):
 def test_ptu_overflow_correction(filename):
     """Test PTU overflow correction for rtHydraHarpT3 records."""
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_ptu(filename, ovcfunc='base')
-    timestamps2, detectors2, nanotimes2, meta2 = phc.pqreader.load_ptu(
+    timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_ptu(filename, ovcfunc='base')
+    timestamps2, detectors2, nanotimes2, meta2, marker_ids2 = phc.pqreader.load_ptu(
         filename, ovcfunc='numba')
     assert (timestamps == timestamps2).all()
 
 def test_load_ptu(filename):
     """Test consistency of data loaded from PTU files."""
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_ptu(filename)
+    timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_ptu(filename)
     # Test metadata
     tags = meta['tags']
     acq_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3

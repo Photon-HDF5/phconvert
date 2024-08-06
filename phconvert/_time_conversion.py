@@ -20,7 +20,10 @@ def _fill_num(text:str, default:str, name:str, short:int=0) -> int:
         raise ValueError(f"Field {name} too long")
     elif len(text) != short:
         warnings.warn(f"Expected {name} field to be of width {short}")
-    return int((default[:len(default)-len(text)]+ text).lstrip('0'))
+    num = (default[:len(default)-len(text)]+ text).lstrip('0')
+    if num == '':
+        num = '0'
+    return int(num)
     
 def _normalize_time(text:str, year_first=None, year_width:int=4)->str:
     # see if string has both date and time

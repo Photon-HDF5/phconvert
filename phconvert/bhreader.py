@@ -75,11 +75,15 @@ In the following drawing each char represents 2 bits::
 
 """
 
-# TODO: automatic board model identification (in a new function?)
 
 import numpy as np
 
+class InvalidSetFile_Error(Exception):
+    """Error indicating set file has been corrupted or otherwise invalid"""
+    pass
 
+
+# TODO: automatic board model identification (in a new function?)
 def load_spc(fname, spc_model='SPC-630'):
     """Load data from Becker & Hickl SPC files.
 
@@ -180,8 +184,12 @@ def bh_set_identification(fname_set):
     and unicode strings on py3).
     """
     with open(fname_set, 'rb') as f:
-        line = f.readline()
-        assert line.strip().endswith(b'IDENTIFICATION')
+        # read until IDENTIFICATION string
+        line = line = f.readline()
+        while not line.strip().endswith(b'IDENTIFICATION'):
+            line = f.readline()
+        if not line.strip().endswith(b'IDENTIFICATION'):
+            raise InvalidSetFile_Error("set file does not contain essential 'IDENTIFICATION' string")
         identification = {}
         # .decode() returns a unicode string and str() a native string
         # on both py2 and py3
