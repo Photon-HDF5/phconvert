@@ -28,8 +28,8 @@ from . import bhreader
 from . import pqreader
 
 
-def loadfile_sm(filename:str, software:str='LabVIEW Data Acquisition usALEX', 
-                       warn:bool=False, print_warning:bool=True)->dict:
+def loadfile_sm(filename, software='LabVIEW Data Acquisition usALEX', 
+                       warn=False, print_warning=True):
     if not os.path.isfile(filename):
         raise FileNotFoundError(f'file: {filename} does not exist')
     timestamps, detectors, labels = smreader.load_sm(filename, 
@@ -80,7 +80,7 @@ def loadfile_sm(filename:str, software:str='LabVIEW Data Acquisition usALEX',
     return data
 
 
-def _load_spc_infer(filename:str, metadata:dict)->tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+def _load_spc_infer(filename, metadata):
     identity = metadata['identification']
     spc_model = ''
     # initial inference
@@ -101,7 +101,7 @@ def _load_spc_infer(filename:str, metadata:dict)->tuple[np.ndarray, np.ndarray, 
     return timestamps, detectors, nanotimes, timestamps_unit
 
 
-def loadfile_bh(filename:str, setfilename:str=None, spc_model:str='infer')->tuple[dict, dict]:
+def loadfile_bh(filename, setfilename=None, spc_model='infer'):
     software = 'Becker & Hickl SPCM'
     if not os.path.isfile(filename):
         raise FileNotFoundError(f'File: {filename} does not exist')
@@ -189,7 +189,7 @@ def loadfile_bh(filename:str, setfilename:str=None, spc_model:str='infer')->tupl
     return data, metadata
 
 
-def loadfile_ptu(filename:str)->tuple[dict, dict]:
+def loadfile_ptu(filename):
     load_pq = {'ptu': pqreader.load_ptu, 'ht3': pqreader.load_ht3,
                'pt3': pqreader.load_pt3}[filename[-3:]]
     

@@ -9,7 +9,6 @@ from itertools import chain
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from typing import Union
 
 has_numba = True
 try:
@@ -27,7 +26,7 @@ _mk_rgx = re.compile(r'markers([1-9]\d*)')
 _al_rgx = re.compile(r'(alex_excitation_period)([1-9]\d*)')
 
 
-def _mask_phot(times:np.ndarray, dets:np.ndarray, dgroup:Union[np.ndarray,set])->np.ndarray:
+def _mask_phot(times, dets, dgroup):
     """
     Return only times of photons with a detector in dgroup
 
@@ -63,7 +62,7 @@ def _toint(nstr:str)->int:
     return int(nstr) if nstr else '0'
 
 
-def _unions(args:list[set])->set:
+def _unions(args):
     """Union of a list of sets"""
     comp = args[0]
     for arg in args[1:]:
@@ -71,21 +70,21 @@ def _unions(args:list[set])->set:
     return comp
 
 
-def _intersects(args:list[set])->set:
+def _intersects(args):
     """Common elements across all sets in list of sets"""
     comp = args[0]
     for arg in args[1:]:
         comp &= arg
     return comp
 
-def _pos_in(idx:int, subs:Union[list[set],tuple[set]])->Union[int,None]:
+def _pos_in(idx, subs):
     """Find index in subs where idx is present in list of sets"""
     for i, s in enumerate(subs):
         if idx in subs:
             return i
     return None
 
-def _get_detector_arrays(idxs:dict, det_spec:dict, rgx:re.Pattern, sort:bool)->None:
+def _get_detector_arrays(idxs, det_spec, rgx, sort):
     groups = list()
     for key, val in det_spec.items():
         mch = rgx.fullmatch(key)
@@ -101,7 +100,7 @@ def _get_detector_arrays(idxs:dict, det_spec:dict, rgx:re.Pattern, sort:bool)->N
         raise ValueError(f"No {name} groups specified in detectors_specs")
 
 
-def _get_det_combos(det_groups:dict, det_id:set, markers:set):
+def _get_det_combos(det_groups, det_id, markers):
     # generate single set with all ids in it
     det_all = _unions(tuple(d for _, d in chain.from_iterable(det_groups.values())))
     det_all |= det_id - markers # add any uncategorized markers
@@ -133,8 +132,8 @@ def _get_det_combos(det_groups:dict, det_id:set, markers:set):
     return out_groups
 
 
-def _get_detectors_specs(ph_data:dict, group_dets:bool, sort_spectral:bool, 
-                         sort_polarization:bool, sort_split:bool):
+def _get_detectors_specs(ph_data, group_dets, sort_spectral, 
+                         sort_polarization, sort_split):
     detectors = ph_data['detectors'][:]
     det_id = set(np.unique(detectors))
     
@@ -157,8 +156,7 @@ def _get_detectors_specs(ph_data:dict, group_dets:bool, sort_spectral:bool,
     return detectors, det_groups
 
 
-def _plot_histograms(ax:mpl.axes.Axes, values:np.ndarray, detectors:np.ndarray, 
-                     dgroups:dict, hist_style:dict)->None:
+def _plot_histograms(ax, values, detectors, dgroups, hist_style):
     if len(dgroups) == 2 and all('spectral' in key for key in dgroups.keys()):
         for label, dgroup in dgroups.items():
             c = _green if 'spectral 1' in label else _red
@@ -170,7 +168,7 @@ def _plot_histograms(ax:mpl.axes.Axes, values:np.ndarray, detectors:np.ndarray,
             ax.hist(_mask_phot(values, detectors, dgroup), label=label, **hist_style)
 
 
-def _plot_spans(ax:mpl.axes.Axes, meas_spec:dict, span_style:dict):
+def _plot_spans(ax, meas_spec, span_style):
     spans = sorted([(_toint(_al_rgx.fullmatch(name).group(2)), span) 
                     for name, span in meas_spec.items() 
                     if _al_rgx.fullmatch(name)])
@@ -189,8 +187,7 @@ def _plot_spans(ax:mpl.axes.Axes, meas_spec:dict, span_style:dict):
                 ax.axvspan(b, e, color=r.color, **span_style)
 
 
-def alternation_hist(d:dict, bins:np.ndarray=None, ich:int=0, 
-                     ax:mpl.axes.Axes=None, **kwargs)->None:
+def alternation_hist(d, bins=None, ich=0, ax=None, **kwargs):
     """Plot the alternation histogram for the the data in dictionary `d`.
     """
     setup = d['setup']
@@ -205,10 +202,10 @@ def alternation_hist(d:dict, bins:np.ndarray=None, ich:int=0,
 
 
 
-def alternation_hist_cw(d:dict, bins:np.ndarray=None, ich:int=0, group_dets:bool=False,
-                        sort_spectral:bool=False, sort_polarization:bool=False,
-                        sort_split:bool=False, ax:mpl.axes.Axes=None, 
-                        hist_style:dict=None, span_style:dict=None)->None:
+def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
+                        sort_spectral=False, sort_polarization=False,
+                        sort_split=False, ax=None, 
+                        hist_style=None, span_style=None):
     """
     Plot the laser alternation histogram for the data dictionary d assuming
     d uses continuous wave alternating laser excitation
@@ -263,11 +260,11 @@ def alternation_hist_cw(d:dict, bins:np.ndarray=None, ich:int=0, group_dets:bool
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
     
     
-def alternation_hist_pulsed(d:dict, ich:int=0, bins:np.ndarray=None, 
-                            group_dets:bool=False, sort_spectral:bool=False, 
-                            sort_polarization:bool=False, sort_split:bool=False, 
-                            ax:mpl.axes.Axes=None, hist_style:dict=None, 
-                            span_style:dict=None)->None:
+def alternation_hist_pulsed(d, ich=0, bins=None, 
+                            group_dets=False, sort_spectral=False, 
+                            sort_polarization=False, sort_split=False, 
+                            ax=None, hist_style=None, 
+                            span_style=None):
     if ax is None:
         plt.figure()
         ax = plt.gca()

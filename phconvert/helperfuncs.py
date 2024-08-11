@@ -16,7 +16,7 @@ _phdata_regex = re.compile(r'photon_data([1-9]\d*)?')
 _alex_regex = re.compile(r'alex_excitation_period([1-9]\d*)')
 
 
-def _get_num_channel(specs:dict, regex:re.Pattern, name:str)->int:
+def _get_num_channel(specs, regex, name):
     """
     Determine the number of channels in detectors_specs dictionary for a given
     detections type.
@@ -55,7 +55,7 @@ def _get_num_channel(specs:dict, regex:re.Pattern, name:str)->int:
     return n_ch
     
 
-def get_num_spectral(detectors_specs:dict)->int:
+def get_num_spectral(detectors_specs):
     """
     Determine number of spectral detection types in a detectors_specs dictionary.
     Used to fill out field of ``/setup/num_spectral_ch`` automatically
@@ -77,7 +77,7 @@ def get_num_spectral(detectors_specs:dict)->int:
     return n_spec
 
 
-def get_num_polarization(detectors_specs:dict)->int:
+def get_num_polarization(detectors_specs):
     """
     Determine number of spectral detection types in a detectors_specs dictionary.
     Used to fill out field of ``/setup/num_polarization_ch`` automatically
@@ -99,7 +99,7 @@ def get_num_polarization(detectors_specs:dict)->int:
     return n_pol
 
 
-def get_num_split(detectors_specs:dict)->int:
+def get_num_split(detectors_specs):
     """
     Determine number of spectral detection types in a detectors_specs dictionary.
     Used to fill out field of ``/setup/num_split_ch`` automatically
@@ -120,7 +120,7 @@ def get_num_split(detectors_specs:dict)->int:
     n_split = _get_num_channel(detectors_specs, _split_regex, 'split')
     return n_split
 
-def fill_alex_periods(data:dict, *args:np.ndarray)->None:
+def fill_alex_periods(data, *args):
     """
     Add excitation periods to ``/photon_data/measurement_specs/`` sub-dictionary
     of a dictionary to be converted into a photon-HDF5 file
@@ -140,7 +140,7 @@ def fill_alex_periods(data:dict, *args:np.ndarray)->None:
         for i, alternation in enumerate(args):
             val['measurement_specs'][f'alex_excitation_period{i+1}'] = alternation
 
-def _get_num_lasers(data:dict)->int:
+def _get_num_lasers(data):
     lasers = [_get_num_channel(val['measurement_specs'], _alex_regex, 
                                'alex_excitation_period') for key, val in 
               data.items() if _phdata_regex.fullmatch(key)]
@@ -150,7 +150,7 @@ def _get_num_lasers(data:dict)->int:
         return sum(lasers)
     
 
-def fill_setup(data:dict)->None:
+def fill_setup(data):
     """
     Fill setup dictioanry based on detectors_specs dictionary
 
@@ -187,7 +187,7 @@ def fill_setup(data:dict)->None:
             
 
 
-def fill_measurement_type(data:dict, measurement_type:str)->None:
+def fill_measurement_type(data, measurement_type):
     """
     Iterate over all photon_dataX groups and set the field
     ``/photon_dataX/measurement_spces/measurement_type`` to 
@@ -209,7 +209,7 @@ def fill_measurement_type(data:dict, measurement_type:str)->None:
 
         
 
-def report_nones(data:dict, root:str='')->None:
+def report_nones(data, root=''):
     """
     Identify the fields that must be either removed or specified from a
     dictionary returned by the ``loader.loadfile_`` function
@@ -230,7 +230,7 @@ def report_nones(data:dict, root:str='')->None:
             print(f'{root}/{key}')
 
 
-def pop_nones(data:dict)->None:
+def pop_nones(data):
     """
     Remove keys with None values in a dictionary from ``loader.loadfile_``
     function. Function should be called only after all other applicable None
