@@ -26,6 +26,7 @@ For more info see:
 import os
 import time
 import re
+from typing import Union
 from textwrap import dedent
 import tables
 import warnings
@@ -209,7 +210,7 @@ class _SpecDict:
                     loc[field] = _SpecDictGroup('', 'group')
             loc[field_regexs[-1]] = _SpecDictGroup(*vals)
     
-    def _get_subindex(self, fieldstr:str)->(str, dict[re.Match, _SpecDictGroup]|str, re.Match, str, str):
+    def _get_subindex(self, fieldstr:str)->(str, Union[dict[re.Match, _SpecDictGroup],str], re.Match, str, str):
         """
         Parameters
         ----------
@@ -821,11 +822,11 @@ def save_photon_hdf5(data_dict:dict,
             h5file.close()
 
 
-def _is_mutispot(h5root_or_dict:dict|tables.Group):
+def _is_mutispot(h5root_or_dict:Union[dict,tables.Group])->bool:
     return 'photon_data' not in h5root_or_dict
 
 
-def _populate_identity(data_dict:dict, h5file:tables.File):
+def _populate_identity(data_dict:dict, h5file:tables.File)->None:
     """Populate identity metadata adding info from the newly created file.
     """
     identity = _get_identity(h5file)
@@ -1701,7 +1702,7 @@ def _check_photon_data_tables(ph_data:tables.Group, setup:tables.Group=None,
                       msg='smFRET-nsALEX requires lifetime = True.')
 
 
-def print_attrs(node:tables.Group|tables.Node, which:str='user')->None:
+def print_attrs(node:Union[tables.Group,tables.Node], which:str='user')->None:
     """Print the HDF5 attributes for `node_name`.
 
     Parameters:

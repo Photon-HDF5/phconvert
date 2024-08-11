@@ -9,6 +9,7 @@ from itertools import chain
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from typing import Union
 
 has_numba = True
 try:
@@ -26,7 +27,7 @@ _mk_rgx = re.compile(r'markers([1-9]\d*)')
 _al_rgx = re.compile(r'(alex_excitation_period)([1-9]\d*)')
 
 
-def _mask_phot(times:np.ndarray, dets:np.ndarray, dgroup:np.ndarray|set)->np.ndarray:
+def _mask_phot(times:np.ndarray, dets:np.ndarray, dgroup:Union[np.ndarray,set])->np.ndarray:
     """
     Return only times of photons with a detector in dgroup
 
@@ -77,7 +78,7 @@ def _intersects(args:list[set])->set:
         comp &= arg
     return comp
 
-def _pos_in(idx:int, subs:list[set]|tuple[set])->int|None:
+def _pos_in(idx:int, subs:Union[list[set],tuple[set]])->Union[int,None]:
     """Find index in subs where idx is present in list of sets"""
     for i, s in enumerate(subs):
         if idx in subs:
