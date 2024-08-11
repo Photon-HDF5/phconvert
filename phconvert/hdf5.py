@@ -1448,10 +1448,11 @@ def assert_valid_photon_hdf5(datafile:tables.File, warnings:bool=True, verbose:b
     _assert_identity(h5file, warnings=warnings, verbose=verbose)
 
     pool = list()
-    kwargs = dict(setup=h5file.root.setup, pool=pool, norepeat=True,
-                  skip_measurement_specs=skip_measurement_specs)
-    for ph_data in _sorted_photon_data_tables(h5file):
-        _check_photon_data_tables(ph_data, **kwargs)
+    if require_setup:
+        kwargs = dict(setup=h5file.root.setup, pool=pool, norepeat=True,
+                      skip_measurement_specs=skip_measurement_specs)
+        for ph_data in _sorted_photon_data_tables(h5file):
+            _check_photon_data_tables(ph_data, **kwargs)
 
 
 def _assert_setup(h5file:tables.File, warnings:bool=True, strict:bool=True, 
@@ -1554,7 +1555,7 @@ def _assert_identity(h5file:tables.File, warnings:bool=True, strict:bool=True,
 #                 raise ValueError('Wrong type in JSON specs.')
 
 
-def _check_photon_data_tables(ph_data:tables.Group, setup:tables.Group,
+def _check_photon_data_tables(ph_data:tables.Group, setup:tables.Group=None,
                               norepeat:bool=False, pool:bool=None,
                               skip_measurement_specs:bool=False,
                               verbose:bool=False)->None:
@@ -1588,9 +1589,11 @@ def _check_photon_data_tables(ph_data:tables.Group, setup:tables.Group,
     kwargs = dict(msg_add=msg, verbose=verbose)
 
     # Read number of channels in each branch
-    num_ch = dict(spectral=setup.num_spectral_ch.read(),
-                  split=setup.num_split_ch.read(),
-                  polarization=setup.num_polarization_ch.read())
+    num_ch = {'spectral':None, 'polarization':None, 'split':None}
+    if setup is not None:
+        num_ch = dict(spectral=setup.num_spectral_ch.read(),
+                      split=setup.num_split_ch.read(),
+                      polarization=setup.num_polarization_ch.read())
 
     # Check for spectral channels
     if meas_type in ('smFRET', 'smFRET-usALEX', 'smFRET-nsALEX'):
@@ -1639,7 +1642,7 @@ def _check_photon_data_tables(ph_data:tables.Group, setup:tables.Group,
     laser alternation and CW lasers. However, there is no alex_period
     field in measurement_specs. alex_period is mandatory in measurements
     using alternation and CW lasers."""
-    if all(setup.excitation_cw[:]):
+    if setup is not None and all(setup.excitation_cw[:]):
         if any(setup.excitation_alternated[:]):
             _assert_has_field('alex_period', meas_specs,
                               msg_add=dedent(msg_cw))
@@ -1654,10 +1657,12 @@ def _check_photon_data_tables(ph_data:tables.Group, setup:tables.Group,
                 _assert_valid(field not in meas_specs, msg0 + msg1 % field)
 
     if 'nanotimes' in ph_data and 'lifetime' in setup:
+        _assert_valid(setup is not None, 
+                      "Measuremnts containing nanotimes, require setup group")
         _assert_valid(setup.lifetime.read(),
                       'Lifetime is False but nanotimes are present.')
 
-    if 'lifetime' in setup and setup.lifetime.read():
+    if setup is not None and 'lifetime' in setup and setup.lifetime.read():
         msg = """\
         According to /setup/lifetime (=True) this file should be a
         TCSPC measurement. However /setup/excitation_cw says that all
@@ -1677,6 +1682,8 @@ def _check_photon_data_tables(ph_data:tables.Group, setup:tables.Group,
 
     # us-ALEX fields
     if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
+        _assert_valid(setup is not None, 
+                      f"setup gropu required for {meas_type} measurements")
         msg = 'All lasers need to be CW in %s measurements.'
         _assert_valid(all(setup.excitation_cw[:]), msg=msg % meas_type)
         msg = 'All lasers need to be alternated in %s measurements.'
@@ -1685,6 +1692,8 @@ def _check_photon_data_tables(ph_data:tables.Group, setup:tables.Group,
 
     # ns-ALEX / PIE fields
     if meas_type == 'smFRET-nsALEX':
+        _assert_valid(setup is not None, 
+                      f"setup gropu required for {meas_type} measurements")
         msg = 'All lasers need to be pulsed in smFRET-nsALEX measurements.'
         _assert_valid(all(~setup.excitation_cw[:]), msg=msg)
         _assert_has_field('lifetime', setup, **kwargs)

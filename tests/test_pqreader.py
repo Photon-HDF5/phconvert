@@ -128,7 +128,7 @@ def test_load_ht3():
     fn = 'Pre.ht3'
     filename = DATADIR + fn
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_ht3(filename)
+    timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_ht3(filename)
     acq_duration = meta['header']['Tacq'] * 1e-3
     acq_duration2 = (timestamps[-1] - timestamps[0]) * meta['timestamps_unit']
     assert abs(acq_duration - acq_duration2) < 0.1
@@ -140,7 +140,7 @@ def test_load_pt3():
     fn = 'topfluorPE_2_1_1_1.pt3'
     filename = DATADIR + fn
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_pt3(filename)
+    timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_pt3(filename)
     acq_duration = meta['header']['AcquisitionTime'] * 1e-3
     acq_duration2 = (timestamps[-1] - timestamps[0]) * meta['timestamps_unit']
     # The two acquisition times should match. TODO: find out why they don't
