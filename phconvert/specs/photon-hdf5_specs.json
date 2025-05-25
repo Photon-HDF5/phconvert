@@ -95,8 +95,8 @@
         "Pixel IDs for the {NTH} channel split through a non-polarizing beam splitter.",
         "array"
     ],
-    "photon_data?N/measurement_specs/detectors_specs/markers!M": [
-            "Detector ids of markers as they apppear in /photon_data/detectors",
+    "photon_data?N/measurement_specs/detectors_specs/non_photon_id!M": [
+            "Detector ids of non photon events as they apppear in /photon_data/detectors",
             "array"
     ],
     "/setup": [

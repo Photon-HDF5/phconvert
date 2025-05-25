@@ -12,6 +12,7 @@ import numpy as np
 _spec_regex = re.compile(r'spectral_ch([1-9]\d*)')
 _pol_regex = re.compile(r'polarization_ch([1-9]\d*)')
 _split_regex = re.compile(r'split_ch([1-9]\d*)')
+_non_phot_regex = re.compile(r'non_photon_id([1-9]\d*)')
 _phdata_regex = re.compile(r'photon_data([1-9]\d*)?')
 _alex_regex = re.compile(r'alex_excitation_period([1-9]\d*)')
 
@@ -95,7 +96,7 @@ def get_num_polarization(detectors_specs):
         assuming no further changes to the input.
 
     """
-    n_pol = _get_num_channel(detectors_specs, _split_regex, 'split')
+    n_pol = _get_num_channel(detectors_specs, _pol_regex, 'polarization')
     return n_pol
 
 

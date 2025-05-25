@@ -1392,7 +1392,9 @@ def _assert_valid_detectors(h5file):
             _assert_valid(v in det_ids_spot, msg=msg % (v, i))
             if 'counts' in detectors:
                 csaved = det_counts[spot == i][det_ids_spot == v]
-                _assert_valid(c == csaved, msg=msgc % (csaved, c, v, i))
+                if csaved.size > 1:
+                    raise Invalid_PhotonHDF5(f'Replicate detector ids f{v} in  spot{i}')
+                _assert_valid(c == csaved, msg=msgc % (csaved[0], c, v, i))
 
 
 def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,

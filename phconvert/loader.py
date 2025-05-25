@@ -30,6 +30,36 @@ from . import pqreader
 
 def loadfile_sm(filename, software='LabVIEW Data Acquisition usALEX', 
                        warn=False, print_warning=True):
+    """
+    Load .sm file filling in all fields that can be filled from metadata in 
+    LabVIEW acquired usALEX data file. 
+
+    Parameters
+    ----------
+    filename : str
+        Name of file to be converted.
+    software : str, optional
+        Description of software that was used to acuire the data. 
+        The default is 'LabVIEW Data Acquisition usALEX'.
+    warn : bool, optional
+        Whether or not to warn if there are potential problems in the data. 
+        The default is False.
+    print_warning : TYPE, optional
+        DESCRIPTION. The default is True.
+
+    Raises
+    ------
+    FileNotFoundError
+        Given filename does not exist on the system.
+
+    Returns
+    -------
+    data : dict
+        Dictionary of data, with unknown but necessary values provided as keys
+        with value of None. Once None values are replaced with appropriate values
+        data can be passed to :func:`hdf5.save_photon_hdf5`.
+
+    """
     if not os.path.isfile(filename):
         raise FileNotFoundError(f'file: {filename} does not exist')
     timestamps, detectors, labels = smreader.load_sm(filename, 
@@ -102,6 +132,39 @@ def _load_spc_infer(filename, metadata):
 
 
 def loadfile_bh(filename, setfilename=None, spc_model='infer'):
+    """
+    Load .spc (Beckr & Hickl) file as dictionary for saving with :func:`hdf5.save_photon_hdf5`.
+    Any field that cannot be infered from data or metadata necessary for saving
+    is given as a key with value of None. All None valued fields must be replaced
+    with appropriate value before saving.
+
+    Parameters
+    ----------
+    filename : str
+        Name of file, must end in .spc/.SPC.
+    setfilename : str, optional
+        Name of cooresponding .set file, if not specified, infer name of set
+        filename from filename. The default is None.
+    spc_model : str, optional
+        SPC model version (SPC-600 SPC-630, SPC-134, SPC-144 SPC-154 SPC-830). 
+        If 'infer', then use .set file parameters to infer model type 
+        (inferene is not guarunteed to be correct)
+        The default is 'infer'.
+
+    Raises
+    ------
+    FileNotFoundError
+        One or both file and/or setfile names provided do not exist on system.
+
+    Returns
+    -------
+    data : dict
+        Dictionary of fields relevant to photon-HDF5.
+    metadata : dict
+        Metadata from set file with information not pertinent to photon-HDF5,
+        data should be saved in /user/becker_hickl group.
+
+    """
     software = 'Becker & Hickl SPCM'
     if not os.path.isfile(filename):
         raise FileNotFoundError(f'File: {filename} does not exist')
@@ -133,10 +196,10 @@ def loadfile_bh(filename, setfilename=None, spc_model='infer'):
     if 'sys_params' in metadata:
         print('TCSPC parameters retrived from the .SET file.')
         sys_params = metadata['sys_params']
-        tcspc_num_bins = int(sys_params['SP_ADC_RE'])
+        tcspc_num_bins = None
         tcspc_unit = float(sys_params['SP_TAC_TC'])/float(sys_params['SP_TAC_G'])
         #tcspc_range = sys_params['SP_TAC_R']  # redundant info, not corrected for gain
-        tcspc_range = tcspc_num_bins * tcspc_unit
+        tcspc_range = None
     else:
         tcspc_num_bins = None
         tcspc_unit = None
@@ -246,7 +309,7 @@ def loadfile_ptu(filename):
         tcspc_num_bins = 4096
         tcspc_range = tcspc_num_bins * tcspc_unit
         photon_data['nanotimes'] = dtime
-        photon_data['measurement_specs']['laser_repetition_rate'] = laser_repetition_rate,
+        photon_data['measurement_specs']['laser_repetition_rate'] = (laser_repetition_rate,)
         photon_data['nanotimes_specs'] = dict(
             tcspc_unit=tcspc_unit,
             tcspc_num_bins = tcspc_num_bins,
@@ -255,7 +318,7 @@ def loadfile_ptu(filename):
         setup['laser_repetition_rates'] = np.array([laser_repetition_rate, ])
     
     if marker_ids.size != 0:
-        photon_data['measurement_specs']['detectors_specs']['markersN'] = marker_ids
+        photon_data['measurement_specs']['detectors_specs']['non_photon_id1'] = marker_ids
 
     data = dict(
         _filename = filename,
@@ -487,7 +550,8 @@ def nsalex_pq(filename,
             detectors_specs=dict(spectral_ch1=np.atleast_1d(donor),
                                  spectral_ch2=np.atleast_1d(acceptor))),
     )
-
+    
+    
     setup = dict(
         num_pixels=2,
         num_spots=1,
@@ -507,6 +571,12 @@ def nsalex_pq(filename,
         photon_data=photon_data,
         setup=setup,
         provenance=provenance)
+    
+    if marker_ids.size != 0:
+        photon_data['measurement_specs']['detectors_specs']['non_photon_id1'] = marker_ids
+        data['user'] = dict(
+            experimental_settings=dict()
+            )
 
     return data, metadata
 

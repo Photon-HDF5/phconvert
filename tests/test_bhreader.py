@@ -40,3 +40,5 @@ def test_import_SPC_150_nanotime():
     assert np.equal(data[0], check[0]).all()
     assert round(data[3]*1e9, 1) == 9.5
 
+# def test_import_SPC_600_nanotime():
+#     input_file = cd .

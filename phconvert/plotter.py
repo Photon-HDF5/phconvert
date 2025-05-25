@@ -5,7 +5,7 @@
 #
 
 import re
-from itertools import chain
+from itertools import chain, repeat
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -22,7 +22,7 @@ _ch_rgx = re.compile(r'(spectral|polarization|split)_ch(1-9]\d*)')
 _spec_rgx = re.compile(r'(spectral)_ch([1-9]\d*)')
 _pol_rgx = re.compile(r'(polarization)_ch([1-9]\d*)')
 _split_rgx = re.compile(r'(split)_ch([1-9]\d*)')
-_mk_rgx = re.compile(r'markers([1-9]\d*)')
+_nph_rgx = re.compile(r'non_photon_id([1-9]\d*)')
 _al_rgx = re.compile(r'(alex_excitation_period)([1-9]\d*)')
 
 
@@ -56,7 +56,7 @@ if has_numba:
     _mask_phot = numba.jit(_mask_phot)
 
 
-def _toint(nstr:str)->int:
+def _toint(nstr):
     """Convert a string with variable leading zeros into an int"""
     nstr = nstr.lstrip('0')
     return int(nstr) if nstr else '0'
@@ -85,6 +85,28 @@ def _pos_in(idx, subs):
     return None
 
 def _get_detector_arrays(idxs, det_spec, rgx, sort):
+    """
+    Fill out idxs (dictionary) of detectors based on detectors_specs dictionary
+    for channel defined by re.Match rgx, raises error if sort is True
+
+    Parameters
+    ----------
+    idxs : dict
+        Dictionary to fill out detector channels.
+    det_spec : dict
+        Dictionary of /photon_dataX/measurement_specs/detectors_specs group.
+    rgx : re.Pattern
+        re.Pattern for given channel, group 1 should be name, group 2 should
+        be the number of the channel.
+    sort : bool
+        Whether or not to raise an error if no channels defined.
+
+    Raises
+    ------
+    ValueError
+        det_spec is missing channels required by rgx.
+
+    """
     groups = list()
     for key, val in det_spec.items():
         mch = rgx.fullmatch(key)
@@ -101,6 +123,25 @@ def _get_detector_arrays(idxs, det_spec, rgx, sort):
 
 
 def _get_det_combos(det_groups, det_id, markers):
+    """
+    Find all possible combinations of each channel type, and the cooresponding
+    detectors.
+
+    Parameters
+    ----------
+    det_groups : dict
+        /photon_dataX/measurement_specs/detectors_specs group.
+    det_id : set
+        set of detector markers, from np.unique(detectros).
+    markers : set
+        set of all detector ids that are markers.
+
+    Returns
+    -------
+    out_groups : dict
+        dict of {channel_name:set[detector ids]}.
+
+    """
     # generate single set with all ids in it
     det_all = _unions(tuple(d for _, d in chain.from_iterable(det_groups.values())))
     det_all |= det_id - markers # add any uncategorized markers
@@ -139,7 +180,7 @@ def _get_detectors_specs(ph_data, group_dets, sort_spectral,
     
     det_spec = ph_data['measurement_specs']['detectors_specs']
     
-    markers = [val for key, val in det_spec.items() if _mk_rgx.fullmatch(key)]
+    markers = [val for key, val in det_spec.items() if _nph_rgx.fullmatch(key)]
     if markers:
         markers = list(chain(*markers))
     markers = set(markers)
@@ -286,7 +327,7 @@ def alternation_hist_pulsed(d, ich=0, bins=None,
     setup_det = d['setup'].get('detectors', dict())
     if 'tcspc_offsets' in setup_det and np.any(setup_det['tcspc_offsets']!= 0):
         idxs = setup_det['id']
-        spots = setup_det['spot'] if multispot else np.zeros(idxs.shape, dtype=idxs.dtype)
+        spots = setup_det['spot'] if multispot else repeat(0)
         nanotimes = nanotimes.copy().astype(np.int16)
         for idx, offset, sp in zip(idxs, setup_det['tcspc_offsets'], spots):
             if sp != ich:
