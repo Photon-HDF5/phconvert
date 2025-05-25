@@ -75,8 +75,8 @@ _ptu_rec_type = dict(
     rtTimeHarp260NT2 = 0x00010205,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
     rtTimeHarp260PT3 = 0x00010306,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
     rtTimeHarp260PT2 = 0x00010206,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
-    rtMultiHarpNT3   = 0x00010307,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T3), HW: $07 (MultiHarp150N)
-    rtMultiHarpNT2   = 0x00010207,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $07 (MultiHarp150N))
+    rtGenericT3      = 0x00010307,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T3), HW: $07 (MultiHarpXXX and PicoHarp330)
+    rtGenericT2      = 0x00010207,  # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $07 (MultiHarpXXX and PicoHarp330)
     )
 
 # Reverse mappings
@@ -118,11 +118,11 @@ def load_ptu(filename, ovcfunc=None):
             t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
             ovcfunc=ovcfunc)
     elif record_type in ('rtHydraHarp2T3', 'rtTimeHarp260NT3',
-                         'rtTimeHarp260PT3'):
+                         'rtTimeHarp260PT3', 'rtGenericT3'):
         detectors, timestamps, nanotimes = process_t3records(
             t3records, time_bit=10, dtime_bit=15, ch_bit=6, special_bit=True,
             ovcfunc=_correct_overflow_nsync)
-    elif record_type in ('rtHydraHarp2T2', 'rtTimeHarp260NT2','rtTimeHarp260PT2', 'rtMultiHarpNT3'):
+    elif record_type in ('rtHydraHarp2T2', 'rtTimeHarp260NT2','rtTimeHarp260PT2'):
         detectors, timestamps = process_t2records(t3records,
                 time_bit=25, ch_bit=6, special_bit=True,
                 ovcfunc=_correct_overflow_nsync)
