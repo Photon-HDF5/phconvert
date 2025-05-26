@@ -6,6 +6,7 @@
 
 import re
 from itertools import chain, repeat
+from typing import Union
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -228,7 +229,7 @@ def _plot_spans(ax, meas_spec, span_style):
                 ax.axvspan(b, e, color=r.color, **span_style)
 
 
-def alternation_hist(d:dict, bins:int|np.ndarray=None, ich:int=0, ax:plt.Axes=None, **kwargs):
+def alternation_hist(d:dict, bins:Union[int,np.ndarray]=None, ich:int=0, ax:plt.Axes=None, **kwargs):
     """
     Plot the alternation histogram or TCSPC decay of the data dictionary, given
     the currently present settings containted within, loaded by
@@ -324,7 +325,7 @@ def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
     
     
-def alternation_hist_pulsed(d:dict, ich:int=0, bins:int|np.ndarray=None, 
+def alternation_hist_pulsed(d:dict, ich:int=0, bins:Union[int,np.ndarray]=None, 
                             group_dets:bool=False, sort_spectral:bool=False, 
                             sort_polarization:bool=False, sort_split:bool=False, 
                             ax:plt.Axes=None, hist_style:dict=None, 

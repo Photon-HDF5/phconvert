@@ -31,6 +31,7 @@ import tables
 import warnings
 import numpy as np
 from collections import OrderedDict
+from typing import Union
 
 from .metadata import (official_fields_specs, root_attributes,
                        LATEST_FORMAT_VERSION)
@@ -1425,7 +1426,7 @@ def _assert_valid_detectors(h5file):
                 _assert_valid(c == csaved, msg=msgc % (csaved[0], c, v, i))
 
 
-def assert_valid_photon_hdf5(datafile:str|tables.File, warnings:bool=True, verbose:bool=False,
+def assert_valid_photon_hdf5(datafile:Union[str, tables.File], warnings:bool=True, verbose:bool=False,
                              strict_description=True, require_setup=True,
                              skip_measurement_specs=False):
     """
