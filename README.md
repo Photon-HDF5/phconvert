@@ -1,4 +1,3 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/l6ncuo9hwqiul36y/branch/master?svg=true)](https://ci.appveyor.com/project/tritemio/phconvert/branch/master)
 [![Tests](https://github.com/Photon-HDF5/phconvert/actions/workflows/tests.yml/badge.svg)](https://github.com/Photon-HDF5/phconvert/actions)
 
 # phconvert
