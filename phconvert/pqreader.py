@@ -144,6 +144,7 @@ def load_ptu(filename, return_marker=False, ovcfunc='auto', check_valid=False):
         'marker_dtime', the nanotime of the marker
 
     """
+
     records, spec, tags = ptu_reader(filename)
     # Get the metadata
     acquisition_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3
