@@ -125,7 +125,7 @@ def load_sm(fname, return_labels=False):
     data = np.frombuffer(rawdata[:valid_size], dtype=sm_dtype)
 
     # Swap byte order inplace to little endian
-    data = data.byteswap(True).newbyteorder()
+    data = data.byteswap(True).view(sm_dtype.newbyteorder())
 
     if return_labels:
         return data['timestamp'], data['detector'], labels

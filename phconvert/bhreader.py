@@ -85,17 +85,30 @@ class InvalidSetFile_Error(Exception):
 
 # TODO: automatic board model identification (in a new function?)
 def load_spc(fname, spc_model='SPC-630'):
-    """Load data from Becker & Hickl SPC files.
-
-    Arguments:
-        spc_model (string): name of the board model. Valid values are
-            'SPC-630', 'SPC-134', 'SPC-144', 'SPC-154' and 'SPC-830'.
-
-    Returns:
-        3 numpy arrays (timestamps, detector, nanotime) and a float
-        (timestamps_unit).
     """
+    Read a .spc file (Becker & Hickl) into memory.
 
+    Parameters
+    ----------
+    fname : str
+        Name of spc file.
+    spc_model : str, optional
+        SPC model that recorded the file
+        Valid options are: 'SPC-630', 'SPC-134', 'SPC-144', 'SPC-154' and 'SPC-830'.
+        The default is 'SPC-630'.
+
+    Returns
+    -------
+    timestamps : np.ndarray
+        Timestamps of .
+    detector : np.ndarray
+        DESCRIPTION.
+    nanotime : np.ndarray
+        DESCRIPTION.
+    timestamps_unit : np.ndarray
+        DESCRIPTION.
+
+    """
     with open(fname, 'rb') as f:
 
         if ('630' in spc_model) or ('600' in spc_model):

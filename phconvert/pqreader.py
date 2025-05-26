@@ -25,7 +25,9 @@ Other lower level functions are:
 - :func:`pt3_reader` to load metadata and raw t3 records from PT3 files
 - :func:`process_pturecords` to decode t2 and t3 records based on spec.
 - :func:`process_t3records_t3rfile` to decode the t3 records for t3r files.
+
 Deprecated functions:
+
 - :func:`process_t3records` to decode the t3 records and return
   timestamps (after overflow correction), detectors and TCSPC nanotimes.
 - :func:`process_t2records` to decode the t2 records and return
@@ -115,7 +117,8 @@ def _record_dict_invert(dct):
 _ptu_rec_map = _record_dict_invert(_ptu_rec_type)
 
 def load_ptu(filename, return_marker=False, ovcfunc='auto'):
-    """Load data from a PicoQuant .ptu file.
+    """
+    Load data from a PicoQuant .ptu file.
 
     Arguments:
         filename (string): the path of the PTU file to be loaded.
@@ -125,7 +128,7 @@ def load_ptu(filename, return_marker=False, ovcfunc='auto'):
             which type of overflow function to use. 'auto' will use the fastest 
             available function 'base' will use the numpy parrallelized version, 
             'numba' will used the numba accelerated version (requires numba to 
-             be installed), 'loop' will use the non-numba accelerated of loop 
+            be installed), 'loop' will use the non-numba accelerated of loop 
             based function, 'none' will not applay any sort of correction, 
             thus allowing inspectection and direct manipulation of marker/
             overflow photons after the fact.
@@ -803,7 +806,7 @@ def _ptu_read_tag(s, offset):
         # WCHAR size is not fixed by C++ standard, but on windows
         # is 2 bytes and the default encoding is UTF-16.
         # I'm assuming this is what the PTU requires.
-        tag['data'] = s[offset: offset + tag['value'] * 2].decode('utf16')
+        tag['data'] = s[offset: offset + tag['value'] * 2].decode('utf-16le', errors='ignore').strip("\0")
         offset += tag['value']
     elif tag['type'] == 'tyBinaryBlob':
         tag['data'] = s[offset: offset + tag['value']]

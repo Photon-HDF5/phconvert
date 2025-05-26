@@ -157,10 +157,8 @@ def fill_setup(data):
 
     Parameters
     ----------
-    setup : dict
-        Dicionary for the ``/setup/`` group.
-    detectors_specs : dict
-        Dictionary for the ``/photon_data/measurement_specs/detectors_specs``.
+    data : dict
+        The data dictionary, will infer setup field from detectors_specs fields
 
     """
     setup = data['setup']

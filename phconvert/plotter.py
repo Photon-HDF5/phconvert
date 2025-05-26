@@ -228,8 +228,31 @@ def _plot_spans(ax, meas_spec, span_style):
                 ax.axvspan(b, e, color=r.color, **span_style)
 
 
-def alternation_hist(d, bins=None, ich=0, ax=None, **kwargs):
-    """Plot the alternation histogram for the the data in dictionary `d`.
+def alternation_hist(d:dict, bins:int|np.ndarray=None, ich:int=0, ax:plt.Axes=None, **kwargs):
+    """
+    Plot the alternation histogram or TCSPC decay of the data dictionary, given
+    the currently present settings containted within, loaded by
+    :func:`loader.loadfile_bh`, :func:`loader.loadfile_pq` or
+    :func:`loader.loadfile_sm`.
+
+    Parameters
+    ----------
+    d : dict
+        Dictionary loaded from loader function and with user inputed parameters
+        for which to plot the alternation histogram.
+    bins : int|np.ndarray, optional
+        Input to matplotlib.axes.Axes.hist, either the number of bins to use
+        or the bin edges to plot in the alternation histogram. The default is None.
+    ich : int, optional
+        Which photon_dataX group to plot, if only one, default of 0 will plot
+        photon_data group. The default is 0.
+    ax : matplolib.axes.Axes, optional
+        Matplotlib Axes in which to plot the alternation histogram. The default is None.
+    **kwargs : 
+        kwargs passed to either :func:`plotter.alternation_hist_cw` or
+        :func:`plotter.alternation_hist_pulsed` depending on if data contains
+        nanotimes.
+
     """
     setup = d['setup']
 
@@ -255,7 +278,7 @@ def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
     ----------
     d : dict
         Raw data dictionary of loaded photon information.
-    bins : np.ndarray, optional
+    bins : numpy.ndarray, optional
         Time bins for alternation period. The default is None.
     ich : int, optional
         Which photon_data spot to use (multispot only, ignored for single spot).
@@ -301,11 +324,39 @@ def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
     
     
-def alternation_hist_pulsed(d, ich=0, bins=None, 
-                            group_dets=False, sort_spectral=False, 
-                            sort_polarization=False, sort_split=False, 
-                            ax=None, hist_style=None, 
-                            span_style=None):
+def alternation_hist_pulsed(d:dict, ich:int=0, bins:int|np.ndarray=None, 
+                            group_dets:bool=False, sort_spectral:bool=False, 
+                            sort_polarization:bool=False, sort_split:bool=False, 
+                            ax:plt.Axes=None, hist_style:dict=None, 
+                            span_style:dict=None):
+    """
+    Plot TCSPC decays for data in d. Must contain nanotimes
+
+    Parameters
+    ----------
+    d : dict
+        Data dictionary from `loader_`` type function, with additional fields specified.
+    ich : int, optional
+        which photon_dataX group to plot, if only one in d, then default to photon_data.
+        The default is 0.
+    bins : int|numpy.ndarray, optional
+        Bins of TCSPC bins. The default is None.
+    group_dets : bool, optional
+        Whether or not to group dets of same type together in histogram. The default is False.
+    sort_spectral : bool, optional
+        DESCRIPTION. The default is False.
+    sort_polarization : bool, optional
+        Check that polarization exists in d. The default is False.
+    sort_split : bool, optional
+        Check that split exists in d. The default is False.
+    ax : matplotlib.axes.Axex, optional
+        Matplotlib Axes in which to plot histogram. The default is None.
+    hist_style : dict, optional
+        keyword arguments to pass to matplotlib.axes.Axes.hist. The default is None.
+    span_style : dict, optional
+        dict of keyword arguments to be passed to matplotlib.aesx.Axes.axvspan. The default is None.
+
+    """
     if ax is None:
         plt.figure()
         ax = plt.gca()
@@ -346,9 +397,13 @@ def alternation_hist_pulsed(d, ich=0, bins=None,
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
 
 
-def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
-                            hist_style=None, span_style=None):
+def alternation_hist_usalex(d:dict, bins=None, ich:int=0, ax:plt.Axes=None,
+                            hist_style:dict=None, span_style:dict=None):
     """Plot the us-ALEX alternation histogram for the data in dictionary `d`.
+    
+    .. note::
+        
+        This is an older function will be deprecated, replace with alternation_hist
     """
     msg = ("At least one source needs to be alternated "
            "(i.e. intensity-modulated)")
@@ -409,7 +464,14 @@ def alternation_hist_usalex(d, bins=None, ich=0, ax=None,
 
 
 def alternation_hist_nsalex(d, bins=None, ich=0, ax=None):
-    """Plot the ns-ALEX alternation histogram for the data in dictionary `d`.
+    """
+    Plot the ns-ALEX alternation histogram for the data in dictionary `d`.
+    
+    .. note::
+        
+        This is an older function, will be deprecated, replace with alternation_hist.
+    
+    
     """
     msg = 'At least one source needs to be pulsed.'
     assert not all(d['setup']['excitation_cw']), msg

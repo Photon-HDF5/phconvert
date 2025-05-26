@@ -21,7 +21,6 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd:
     # Mocking of the dependencies
     sys.path.insert(0,'.')
-    from readthedocs import *
     sys.path.pop(0)
 
 print("python exec: " + sys.executable)
@@ -38,7 +37,7 @@ except ImportError:
 sys.path.insert(0, os.path.abspath('..'))
 from importlib.metadata import version as get_version
 release = get_version('phconvert')
-version = '.'.join(version.split('.')[:2])
+version = '.'.join(release.split('.')[:2])
 
 
 # -- General configuration ------------------------------------------------
@@ -89,7 +88,7 @@ author = 'Antonino Ingargiola'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -166,7 +165,7 @@ if not on_rtd:
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

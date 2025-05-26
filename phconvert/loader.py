@@ -136,7 +136,12 @@ def loadfile_bh(filename, setfilename=None, spc_model='infer'):
     Load .spc (Beckr & Hickl) file as dictionary for saving with :func:`hdf5.save_photon_hdf5`.
     Any field that cannot be infered from data or metadata necessary for saving
     is given as a key with value of None. All None valued fields must be replaced
-    with appropriate value before saving.
+    with appropriate value before saving. For detectors fields that cannot be
+    infered, all detectors are assigned to 
+    `photon_data(X)/measurement_specs/detectors_specs/spectral_polarization_split_chN`,
+    this element should be removed from the dictioanry, and each index within
+    assigned to the appropriate `spectral_chX`, `polarization_chX` or `split_chX`
+    array.
 
     Parameters
     ----------
@@ -252,7 +257,39 @@ def loadfile_bh(filename, setfilename=None, spc_model='infer'):
     return data, metadata
 
 
-def loadfile_ptu(filename):
+def loadfile_ptu(filename:str):
+    """
+    Load a .ptu (picoquant) file as dictionary for saving with :func:`hdf5.save_photon_hdf5`.
+    Any field that cannot be infered from data or metadata necessary for saving
+    is given as a key with value of None. All None valued fields must be replaced
+    with appropriate value before saving. For detectors fields that cannot be
+    infered, all detectors are assigned to 
+    `photon_data(X)/measurement_specs/detectors_specs/spectral_polarization_split_chN`,
+    this element should be removed from the dictioanry, and each index within
+    assigned to the appropriate `spectral_chX`, `polarization_chX` or `split_chX`
+    array.
+
+    Parameters
+    ----------
+    filename : str
+        Name of ptu file to load.
+        
+    Raises
+    ------
+    FileNotFoundError
+        Given filename does not exist on the system.
+
+    Returns
+    -------
+    data : dict
+        Dictionary with identical structure to photon-HDF5 format, with all
+        fields that can be infered from the metadata completed. Required fields
+        that cannot be infered are incldued with their values set to None.
+    
+    metadata : dict
+        Metadata read from picoquant header.
+
+    """
     load_pq = {'ptu': pqreader.load_ptu, 'ht3': pqreader.load_ht3,
                'pt3': pqreader.load_pt3}[filename[-3:]]
     
