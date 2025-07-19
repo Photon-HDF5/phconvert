@@ -75,7 +75,6 @@ _ptu_tag_type = dict(
     )
 
 # Record Types
-# Record Types
 _ptu_rec_type = dict(
     # (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $03 (PicoHarp)
     rtPicoHarp300T3     = dict(record_id=0x00010303, fmt='PT', T=3, channel_bit=4, time_bit=16, dtime_bit=12, WRAPAROUND=np.uint64(65536)),
@@ -806,7 +805,7 @@ def _ptu_read_tag(s, offset):
         # WCHAR size is not fixed by C++ standard, but on windows
         # is 2 bytes and the default encoding is UTF-16.
         # I'm assuming this is what the PTU requires.
-        tag['data'] = s[offset: offset + tag['value'] * 2].decode('utf-16le', errors='ignore').strip("\0")
+        tag['data'] = s[offset: offset + tag['value']].decode("utf-16le", errors="ignore").strip("\0")
         offset += tag['value']
     elif tag['type'] == 'tyBinaryBlob':
         tag['data'] = s[offset: offset + tag['value']]
