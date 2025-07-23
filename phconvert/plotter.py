@@ -174,14 +174,14 @@ def _get_det_combos(det_groups, det_id, markers):
     return out_groups
 
 
-def _get_detectors_specs(ph_data, group_dets, sort_spectral, 
-                         sort_polarization, sort_split):
+def _get_detectors_specs(ph_data:dict, group_dets:bool, sort_spectral:bool, 
+                         sort_polarization:bool, sort_split:bool):
     detectors = ph_data['detectors'][:]
     det_id = set(np.unique(detectors))
     
     det_spec = ph_data['measurement_specs']['detectors_specs']
     
-    non_photon = [val for key, val in det_spec.items() if _nph_rgx.fullmatch(key)]
+    non_photon = set(val for key, val in det_spec.items() if _nph_rgx.fullmatch(key))
     if non_photon:
         non_photon = set(chain(*non_photon))
     
@@ -197,7 +197,8 @@ def _get_detectors_specs(ph_data, group_dets, sort_spectral,
     return det_groups
 
 
-def _plot_histograms(ax, values, detectors, dgroups, hist_style):
+def _plot_histograms(ax:plt.Axes, values:np.ndarray, detectors:np.ndarray[np.uint8], 
+                     dgroups, hist_style:dict):
     if len(dgroups) == 2 and all('spectral' in key for key in dgroups.keys()):
         for label, dgroup in dgroups.items():
             c = _green if 'spectral 1' in label else _red
@@ -209,7 +210,11 @@ def _plot_histograms(ax, values, detectors, dgroups, hist_style):
             ax.hist(_mask_phot(values, detectors, dgroup), label=label, **hist_style)
 
 
-def _plot_spans(ax, meas_spec, span_style):
+def _plot_spans(ax:plt.Axes, meas_spec:dict, span_style:dict):
+    """
+    Plot excitation ranges based on meas_spec from photon_data/measurement_specs
+    into ax, according to span_style keyword arguments
+    """
     spans = sorted([(_toint(_al_rgx.fullmatch(name).group(2)), span) 
                     for name, span in meas_spec.items() 
                     if _al_rgx.fullmatch(name)])
