@@ -11,11 +11,6 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-has_numba = True
-try:
-    import numba
-except ImportError:
-    has_numba = False
 
 _green = 'g'
 _red = 'r'
@@ -47,14 +42,8 @@ def _mask_phot(times, dets, dgroup):
 
     """
     dgroup = np.atleast_1d(dgroup)
-    mask = np.zeros(times.size, dtype=np.bool_)
-    for d in dgroup:
-        mask += dets == d
-    filt = times[mask]
-    return filt
-
-if has_numba:
-    _mask_phot = numba.jit(_mask_phot)
+    mask = np.isin(dets, dgroup)
+    return times[mask]
 
 
 def _toint(nstr):
@@ -197,17 +186,41 @@ def _get_detectors_specs(ph_data:dict, group_dets:bool, sort_spectral:bool,
     return det_groups
 
 
+def _norm_denominator(normalization, hst):
+    """return normalization factor (denominator) base on either sum or max"""
+    if 'sum' in normalization:
+        return np.sum(hst)
+    elif 'max' in normalization:
+        return np.max(hst)
+    return 1
+
+
+def _plot_histogram(ax:plt.Axes, values:np.ndarray, detectors:np.ndarray[np.uint8],
+                    dgroup:np.ndarray, bins:np.ndarray, stair_style:dict, 
+                    normalization:Union[None,str], xrange:Union[None,tuple[int, int]]):
+    hst, bns = np.histogram(_mask_phot(values, detectors, dgroup), bins=bins)
+    if normalization is not None:
+        if 'full' in normalization or xrange is None:
+            hst = hst / _norm_denominator(normalization, hst)
+        else:
+            hst = hst / _norm_denominator(normalization, hst[slice(*xrange)])
+    ax.stairs(hst, bns, **stair_style)
+
+
 def _plot_histograms(ax:plt.Axes, values:np.ndarray, detectors:np.ndarray[np.uint8], 
-                     dgroups, hist_style:dict):
+                     dgroups:int, bins:np.ndarray, stair_style:dict, 
+                     normalization:str=None, xrange:tuple[int,int]=None):
     if len(dgroups) == 2 and all('spectral' in key for key in dgroups.keys()):
         for label, dgroup in dgroups.items():
             c = _green if 'spectral 1' in label else _red
-            label = "Donor" if 'spectral 1' in label else "Acceptor"
-            ax.hist(_mask_phot(values, detectors, dgroup), color=c, 
-                    label=label, **hist_style)
+            stkw = stair_style.copy()
+            stkw.update(label="Donor" if 'spectral 1' in label else "Acceptor", color=c)
+            _plot_histogram(ax, values, detectors, dgroup, bins, stkw, normalization, xrange)
     else:
         for label, dgroup in dgroups.items():
-            ax.hist(_mask_phot(values, detectors, dgroup), label=label, **hist_style)
+            stkw = stair_style.copy()
+            stkw.update(label=label)
+            _plot_histogram(ax, values, detectors, dgroup, bins, stkw, normalization, xrange)
 
 
 def _plot_spans(ax:plt.Axes, meas_spec:dict, span_style:dict):
@@ -271,10 +284,11 @@ def alternation_hist(d:dict, bins:Union[int,np.ndarray]=None, ich:int=0, ax:plt.
 
 
 
-def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
-                        sort_spectral=False, sort_polarization=False,
-                        sort_split=False, ax=None, 
-                        hist_style=None, span_style=None):
+def alternation_hist_cw(d, ax:plt.Axes=None, bins:np.ndarray=None, 
+                        ich:int=0, group_dets:bool=False,
+                        sort_spectral:bool=False, sort_polarization:bool=False,
+                        sort_split:bool=False, 
+                        hist_style:dict=None, span_style:dict=None):
     """
     Plot the laser alternation histogram for the data dictionary d assuming
     d uses continuous wave alternating laser excitation
@@ -283,6 +297,9 @@ def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
     ----------
     d : dict
         Raw data dictionary of loaded photon information.
+    ax : mpl.axes.Axes, optional
+        Matplotlib axes in which to plot alternation histogram. If None, calls
+        plt.figure() and then plt.gca() to get new axes. The default is None.
     bins : numpy.ndarray, optional
         Time bins for alternation period. The default is None.
     ich : int, optional
@@ -291,9 +308,6 @@ def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
     use_spectral : bool, optional
         If true, use definition from ``measurement_specs/detectors`` instead of 
         plotting detectors independently. The default is False.
-    ax : mpl.axes.Axes, optional
-        Matplotlib axes in which to plot alternation histogram. If None, calls
-        plt.figure() and then plt.gca() to get new axes. The default is None.
     hist_style : dict, optional
         Keyword arguments passed to ax.hist for alternation histogram.
         If None, generates defautlt dictionary. The default is None.
@@ -306,7 +320,7 @@ def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
         plt.figure()
         ax = plt.gca()
     bins = 101 if bins is None else bins
-    hist_style_ = dict(bins=bins, alpha=0.5, histtype='stepfilled', lw=1.3)
+    hist_style_ = dict(alpha=0.5, histtype='stepfilled', lw=1.3)
     hist_style_.update(dict() if hist_style is None else hist_style)
     
     span_style_ = dict(alpha=0.1)
@@ -326,7 +340,7 @@ def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
     # Plot the spans of the alex periodss
     _plot_spans(ax, meas_specs, span_style_)
     # Plot the histograms of detectors
-    _plot_histograms(ax, ph_times_mod, detectors, det_groups, hist_style_)
+    _plot_histograms(ax, ph_times_mod, detectors, det_groups, bins, hist_style_)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
     
     
@@ -334,7 +348,8 @@ def alternation_hist_pulsed(d:dict, ich:int=0, bins:Union[int,np.ndarray]=None,
                             group_dets:bool=False, sort_spectral:bool=False, 
                             sort_polarization:bool=False, sort_split:bool=False, 
                             ax:plt.Axes=None, hist_style:dict=None, 
-                            span_style:dict=None):
+                            span_style:dict=None, xrange:tuple[int, int]=None, 
+                            normalization=None):
     """
     Plot TCSPC decays for data in d. Must contain nanotimes
 
@@ -358,15 +373,28 @@ def alternation_hist_pulsed(d:dict, ich:int=0, bins:Union[int,np.ndarray]=None,
     ax : matplotlib.axes.Axex, optional
         Matplotlib Axes in which to plot histogram. The default is None.
     hist_style : dict, optional
-        keyword arguments to pass to matplotlib.axes.Axes.hist. The default is None.
+        keyword arguments to pass to matplotlib.axes.Axes.stairs. The default is None.
     span_style : dict, optional
         dict of keyword arguments to be passed to matplotlib.aesx.Axes.axvspan. The default is None.
+    xrange : tuple[int, int], optional
+        Range of TCSPC values to plot, default is None
+    normalization: str, optional
+        Normalization style, specified as a string.
+        The basic options are as follows
+        
+        - "sum" normalize by the sum, ie sum of all values in a given stream will be 1
+        - "max" normalize by the max value of the histogram, so max value of all streams is 1
+        
+        By default the funciton is only applied based on the displayed values,
+        However, if the normalization string contains "full", ie "full_sum",
+        the normalization string, the normalization will be based on all values,
+        The default is None
 
     """
     if ax is None:
         plt.figure()
         ax = plt.gca()
-    hist_style_ = dict(histtype='step', lw=1.2, alpha=0.5)
+    hist_style_ = dict(lw=1.2, alpha=0.5)
     hist_style_.update(dict() if hist_style is None else hist_style)
     span_style_ = dict(alpha=0.3)
     span_style_.update(dict() if span_style is None else span_style)
@@ -393,11 +421,13 @@ def alternation_hist_pulsed(d:dict, ich:int=0, bins:Union[int,np.ndarray]=None,
                 
     # if 'tcspc_offset' in d['setup'].get('detectors', dict()):
     #     # code to extract offsets
-    hist_style_.update(bins=np.arange(0,nanotimes.max()+1,1) if bins is None else bins)
+    bins = np.arange(0,nanotimes.max()+1,1) if bins is None else bins
     _plot_spans(ax, meas_spec, span_style_)
-    _plot_histograms(ax, nanotimes, detectors, det_groups, hist_style_)
+    _plot_histograms(ax, nanotimes, detectors, det_groups, bins, hist_style_, normalization, xrange)
     
     # Final plotting niceties
+    if xrange is not None:
+        ax.set_xlim(xrange)
     ax.set_xlabel('TCSPC nanotimes bins')
     ax.set_yscale('log')
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
