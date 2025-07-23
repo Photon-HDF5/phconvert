@@ -110,28 +110,7 @@ def loadfile_sm(filename, software='LabVIEW Data Acquisition usALEX',
     return data
 
 
-def _load_spc_infer(filename, metadata):
-    identity = metadata['identification']
-    spc_model = ''
-    # initial inference
-    for module in ('134', '144', '154', '830', '630', '600'):
-        if module in identity['Contents']:
-            spc_model = f'SPC-{module}'
-            break
-    if spc_model == '':
-        spc_model = 'SPC-630' if '12' in identity['Revision'] else 'SPC-151'
-    timestamps, detectors, nanotimes, timestamps_unit = bhreader.load_spc(filename, 
-                                                                          spc_model=spc_model)
-    if np.any(np.diff(timestamps) < 0):
-        spc_model = 'SPC-151' if '6' in spc_model else 'SPC-630'
-        timestampsn, detectorsn, nanotimesn, timestamps_unitn = bhreader.load_spc(filename, 
-                                                                              spc_model=spc_model)
-        if (np.diff(timestampsn) < 0).sum() < (np.diff(timestamps) < 0).sum():
-            timestamps, detectors, nanotimes, timestamps_unit = timestampsn, detectorsn, nanotimesn, timestamps_unitn
-    return timestamps, detectors, nanotimes, timestamps_unit
-
-
-def loadfile_bh(filename, setfilename=None, spc_model='infer'):
+def loadfile_bh(filename, setfilename=None, spc_model='infer', SPC_type='auto'):
     """
     Load .spc (Beckr & Hickl) file as dictionary for saving with :func:`hdf5.save_photon_hdf5`.
     Any field that cannot be infered from data or metadata necessary for saving
@@ -150,12 +129,25 @@ def loadfile_bh(filename, setfilename=None, spc_model='infer'):
     setfilename : str, optional
         Name of cooresponding .set file, if not specified, infer name of set
         filename from filename. The default is None.
+    SPC_type : str, optional
+        Identifier for card type, use only if your card is newer than phconvert.
+        Options are:
+            
+            - 'SPC-1XX' for SPC-1XX and SPC-8XX cards (this is the most common format)
+            - 'SPC-6XX-48bit' for SPC-6XX cards with 12 bit TCSPC resolution 
+              (most common for these cards)
+            - 'SPC-6XX-32bit'for SPC-6XX cards with 8 bit TCSPC resolution 
+              (most common for these cards)
+            - 'QC-X04' for SPC-QC-X04 cards 
+            - 'QC-X06'for SPC-QC-X06 cards
+    
     spc_model : str, optional
-        SPC model version (SPC-600 SPC-630, SPC-134, SPC-144 SPC-154 SPC-830). 
-        If 'infer', then use .set file parameters to infer model type 
-        (inferene is not guarunteed to be correct)
-        The default is 'infer'.
-
+        **Deprecated** use SPC_type intead. Originally used to determine bit layout
+        of .spc file. Now read_set can determine layout of .spc file automatically.
+        New cards may come out that will confuse this function however, thus,
+        if you have a newer card that supported by phconvert, but still uses a
+        supported .spc format, use SPC_type argument.
+    
     Raises
     ------
     FileNotFoundError
@@ -170,64 +162,51 @@ def loadfile_bh(filename, setfilename=None, spc_model='infer'):
         data should be saved in /user/becker_hickl group.
 
     """
-    software = 'Becker & Hickl SPCM'
-    if not os.path.isfile(filename):
-        raise FileNotFoundError(f'File: {filename} does not exist')
-    if setfilename is None:
-        setfilename = filename[:-3] + 'set'
-        if not os.path.isfile(setfilename):
-            setfilename = filename[:-3] + 'SET'
-            if not os.path.isfile(setfilename):
-                raise FileNotFoundError(f'Set file for {filename} could not be '
-                                        'located with .set or .SET extension '
-                                        'manually specify setfile=... if set '
-                                        'file has different extension')
-    elif not os.path.isfile(setfilename):
-        raise FileNotFoundError(f'Set file {setfilename} does not exist')
-    metadata = bhreader.load_set(setfilename)
-    if spc_model == 'infer':
-        timestamps, detectors, nanotimes, timestamps_unit = _load_spc_infer(filename, metadata)
-    else:
-        timestamps, detectors, nanotimes, timestamps_unit = bhreader.load_spc(filename, 
-                                                                            spc_model=spc_model)
+    data = bhreader.load_spc(filename, setfile=setfilename, SPC_type=SPC_type)
+    metadata        = data['meta']
+    timestamps      = data['photon_data']['timestamps'] 
+    detectors       = data['photon_data']['detectors']
+    nanotimes       = data['photon_data']['nanotimes']
+    timestamps_unit = data['photon_data']['timestamps_unit']
+    tcspc_num_bins = data['photon_data']['tcspc_num_bins']
     det_ids, det_counts = np.unique(detectors, return_counts=True)
-    provenance = dict(filename=filename, software=software)
+    metadata.pop('header')
+    provenance = dict(filename=str(filename), software='Becker & Hickl SPCM')
     if 'identification' in metadata:
         identification = metadata['identification']
         date_str = identification['Date']
         time_str = identification['Time']
         creation_time = date_str + ' ' + time_str
         provenance.update({'creation_time': creation_time})
-    if 'sys_params' in metadata:
+        
+    if 'setup' in metadata:
         print('TCSPC parameters retrived from the .SET file.')
-        sys_params = metadata['sys_params']
-        tcspc_num_bins = None
-        tcspc_unit = float(sys_params['SP_TAC_TC'])/float(sys_params['SP_TAC_G'])
-        #tcspc_range = sys_params['SP_TAC_R']  # redundant info, not corrected for gain
-        tcspc_range = None
+        sys_setup = metadata['setup']
+        # TODO : Check all TAC related derived parameters
+        tcspc_range = float(sys_setup.get('SP_TAC_R', 0.0))
+        if tcspc_range > 1e-3: tcspc_range *= 1e-9
+        tcspc_range /=  float(sys_setup.get('SP_TAC_G', 1))
+        tcspc_unit = tcspc_range / tcspc_num_bins
+        if tcspc_range == 0.0: tcspc_range = None
+        if tcspc_unit == 0.0: tcspc_unit = None
     else:
-        tcspc_num_bins = None
         tcspc_unit = None
         tcspc_range = None
-
     photon_data = dict(
-        timestamps=timestamps, 
-        timestamps_specs=dict(timestamps_unit=timestamps_unit),
-        detectors=detectors,
+        timestamps = timestamps,
+        timestamps_specs = dict(timestamps_unit=timestamps_unit),
+        measurement_specs = dict(measurement_type = None,
+                                 detectors_specs = dict(spectral_polarization_split_chN=np.unique(detectors),),
+                                 laser_repetition_rate = 1/tcspc_range if tcspc_range is not None else None), # TODO: check this is best way to get laser rep rate
+        detectors = detectors,
         nanotimes = nanotimes,
-        measurement_specs = dict(
-            measurement_type = None,
-            laser_repetition_rate = np.array([sys_params['SP_TAC_R']]),
-            detectors_specs = dict(spectral_polarization_split_chN=np.unique(detectors),
-                                   )),
-        nanotimes_specs = dict(
-            tcspc_unit = tcspc_unit,
-            tcspc_range = tcspc_range,
-            tcspc_num_bins = tcspc_num_bins),
-        )
+        nanotimes_specs = dict(tcspc_unit = tcspc_unit,
+                               tcspc_range = tcspc_range,
+                               tcspc_num_bins = tcspc_num_bins),
+                       )
 
     setup = dict(
-        num_pixels = np.unique(detectors).size,
+        num_pixels = np.unique(detectors).size - det_ids.size,
         num_spots = 1,
         num_spectral_ch = None,
         num_polarization_ch = None,
@@ -239,7 +218,7 @@ def loadfile_bh(filename, setfilename=None, spc_model='infer'):
         detection_wavelengths = None,
         excitation_alternated = None,
         detectors = dict(id=det_ids, counts=det_counts, label=None),
-        laser_repetition_rates = np.array([sys_params['SP_TAC_R'], ])
+        laser_repetition_rates = np.array([1/sys_setup['SP_TAC_R'], ])
         )
 
     acquisition_duration = ((timestamps.max() - timestamps.min()) *

@@ -85,7 +85,7 @@ def _pos_in(idx, subs):
             return i
     return None
 
-def _get_detector_arrays(idxs, det_spec, rgx, sort):
+def _get_detector_arrays(idxs:dict, det_spec:dict, rgx:re.Pattern, sort:bool):
     """
     Fill out idxs (dictionary) of detectors based on detectors_specs dictionary
     for channel defined by re.Match rgx, raises error if sort is True
@@ -181,21 +181,20 @@ def _get_detectors_specs(ph_data, group_dets, sort_spectral,
     
     det_spec = ph_data['measurement_specs']['detectors_specs']
     
-    markers = [val for key, val in det_spec.items() if _nph_rgx.fullmatch(key)]
-    if markers:
-        markers = list(chain(*markers))
-    markers = set(markers)
+    non_photon = [val for key, val in det_spec.items() if _nph_rgx.fullmatch(key)]
+    if non_photon:
+        non_photon = set(chain(*non_photon))
     
     det_groups = dict()
     if group_dets:
         _get_detector_arrays(det_groups, det_spec, _spec_rgx, sort_spectral)
         _get_detector_arrays(det_groups, det_spec, _pol_rgx, sort_polarization)
         _get_detector_arrays(det_groups, det_spec, _split_rgx, sort_split)
-        det_groups = _get_det_combos(det_groups, det_id, markers)
+        det_groups = _get_det_combos(det_groups, det_id, non_photon)
     else:
         det_groups = {f'Detector id:{i}':np.array([i,]) for i in 
-                      det_id if i not in markers}
-    return detectors, det_groups
+                      det_id if i not in non_photon}
+    return det_groups
 
 
 def _plot_histograms(ax, values, detectors, dgroups, hist_style):
@@ -310,8 +309,9 @@ def alternation_hist_cw(d, bins=None, ich=0, group_dets=False,
     
     # extract fields from d dictionary, use [:] in case fields are tables arrays
     ph_data = d.get('photon_data', d.get('photon_data%d' % ich))
-    detectors, det_groups = _get_detectors_specs(ph_data, group_dets, sort_spectral, 
-                                                 sort_polarization, sort_split)
+    detectors = ph_data['detectors'][:]
+    det_groups = _get_detectors_specs(ph_data, group_dets, 
+                                      sort_spectral, sort_polarization, sort_split)
     ph_times_t = ph_data['timestamps'][:]
     meas_specs = ph_data['measurement_specs']
     # Calculate the periods
@@ -370,22 +370,22 @@ def alternation_hist_pulsed(d:dict, ich:int=0, bins:Union[int,np.ndarray]=None,
     ich = ich if multispot else 0
     ph_data = d['photon_data%d'%ich] if multispot else d['photon_data']
     
-    detectors, det_groups = _get_detectors_specs(ph_data, group_dets, 
-                                                 sort_spectral, 
-                                                 sort_polarization, 
-                                                 sort_split)
+    detectors = ph_data['detectors'][:]
+    det_groups = _get_detectors_specs(ph_data, group_dets, 
+                                      sort_spectral, sort_polarization, sort_split)
     meas_spec = ph_data['measurement_specs']
-    nanotimes = ph_data['nanotimes'][:]
+    nanotimes = ph_data['nanotimes']
     setup_det = d['setup'].get('detectors', dict())
-    if 'tcspc_offsets' in setup_det and np.any(setup_det['tcspc_offsets']!= 0):
-        idxs = setup_det['id']
-        spots = setup_det['spot'] if multispot else repeat(0)
-        nanotimes = nanotimes.copy().astype(np.int16)
-        for idx, offset, sp in zip(idxs, setup_det['tcspc_offsets'], spots):
-            if sp != ich:
-                continue
-            nanotimes[detectors==idx] -= offset
-            
+    if 'tcspc_offsets' in setup_det:
+        if np.any(setup_det['tcspc_offsets']!= 0):
+            idxs = setup_det['id']
+            spots = setup_det['spot'] if multispot else repeat(0)
+            nanotimes = nanotimes.copy().astype(np.int16)
+            for idx, offset, sp in zip(idxs, setup_det['tcspc_offsets'], spots):
+                if sp != ich:
+                    continue
+                nanotimes[detectors==idx] -= offset
+                
     # if 'tcspc_offset' in d['setup'].get('detectors', dict()):
     #     # code to extract offsets
     hist_style_.update(bins=np.arange(0,nanotimes.max()+1,1) if bins is None else bins)

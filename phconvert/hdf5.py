@@ -44,23 +44,23 @@ _EMPTY = ' '
 
 
 # Names of mandatory fields in the setup group
-_setup_mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
+_setup_mantatory_fields = ('num_pixels', 'num_spots', 'num_spectral_ch',
                            'num_polarization_ch', 'num_split_ch',
                            'modulated_excitation', 'lifetime',
-                           'excitation_alternated']
+                           'excitation_alternated')
 
 # Names of mandatory fields in the identity group
-_identity_mantatory_fields = ['format_name', 'format_version', 'format_url',
-                              'software', 'software_version', 'creation_time']
+_identity_mantatory_fields = ('format_name', 'format_version', 'format_url',
+                              'software', 'software_version', 'creation_time')
 
 # Names of fields in /setup/detectors
 _detectors_group_fields = ('id', 'id_hardware', 'counts', 'dcr', 'afterpulsing',
                            'positions', 'spot', 'module', 'label', 'tcspc_unit',
-                           'tcspc_num_bins')
+                           'tcspc_num_bins', 'tcspc_offset')
 
 # All valid measurement_type strings
-valid_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
-                    'smFRET-nsALEX', 'generic']
+valid_meas_types = ('smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
+                    'smFRET-nsALEX', 'generic')
 
 
 _photon_data_regex = re.compile(r'^photon_data(\d*)$')
@@ -86,7 +86,8 @@ _file_meta_strip = lambda field: _file_field_regex.fullmatch(field).group(1)
 _field_meta_regex = re.compile(r'^(\w+[^\d\W])(\d+)')
 
 
-def _file_field_sub(field):
+def _file_field_sub(field:str)->re.Pattern:
+    """Create regex for field name, checking if it matches a <field>_<num> style"""
     matchobj = _file_field_regex.match(field)
     text = '^' + matchobj.group(1)
     if matchobj.group(2):
@@ -649,10 +650,10 @@ def _save_photon_hdf5_dict(group, data_dict, user_descr, prefix_list=None,
 
 def save_photon_hdf5(data_dict:dict,
                      h5_fname=None,
-                     h5file=None,
-                     user_descr=None,
-                     overwrite=False,
-                     compression=dict(complevel=6, complib='zlib'),
+                     h5file:tables.File=None,
+                     user_descr:str=None,
+                     overwrite:bool=False,
+                     compression:dict=None,
                      close=True,
                      validate=True,
                      warnings=True,
@@ -773,12 +774,13 @@ def save_photon_hdf5(data_dict:dict,
         CArray or EArray) will be left unmodified. In either cases the TITLE
         attribute is always updated.
     """
+    compression = dict(complevel=6, complib='zlib') if compression is None else compression
     comp_filter = tables.Filters(**compression)
 
     ## Compute file names
     if h5file is not None:
-        _msg = 'Argument `h5file` must be None or a `tables.File` object.'
-        assert isinstance(h5file, tables.File), _msg
+        if not isinstance(h5file, tables.File):
+            raise TypeError('Argument `h5file` must be None or a `tables.File` object.')
         h5_fname = h5file.filename
     else:
         if h5_fname is None:
@@ -865,12 +867,10 @@ def _populate_provenance(data_dict):
             break
 
     if orig_fname is None:
-
-        msg = """\
+        warnings.warn("""\
             WARNING: Could not locate original file '%s'.
                      File info in provenance group will not be added.
-            """ % provenance['filename']
-        print(dedent(msg))
+            """ % provenance['filename'])
     else:
         # Use metadata from the file except for creation time if
         # already present in `provenance`. i.e. the user-provided
@@ -1173,14 +1173,13 @@ def _normalize_setup_arrays(data_dict):
     # Useful when input is from YAML whose parser retrives floats a strings
     setup = data_dict['setup']
     # Arrays of float fields in setup group
-    names_aof = ['detection_wavelengths', 'excitation_wavelengths',
+    names_aof = ('detection_wavelengths', 'excitation_wavelengths',
                  'excitation_input_powers', 'detection_polarizations',
                  'excitation_intensity', 'detection_split_ch_ratios',
-                 'laser_repetition_rates']
+                 'laser_repetition_rates')
     for name in names_aof:
         if name in setup:
-            setup[name] = np.array([float(v) for v in setup[name]],
-                                   dtype=float)
+            setup[name] = np.asarray(setup[name], dtype=np.float64)
 
 
 def _normalize_detectors_group(data_dict):
@@ -1312,7 +1311,7 @@ def _sanitize_data(data_dict, require_setup=True):
 # Validation functions
 #
 
-def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
+def _assert_valid(condition:bool, msg:str, strict:bool=True, norepeat:bool=False, pool:list=None):
     """Assert `condition` and raise Invalid_PhotonHDF5(msg) on fail.
 
     Arguments:
@@ -1344,7 +1343,7 @@ def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
         if strict:
             raise Invalid_PhotonHDF5(msg)
         else:
-            print('Photon-HDF5 WARNING: %s' % msg)
+            warnings.warn(f'Photon-HDF5 WARNING: {msg}')
     return condition
 
 
@@ -1387,7 +1386,7 @@ def _assert_has_field(name, group, msg=None, msg_add=None,
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
 
 
-def _assert_valid_detectors(h5file):
+def _assert_valid_detectors(h5file:tables.File)->None:
     detectors = h5file.root.setup.detectors
     det_ids = detectors.id.read()
     if 'counts' in detectors:
@@ -1397,12 +1396,12 @@ def _assert_valid_detectors(h5file):
     else:
         spot = np.zeros(len(det_ids), dtype='uint8')
 
-    m = 'detectors/%s length (%d) is not equal to the number of detectors (%d).'
+    msg = 'detectors/%s length (%d) is not equal to the number of detectors (%d).'
     for field in _detectors_group_fields:
         if field in detectors:
             values = detectors._f_get_child(field)
             _assert_valid(len(values) == len(det_ids),
-                          msg=m % (field, len(values), len(det_ids)))
+                          msg=msg % (field, len(values), len(det_ids)))
 
     msg = 'Detector %d in spot %d not found in detectors/id.'
     msgc = 'Wrong counts (%d instead of %d) for detector %d in spot %d.'
@@ -1491,7 +1490,7 @@ def assert_valid_photon_hdf5(datafile:Union[str, tables.File], warnings:bool=Tru
             _check_photon_data_tables(ph_data, **kwargs)
 
 
-def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
+def _assert_setup(h5file:tables.File, warnings:bool=True, strict:bool=True, verbose:bool=False):
     """Assert that setup exists and contains the mandatory fields.
     """
     if not _assert_has_field('setup', h5file.root, mandatory=strict,
@@ -1509,7 +1508,7 @@ def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
                               verbose=verbose)
 
 
-def _assert_identity(h5file, warnings=True, strict=True, 
+def _assert_identity(h5file:tables.File, warnings:bool=True, strict:bool=True, 
                      verbose=False)->None:
     """Assert that identity group exists and contains the mandatory fields.
     """

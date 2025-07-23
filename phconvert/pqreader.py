@@ -133,20 +133,24 @@ def load_ptu(filename, return_marker=False, ovcfunc='auto'):
             overflow photons after the fact.
 
     Returns:
-        A tuple of timestamps, detectors, nanotimes (integer arrays) and a
-        dictionary with metadata containing the keys
-        'timestamps_unit', 'nanotimes_unit', 'acquisition_duration' and
-        'tags'. The data in the PTU file header is returned as a
-        dictionary of "tags". Each item in the dictionary has 'idx', 'type', 
-        'value' and 'offset' keys. Some tags also have a 'data' key.
-        Use :func:`_ptu_print_tags` to print the tags as an easy-to-read 
-        table.
-        If return_marker = True
-        'marker_loc', index before which marker is inserted
-        'marker_time', timestamp of marker
-        'marker_det', pseudo-detector of marker
-        'marker_dtime', the nanotime of the marker
-
+        timestamps : np.ndarray[np.uint64]
+            Array of timestamps of all photons/markers in data
+        detectors : np.ndarray[np.uint8]
+            Array of detectors of all photons/markers in data
+        nanotimes np.ndarray[np.uint16]
+            Array of nanotimes of all photons/markers in data
+        meta : dict
+            Dictionary of tags from the beginning of ptu file.
+            Tags with clear interpretation extracted to outer level of dictionary.
+            dictionary with metadata containing the keys
+            'timestamps_unit', 'nanotimes_unit', 'acquisition_duration' and
+            'tags'. The data in the PTU file header is returned as a
+            dictionary of "tags". Each item in the dictionary has 'idx', 'type', 
+            'value' and 'offset' keys. Some tags also have a 'data' key.
+            Use :func:`_ptu_print_tags` to print the tags as an easy-to-read 
+            table.
+        marker_ids : np.ndarray[np.uint8]
+            array of the ids of markers (i.e. records that are not photons)
     """
     records, spec, tags = ptu_reader(filename)
     # Get the metadata

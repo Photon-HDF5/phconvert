@@ -189,7 +189,7 @@ def fill_setup(data):
 def fill_measurement_type(data, measurement_type):
     """
     Iterate over all photon_dataX groups and set the field
-    ``/photon_dataX/measurement_spces/measurement_type`` to 
+    ``/photon_dataX/measurement_spces/measurement_type`` to measuremnt_type
 
     Parameters
     ----------
@@ -206,8 +206,9 @@ def fill_measurement_type(data, measurement_type):
 
 
 
-        
-
+###########################################################
+### Functions for inspecting dictionaries of data for Nones
+###########################################################
 def report_nones(data, root=''):
     """
     Identify the fields that must be either removed or specified from a
