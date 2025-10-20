@@ -1,17 +1,113 @@
 """
-This module contains functions to load and decode files from Becker & Hickl
+.. currentmodule:: phconvert
+
+Using bhreader module
+---------------------
+
+.. note::
+    
+    It is rarely necessary to call ``bhreader`` directly, instead call
+    :func:`loader.loadfile_bh`
+
+This module contains functions to load and decode files from Becker & Hickl (B&H) 
 hardware.
 
-The high-level function in this module are:
-    - :func:`load_spc` which loads photon data from .spc file, along with .set file
-    - :func:`load_set` which just loads the metadata from a .set file
+.. currentmodule::phconvert.bhreader
+
+The main, highest level function of the module is :func:`load_spc`.
+This function will automatically detect the type of card, and read the files
+appropriately.
+
+:func:`load_spc` returns a dictionary of with 2 keys: 'meta', and 'photon_data':
+    - 'meta': the dictionary loaded by :func:`load_set`
+    - 'photon_data': dictionary of the data loaded from the .spc file, all values
+      are already converted into form acceptable for photon-hdf5
+        - 'timestamps': numpy array of timestamps of all photons/markers
+        - 'detectors': numpy array of the detector of each photon/marker 
+          (markers already reassigned unique index)
+        - 'nanotimes': nanotime of each photon (ADC automatically converted to nanotime)
+        - 'timestamps_unit' : the timestamps unit of macrotimes
+        - 'marker_ids' : array of unuiqe indexes cooresponding to detector indexes
+          that should be read as markers
+
+
+:func`load_spc` loads just the .set file which contains metadata on the .spc file.
+It returns a dictionary with the following keys:
+    - 'identification': a dictionary of key value pairs that are both strings
+      equivalent to the IDENTIFICATION portiion of the .set file
+    - 'setup': a dictionary of key (string) value (any) pairs contained in the
+      SETUP section of the .set file. This contains metadata on the acqusition
+      settings
+    - 'header': 1 element numpy array with a dtype representing the .set header
+      structure (see following explanation) this most importantly contains
+      a code indicating the SPC card used (see `bhformats`_ )
+
+Code examples
+*************
+
+:func:`load_spc` is flexible, assuming the .set and .spc files have the same
+name other than the extension, it is easiest, and best to specify the .spc file 
+
+.. code-block::
     
-Becker & Hickl SPC format
--------------------------
+    import phconvert as phc
+    data = phc.bhreader.load_spc('sample.spc')
+    
+however, the result will be the same as
+
+.. code-block::
+    
+    data = phc.bhreader.load_spc(setfile='sample.set')
+
+If for some reason, the .set and .spc files have different names, it is necessary
+to specify both
+
+.. code-block::
+    
+    data = phc.bhreader.load_spc(spcfile='sample.spc', setfile='Sample1.set')
+    
+.. warning::
+    
+    SPCM sofware never saves the .set and .spc files with different names.
+    Therefore, this situation indicates that the files were manually renamed.
+    Renaming the two files differently is therefore *highly* inadvisable.
+
+
+Future proofing
+***************
+
+With the latest version of phconvert, detection of the spc card and therefore
+record format has become automatic.
+
+This does come with a downside: if B&H comes out with a new card, it will be
+unrecognizable by phconvert versions published before the new card.
+
+However, in anticipation of this, a work-around is provided.
+(As of writing (July 20205), there should be no cards for which this is necessary)
+
+Assuming B&H has not come up with another format (i.e. your card is new, but uses
+an existing record format), :func:`load_spc` can be instructed to read the .spc
+file according the the specified format.
+
+This is done by specifying the '``SPC_type``' argument of :func:`load_spc` as a
+string, see the first line of the subsections of `bhformats`_ to get the argument
+to provide.
+
+For example
+
+.. code-block::
+    
+    data = phc.bhreader.load_spc('sample.spc', SPC_type='SPC-1XX')
+
+
+.. _bhformats:
+
+Becker & Hickl SPC formats
+--------------------------
 
 Becker & Hickl documentation for their file format is scattered across the
 `TCSPC handbook <https://www.becker-hickl.com/literature/documents/flim/the-bh-tcspc-handbook/>`_
-and in the SPC_data_file_structure.h file which can be located in the SPCM sofware
+and in the ``SPC_data_file_structure.h`` file which can be located in the SPCM sofware
 directory within the program files directory after installation of the B&H SPCM
 sofware.
 
@@ -30,6 +126,221 @@ following formats. In all cases, the 1st 48 or 32 bits are a header that defines
 the macrotime clock (timestamps_unit), and number of routing bits. After the header,
 all subsequent data are records of single photon arrivals, each record is always
 the same number of bytes as the header.
+
+SPC-1XX and SPC-8XX format
+**************************
+
+:func:`load_set` can be forced to read the .spc in this format by setting
+``SPC_type='SPC-1XX'``
+
+The majority of modern B&H cards use this format, whic relies on 32 bit (4 byte)
+records.
+The structure of these records is as follows
+
++------+---------+--------------------+------+--------+------------+-----------+------------+
+| Bit  | 31      | 30                 | 29   | 28     | 27-16      | 15-12     | 11-0       |
++------+---------+--------------------+------+--------+------------+-----------+------------+
+| name | Invalid | Macrotime overflow | Gap  | marker | ADC        | Routing   | Macrotime  |
++------+---------+--------------------+------+--------+------------+-----------+------------+
+| type | bool    | bool               | bool | bool   | int 12 bit | int 4 bit | int 12 bit |
++------+---------+--------------------+------+--------+------------+-----------+------------+
+
+Where:
+    - invalid: boolean indicating if record can be considered a photon, if 1, then
+      the record either arose from an error, or if macrotime overflow is also 1, then 
+      exclusively as a macrotime overflow (see below)
+    - Macrotime overflow: since only 12 bits are allocated to the macrotime
+      every :math:`2^{12} = 4096` macrotime unit, it is necessar to add an overflow
+      event, which adds an additional 4096 to the value of the macrotime.
+      So, for any given record, the number of overflow events in the records up to
+      the given record must be summed, and 
+      :math:`4096 * no.\:of\:overflows` must be added to the
+      macrotime clock
+    - Gap: this indicates that the file buffer overflowed, and therefore there may
+      be photons missed in the recording. This is rare and indicates potentially
+      corupted data
+    - marker indicates if the record is a marker photon, ie for FLIM, if the bit is
+      1, then the record must be read differently  (see below)
+    - 0: this bit is always zero and serve no purpose
+    - ADC: this represents the nanotime, but as the cards record in stop-start mode
+      the nanotime = 4096 - ADC
+    - Routing: the index of the detector from the router, ie this indicates which
+      detector the photon arrived at
+    - Macrotime: the time since the last overflow event, in macrotime units
+
+The first record in any .spc file follows the following format
+
++------+----+---------+------+---------+----------+----------------+
+| Bit  | 31 | 30-78   | 26   | 25      | 24       | 23-0           |
++------+----+---------+------+---------+----------+----------------+
+| name | 1  | unused  | raw  | markers | reserved | macrotime unit |
++------+----+---------+------+---------+----------+----------------+
+| type | -- | --      | bool | bool    | --       | int  24 bit    |
++------+----+---------+------+---------+----------+----------------+
+
+- macrotime unit is in 0.1 nanoseconds
+- raw indicates if data was recorded in diatnostic mode
+- markers indicated if markers are used in the photon stream
+
+Marker records (bit 28 = 1) change certain field
+
+- routing becomes the marker type
+- ADC is irrelevant, these values are ignored
+- bit 31 (Invalid) is set to 1
+
+
+SPC-QC-Formats
+***************
++-----+----+------------------------+-----+---------+--------+-----------+--------+----------------+
+| Bit | 31 | 30-27                  | 26  | 25      | 24     | 23        | 22     | 21-0           |
++-----+----+------------------------+-----+---------+--------+-----------+--------+----------------+
+|     | 1  | number of routing bits | raw | markers | femto  | 6 channel | unused | macrotime unit |
++-----+----+------------------------+-----+---------+--------+-----------+--------+----------------+
+
+
+SPC-QC-X06/X08 format
+~~~~~~~~~~~~~~~~~~~~~
+
+:func:`load_spc` can be forced to read the .spc file in this format by specifying
+``SPC_type='SPC-QC-X04'``
+
+QC-004 type cards store the data in the following 32-bit record format
+
+Photon records use the following format
+
++------+--------------+-----------+------------+-----------+------------+
+| Bit  | 31 -30       | 29-28     | 27-16      | 15-12     | 11-0       |
++------+--------------+-----------+------------+-----------+------------+
+| name |  record type | channel   | nanotime   | routing   | macrotime  |
++------+--------------+-----------+------------+-----------+------------+
+| type | int 2 bit    | int 2 bit | int 12 bit | int 4 bit | int 12 bit |
++------+--------------+-----------+------------+-----------+------------+
+
+The record codes are the following
+
+- bit 31 = 0, bit 30 = 0: normal photon record
+- bit 31 = 1, bit 30 = 0: macrotime overflow, all other bits 0 by definition
+- bit 31 - 0, bit 30 = 1: marker, channel and nanotime bits all 0 by definition
+- bit 31 = 1, bit 30 = 1: Gap, which occurs immediately before a file in file out
+  overflow, meaning potential missing data, read remaining bytes as normal photon
+  
+For normal photon records
+
+- channel indicates which input channel the event occured with
+- routing indicates the routing signal for the photon
+- To determine detector, both channel and routing must be considered
+- unlike most other B&H record formats, the nanotime is not inverted, ie 0x000 = 0 ns
+
+For marker records:
+    - routing number indicates the marker type
+
+The first "header" records is in the following format
+
+
+SPC-QC-X06/X08 format
+~~~~~~~~~~~~~~~~~~~~~
+
+:func:`load_spc` can be forced to read the .spc file in this format by specifying
+``SPC_type='SPC-QC-X06'``
+
+QC-X0(>4) cards use a 32-bit record format similar to that of QC-X04 cards, but
+with some key changes due to having more channels than can be indexed with the 2
+bits allocated in the QC-0X04 format.
+
++------+------------+----------------+------------+-----------+------------+
+| Bit  | 31         | 30-28          | 27-16      | 15-12     | 11-0       |
++------+------------+----------------+------------+-----------+------------+
+| name | Special    | record/channel | nanotime   | routing   | macrotime  |
++------+------------+----------------+------------+-----------+------------+
+| type | bool       | int 3 bit      | int 12 bit | int 4 bit | int 12 bit |
++------+------------+----------------+------------+-----------+------------+
+
+As in QC-004, channel is the physical channel, and routing the signal from the
+router. Therefore to determine the detctor, both must be taken into account.
+
+If Special (bit 31) = 1, then the bits 30-2 are used to determine the non-photon
+type of record.
+
+
+| Bit                | 31 | 30 | 29 | 28 | 27-16    | 15-12   | 11-0      |
++====================+====+====+====+====+==========+=========+===========+
+| photon             | 0  | ch[2:0]      | nanotime | routing | macrotime |
++--------------------+----+--------------+----------+---------+-----------+
+| macrotime overflow | 1  | 0  | 0  | 0  | 0x000    | 0x0     | 0x000     |
++--------------------+----+--------------+----------+---------+-----------+
+| marker             | 1  | 0  | 1  | 0  | 0x000    | marker  | macrotime |
++--------------------+----+--------------+----------+---------+-----------+
+| Gap                | 1  | 1  | ch[1:0] | nanotime | routing | macrotime |
++--------------------+----+--------------+----------+---------+-----------+
+
+The first record follows the same format as QC-X04 cards
+
+SPC-6XX formats
+***************
+
+Older SPC-6XX cards can use either a 48 bit or 32 bit size records.
+Since there are 2 formats for these cards, the format must be infered.
+This is normally done automatically, based on the initial bits of .spc file.
+
+:func:`load_spc` can be forced to ignore the .set file, and perform the inference
+as an SPC-6XX card by specifying ``SPC_type='SPC-6XX'``
+
+
+The 48 bit format has the following bit assigments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`load_spc` can be forced to read .spc files in this fomat by specifying
+``SPC_type='SPC-6XX-48bit'``
+
++------+------------------+-----------+-------------------+----+------+--------------------+---------+------------+
+| Bit  | 47-32            | 31-24     | 23-16             | 15 | 14   | 13                 | 12      | 11-0       |
++------+------------------+-----------+-------------------+----+------+--------------------+---------+------------+
+| name | macrotime[15:0]  | routing   | marcrotime[23:12] | 0  | Gap  | macrotime overflow | Invalid | ADC        |
++------+------------------+-----------+-------------------+----+------+--------------------+---------+------------+
+| type | int 24 bit[15:0] | int 8 bit | int 24 bit[23:12] | -- | bool | bool               | bool    | int 12 bit |
++------+------------------+-----------+-------------------+----+------+--------------------+---------+------------+
+
+
+The 32 bit fomat has the following bit assigments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`load_spc` can be forced to read .spc files in this fomat by specifying
+``SPC_type='SPC-6XX-48bit'``
+
++------+---------+--------------------+------+----+-----------+------------+-----------+
+| Bit  | 31      | 30                 | 29   | 28 | 27        | 26-8       | 7-0       |
++------+---------+--------------------+------+----+-----------+------------+-----------+
+| name | Invalid | macrotime overflow | GAP  | 0  | routing   | macrotime  | ADC       |
++------+---------+--------------------+------+----+-----------+------------+-----------+
+| type | bool    | bool               | bool | -- | int 3 bit | int 17 bit | int 8 bit |
++------+---------+--------------------+------+----+-----------+------------+-----------+
+
+Where
+
+- invalid: boolean indicating if record can be considered a photon, if 1, then
+  the record either arose from an error, or if macrotime overflow is also 1, then 
+  exclusively as a macrotime overflow (see below)
+- Routing: the index of the detector from the router, ie this indicates which
+  detector the photon arrived at
+- Gap: this indicates that the file buffer overflowed, and therefore there may
+  be photons missed in the recording. This is rare and indicates potentially
+  corupted data
+- Macrotime overflow: due to the limited number of bit available to the macrotime,
+  every :math:`2^{num\:bits}` macrotime unit, it is necessar to add an overflow
+  event, which adds an additional :math:`2^{num\:bits}` to the value of the macrotime.
+  So, for any given record, the number of overflow events in the records up to
+  the given record must be summed, and 
+  :math:`2^{num\:bits} * no.\:of\:overflows` must be added to the
+  macrotime clock
+- Macrotime: the time since the last overflow event, in macrotime units
+- ADC: this represents the nanotime, but as the cards record in stop-start mode
+  the nanotime = :math:`max(ADC) - ADC`
+  
+.. note::
+    
+    For the 48 bit format, the macrotime is stored in 2 blocks, which must be 
+    combined, the 47-32 block stores the smaller  values, but otherwise all 
+    integer values stored in little endian format
 
 """
 
@@ -210,8 +521,8 @@ def _read_32_nonQC_records(records:np.ndarray[np.uint32],
     diferent specification for markers and overflows.
     Specify field locations with bitmask and shift arguments
     """
-    timestamps = _mask_shift(records, timestamps_bitmask, timestamps_shift, 'u8')
-    ovfl       = _mask_shift(records, 0xC0000000, 30, 'u1')
+    timestamps = _mask_shift(records, timestamps_bitmask, timestamps_shift, '<i8')
+    ovfl       = _mask_shift(records, 0xC0000000, 30, '<u1')
     # recompute times for overflows w/ invalid photons
     timestamps += np.left_shift(np.cumsum((ovfl == 0b11)*np.bitwise_and(records, 0x0FFFFFFF)), 12)
     # remove invalid photons
@@ -225,8 +536,8 @@ def _read_32_nonQC_records(records:np.ndarray[np.uint32],
     del ovfl # save memory
     # get routing (marker/detector) and nanotimes arrays
     # do this only after removing invalid from records to save memory
-    routing = _mask_shift(records,   routing_bitmask,   routing_shift, np.uint8)
-    adc     = _mask_shift(records, nanotimes_bitmask, nanotimes_shift, np.uint16)
+    routing = _mask_shift(records,   routing_bitmask,   routing_shift, '<u1')
+    adc     = _mask_shift(records, nanotimes_bitmask, nanotimes_shift, '<u2')
     # process markers
     marker_shift = 2**int(np.max(routing)).bit_length()
     marker_mask = np.bitwise_and(records, 0x10000000).astype(np.bool_)
@@ -283,13 +594,13 @@ def _read_spc6xx_48bit(file, meta:dict=None)->dict:
     detectors = data['c']
 
     # Build the macrotime (timestamps) using in-place operation for efficiency
-    timestamps = data['b'].astype('i8')
+    timestamps = data['b'].astype('<i8')
     np.left_shift(timestamps, 16, out=timestamps)
     timestamps += data['a']
 
     # extract the 13-th bit from data['field0']
     overflow = np.bitwise_and(np.right_shift(data['field0'], 13), 1)
-    overflow = np.cumsum(overflow, dtype='i8')
+    overflow = np.cumsum(overflow, dtype='<i8')
 
     # Add the overflow bits
     timestamps += np.left_shift(overflow, 24)
@@ -337,20 +648,20 @@ def _read_QCX04(file, meta:dict=None)->dict:
     # read final 2 bits, which indicate the record type as photon, marker, macrotime overflow, or GAP
     phtype = _mask_shift(records, 0xC0000000, 30, np.uint8)
     # read timestamps
-    timestamps = np.bitwise_and(records, 0x00000FFF).astype('u8')
+    timestamps = np.bitwise_and(records, 0x00000FFF).astype('<i8')
     # adjust timestamps for overflows
     ovfl_mask = phtype == 0b10
-    timestamps += np.left_shift(np.cumsum(ovfl_mask, dtype=np.uint64), 12)
+    timestamps += np.left_shift(np.cumsum(ovfl_mask, dtype='<i8'), 12)
     ovfl_mask = ~ovfl_mask
     records = records[ovfl_mask]
     timestamps = timestamps[ovfl_mask]
     phtype = phtype[ovfl_mask]
     del ovfl_mask # save memory
     # read nanotimes
-    nanotimes = _mask_shift(records, 0x0FFF0000, 16, 'u4')
+    nanotimes = _mask_shift(records, 0x0FFF0000, 16, 'u2')
     # combine CH bits and routing bits for detectors channel
-    route_ch = _mask_shift(records, 0x30000000, 28, 'u1')
-    route_ch += _mask_shift(records, 0x0000F000, 10, 'u1')
+    route_ch = _mask_shift(records, 0x30000000, 28, '<u1')
+    route_ch += _mask_shift(records, 0x0000F000, 10, '<u1')
     # get markers
     marker_mask = phtype == 0b01
     # set detectors to shift according to marker
@@ -366,12 +677,12 @@ def _read_QCX06(file, meta:dict=None)->dict:
     timestamps_unit, nroute = _read_QC_header(file)
     records = np.fromfile(file, dtype='<u4')
     # read final 4 bits, indicates record type, with some complexities...
-    phtype = _mask_shift(records, 0xF0000000, 28, 'u1')
+    phtype = _mask_shift(records, 0xF0000000, 28, '<u1')
     # read timestamps
-    timestamps = np.bitwise_and(records, 0x00000FFF).astype('u8')
+    timestamps = np.bitwise_and(records, 0x00000FFF).astype('<i8')
     # adjust for macrotime overflows
     overflow_mask = phtype == 0b1000
-    timestamps += np.left_shift(np.cumsum(overflow_mask, dtype='u8'), 12)
+    timestamps += np.left_shift(np.cumsum(overflow_mask, dtype='<i8'), 12)
     # remove overflow photons from records
     overflow_mask = ~overflow_mask
     records = records[overflow_mask]
@@ -379,7 +690,7 @@ def _read_QCX06(file, meta:dict=None)->dict:
     phtype = phtype[overflow_mask]
     del overflow_mask # save memory
     # start building router array
-    route_ch = _mask_shift(records, 0x0000F000, 9, 'u1')
+    route_ch = _mask_shift(records, 0x0000F000, 9, '<u1')
     route_ch[np.bitwise_and(phtype, 0b1000)==0b0000] += np.bitwise_and(phtype, 0b0111) # normal photon
     route_ch[np.bitwise_and(phtype, 0b1100)==0b1100] += np.bitwise_and(phtype, 0b0011) # GAP photon
     # identify and shift marker photons
@@ -387,7 +698,7 @@ def _read_QCX06(file, meta:dict=None)->dict:
     route_ch[marker_mask] += 2**int(np.max(route_ch)).bit_length()
     marker_ids = np.unique(route_ch[marker_mask])
     # get nanotimes
-    nanotimes = _mask_shift(records, 0x0FFF0000, 16, 'u4')
+    nanotimes = _mask_shift(records, 0x0FFF0000, 16, '<u2')
     return dict(timestamps=timestamps, detectors=route_ch, 
                 nanotimes=nanotimes, marker_ids=marker_ids, 
                 timestamps_unit=timestamps_unit)

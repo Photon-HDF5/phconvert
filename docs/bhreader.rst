@@ -8,9 +8,10 @@ List of functions
 
 High-level functions to load and decode Becker & Hickl SPC/SET pair of files:
 
+.. autofunction:: phconvert.bhreader.load_set
+
 .. autofunction:: phconvert.bhreader.load_spc
 
-.. autofunction:: phconvert.bhreader.load_set
 
 
 Low-level functions

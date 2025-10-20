@@ -1,11 +1,19 @@
 #
 # phconvert - Convert files to Photon-HDF5 format
 #
-# Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
+# Copyright (C) 2025-2026 Paul David Harris <harripd@gmail.com>
 #
+"""
+Plotter contains functions for plotting information loaded by ``loader`` module
+fucntions, making setting of excitation windows, ALEX periods, TCSPC_offsets etc.
+easier.
+
+"""
+
 
 import re
 from itertools import chain, repeat
+from collections.abc import Sequence
 from typing import Union
 import numpy as np
 import matplotlib as mpl
@@ -22,7 +30,7 @@ _nph_rgx = re.compile(r'non_photon_id([1-9]\d*)')
 _al_rgx = re.compile(r'(alex_excitation_period)([1-9]\d*)')
 
 
-def _mask_phot(times, dets, dgroup):
+def _mask_phot(times:np.ndarray, dets, dgroup):
     """
     Return only times of photons with a detector in dgroup
 
@@ -46,35 +54,35 @@ def _mask_phot(times, dets, dgroup):
     return times[mask]
 
 
-def _toint(nstr):
+def _toint(nstr:str)->int:
     """Convert a string with variable leading zeros into an int"""
     nstr = nstr.lstrip('0')
     return int(nstr) if nstr else '0'
 
 
-def _unions(args):
-    """Union of a list of sets"""
+def _unions(args:tuple[set[int],...])->set:
+    """Union of a list/tuple of sets"""
     comp = args[0]
     for arg in args[1:]:
         comp = comp | arg # do not use |= b/c cause side effect
     return comp
 
 
-def _intersects(args):
+def _intersects(args:tuple[set[int],...])->set:
     """Common elements across all sets in list of sets"""
     comp = args[0]
     for arg in args[1:]:
         comp &= arg
     return comp
 
-def _pos_in(idx, subs):
+def _pos_in(idx:int, subs:Sequence[set[int],...])->int:
     """Find index in subs where idx is present in list of sets"""
     for i, s in enumerate(subs):
         if idx in subs:
             return i
     return None
 
-def _get_detector_arrays(idxs:dict, det_spec:dict, rgx:re.Pattern, sort:bool):
+def _get_detector_arrays(idxs:dict, det_spec:dict, rgx:re.Pattern, sort:bool)->None:
     """
     Fill out idxs (dictionary) of detectors based on detectors_specs dictionary
     for channel defined by re.Match rgx, raises error if sort is True
@@ -112,7 +120,7 @@ def _get_detector_arrays(idxs:dict, det_spec:dict, rgx:re.Pattern, sort:bool):
         raise ValueError(f"No {name} groups specified in detectors_specs")
 
 
-def _get_det_combos(det_groups, det_id, markers):
+def _get_det_combos(det_groups:dict, det_id:set[int], markers:set[int])->dict:
     """
     Find all possible combinations of each channel type, and the cooresponding
     detectors.
@@ -164,7 +172,7 @@ def _get_det_combos(det_groups, det_id, markers):
 
 
 def _get_detectors_specs(ph_data:dict, group_dets:bool, sort_spectral:bool, 
-                         sort_polarization:bool, sort_split:bool):
+                         sort_polarization:bool, sort_split:bool)->dict:
     detectors = ph_data['detectors'][:]
     det_id = set(np.unique(detectors))
     
@@ -186,7 +194,7 @@ def _get_detectors_specs(ph_data:dict, group_dets:bool, sort_spectral:bool,
     return det_groups
 
 
-def _norm_denominator(normalization, hst):
+def _norm_denominator(normalization:str, hst:np.ndarray[np.integer])->Union[int,float]:
     """return normalization factor (denominator) base on either sum or max"""
     if 'sum' in normalization:
         return np.sum(hst)
@@ -197,7 +205,15 @@ def _norm_denominator(normalization, hst):
 
 def _plot_histogram(ax:plt.Axes, values:np.ndarray, detectors:np.ndarray[np.uint8],
                     dgroup:np.ndarray, bins:np.ndarray, stair_style:dict, 
-                    normalization:Union[None,str], xrange:Union[None,tuple[int, int]]):
+                    normalization:Union[None,str], xrange:Union[None,tuple[int, int]])->None:
+    """
+    Internal function for plotting single histogram curve of values
+    values is either timestamps mod alex period or nanotimes, must also supply 
+    detectors to identify each photon, will only include detectors in dgroup.
+    Bins supplies range, stair_style is kwargs for ax.stairs, normalization is
+    string supplied to determine how to noralize histogram, xrange is range of 
+    values to plot.
+    """
     hst, bns = np.histogram(_mask_phot(values, detectors, dgroup), bins=bins)
     if normalization is not None:
         if 'full' in normalization or xrange is None:
@@ -209,7 +225,8 @@ def _plot_histogram(ax:plt.Axes, values:np.ndarray, detectors:np.ndarray[np.uint
 
 def _plot_histograms(ax:plt.Axes, values:np.ndarray, detectors:np.ndarray[np.uint8], 
                      dgroups:int, bins:np.ndarray, stair_style:dict, 
-                     normalization:str=None, xrange:tuple[int,int]=None):
+                     normalization:str=None, xrange:tuple[int,int]=None)->None:
+    """Internal function to plot all histograms in alternation histogram"""
     if len(dgroups) == 2 and all('spectral' in key for key in dgroups.keys()):
         for label, dgroup in dgroups.items():
             c = _green if 'spectral 1' in label else _red
@@ -223,7 +240,7 @@ def _plot_histograms(ax:plt.Axes, values:np.ndarray, detectors:np.ndarray[np.uin
             _plot_histogram(ax, values, detectors, dgroup, bins, stkw, normalization, xrange)
 
 
-def _plot_spans(ax:plt.Axes, meas_spec:dict, span_style:dict):
+def _plot_spans(ax:plt.Axes, meas_spec:dict, span_style:dict)->None:
     """
     Plot excitation ranges based on meas_spec from photon_data/measurement_specs
     into ax, according to span_style keyword arguments
@@ -246,7 +263,8 @@ def _plot_spans(ax:plt.Axes, meas_spec:dict, span_style:dict):
                 ax.axvspan(b, e, color=r.color, **span_style)
 
 
-def alternation_hist(d:dict, bins:Union[int,np.ndarray]=None, ich:int=0, ax:plt.Axes=None, **kwargs):
+def alternation_hist(d:dict, bins:Union[int,np.ndarray]=None, ich:int=0, 
+                     ax:plt.Axes=None, **kwargs)->None:
     """
     Plot the alternation histogram or TCSPC decay of the data dictionary, given
     the currently present settings containted within, loaded by
@@ -288,7 +306,7 @@ def alternation_hist_cw(d, ax:plt.Axes=None, bins:np.ndarray=None,
                         ich:int=0, group_dets:bool=False,
                         sort_spectral:bool=False, sort_polarization:bool=False,
                         sort_split:bool=False, 
-                        hist_style:dict=None, span_style:dict=None):
+                        hist_style:dict=None, span_style:dict=None)->None:
     """
     Plot the laser alternation histogram for the data dictionary d assuming
     d uses continuous wave alternating laser excitation
@@ -349,7 +367,7 @@ def alternation_hist_pulsed(d:dict, ich:int=0, bins:Union[int,np.ndarray]=None,
                             sort_polarization:bool=False, sort_split:bool=False, 
                             ax:plt.Axes=None, hist_style:dict=None, 
                             span_style:dict=None, xrange:tuple[int, int]=None, 
-                            normalization=None):
+                            normalization=None)->None:
     """
     Plot TCSPC decays for data in d. Must contain nanotimes
 
@@ -434,7 +452,7 @@ def alternation_hist_pulsed(d:dict, ich:int=0, bins:Union[int,np.ndarray]=None,
 
 
 def alternation_hist_usalex(d:dict, bins=None, ich:int=0, ax:plt.Axes=None,
-                            hist_style:dict=None, span_style:dict=None):
+                            hist_style:dict=None, span_style:dict=None)->None:
     """Plot the us-ALEX alternation histogram for the data in dictionary `d`.
     
     .. note::

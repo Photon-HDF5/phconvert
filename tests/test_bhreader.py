@@ -1,8 +1,6 @@
-import unittest
 from phconvert import bhreader
 import numpy as np
 import pandas as pd
-import os.path
 
 import pytest
 
@@ -32,7 +30,7 @@ def test_import_SPC_150_nanotime():
     input_file = 'tests/test_files/test_noise.spc'
     check_file = 'tests/test_files/test_noise.asc'
 
-    data = bhreader.load_spc(input_file, 'SPC-150')
+    data = bhreader.load_spc(input_file)
     check = pd.read_csv(check_file, delimiter=' ', dtype='int64', usecols=[0,1], header=None).values.T
     
     assert data[2].size == check[1].size
