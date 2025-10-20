@@ -771,7 +771,7 @@ def load_spc(spcfile:Union[FileName, None]=None, setfile:Union[FileName, None]=N
         raise TypeError("must specify at least spcfile or setfile")
     # cast spcfile and setfile to Path objects
     spcfile = Path(spcfile) if spcfile is not None else spcfile
-    setfile = Path(spcfile) if setfile is not None else setfile
+    setfile = Path(setfile) if setfile is not None else setfile
     # Auto-fill non-specified file
     if setfile is None:
         setfile = spcfile.with_suffix('.set')

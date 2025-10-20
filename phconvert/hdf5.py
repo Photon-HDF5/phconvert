@@ -628,7 +628,7 @@ def _save_photon_hdf5_dict(group, data_dict, user_descr, prefix_list=None,
                       item['meta_path'])
 
         if item['value'] is None:
-            raise ValueError('Must set value for {item["name"]}')
+            raise ValueError(f'Must set value for {item["name"]}')
 
         if isinstance(item['value'], tables.Array):
             # If the data is already a pytable array set only the title
