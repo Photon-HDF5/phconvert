@@ -1335,40 +1335,6 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
     is potentially expensive for big data files). Under normal usage the
     additional detectors take negligible space and can be safely ignored.
 
-    Arguments:
-        t3records (array): raw array of t3records as saved in the
-            PicoQuant file.
-        time_bit (int): number of bits in the t3record used for timestamps
-            (or macro-time).
-        dtime_bit (int): number of bits in the t3record used for the nanotime
-            (TCSPC time or micro-time)
-        ch_bit (int): number of bits in the t3record used for the detector
-            number.
-        special_bit (bool): if True the t3record contains a special bit
-            for overflow correction.
-            This special bit will become the MSB in the returned detectors
-            array. If False, it assumes no special bit in the t3record.
-        ovcfunc (function or None): function to perform overflow correction
-            of timestamps. If None use the default function. The default
-            function is the numba-accelerated version is numba is installed
-            otherwise it is function using plain numpy.
-
-    Returns:
-        A 3-element tuple containing the following 1D arrays (all of the same
-        length):
-
-        - **timestamps** (*array of int64*): the macro-time (or number of sync)
-          of each photons after overflow correction. Units are specified in
-          the file header.
-        - **nanotimes** (*array of uint16*): the micro-time (TCSPC time), i.e.
-          the time lag between the photon detection and the previous laser
-          sync. Units (i.e. the bin width) are specified in the file header.
-        - **detectors** (*arrays of uint8*): detector number. When
-          `special_bit = True` the highest bit in `detectors` will be
-          the special bit.
-    """
-
-    """
     Notes on detectors:
 
         The bit allocation in the record is, starting from the MSB::
@@ -1400,6 +1366,40 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
             detectors==1 => regular event regular detector 1
             detectors==2 => regular event regular detector 2
             ...
+
+    Arguments:
+        t3records (array): raw array of t3records as saved in the
+            PicoQuant file.
+        time_bit (int): number of bits in the t3record used for timestamps
+            (or macro-time).
+        dtime_bit (int): number of bits in the t3record used for the nanotime
+            (TCSPC time or micro-time)
+        ch_bit (int): number of bits in the t3record used for the detector
+            number.
+        special_bit (bool): if True the t3record contains a special bit
+            for overflow correction.
+            This special bit will become the MSB in the returned detectors
+            array. If False, it assumes no special bit in the t3record.
+        ovcfunc (function or None): function to perform overflow correction
+            of timestamps. If None use the default function. The default
+            function is the numba-accelerated version is numba is installed
+            otherwise it is function using plain numpy.
+
+    Returns:
+        A 3-element tuple containing the following 1D arrays (all of the same
+        length):
+        
+        - **detectors** (*arrays of uint8*): detector number. When
+          `special_bit = True` the highest bit in `detectors` will be
+          the special bit.
+        - **timestamps** (*array of int64*): the macro-time (or number of sync)
+          of each photons after overflow correction. Units are specified in
+          the file header.
+        - **nanotimes** (*array of uint16*): the micro-time (TCSPC time), i.e.
+          the time lag between the photon detection and the previous laser
+          sync. Units (i.e. the bin width) are specified in the file header.
+        
+    
 
     """
 
