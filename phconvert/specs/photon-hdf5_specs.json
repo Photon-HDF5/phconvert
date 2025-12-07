@@ -223,7 +223,7 @@
         "Number of TCSPC bins for each pixel.",
         "array"
     ],
-    "/setup/detectors/tcspc_offsets": [
+    "/setup/detectors/tcspc_offset": [
         "Offset per decector for TCSPC nanotimes",
         "array"
     ],

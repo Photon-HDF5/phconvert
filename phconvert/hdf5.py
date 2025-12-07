@@ -659,7 +659,7 @@ def save_photon_hdf5(data_dict:dict,
                      warnings=True,
                      skip_measurement_specs=False,
                      require_setup=True,
-                     debug=False):
+                     debug=False)->tables.File:
     """
     Saves the dict `data_dict` in the Photon-HDF5 format.
 
@@ -758,6 +758,10 @@ def save_photon_hdf5(data_dict:dict,
             only detectors' dark counts.
         debug : bool
             if True prints additional debug information.
+    
+    Returns:
+    tables.File
+        The file object of the created photonHDF5 file
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
@@ -836,6 +840,7 @@ def save_photon_hdf5(data_dict:dict,
     finally:
         if close:
             h5file.close()
+    return h5file
 
 
 def _is_mutispot(h5root_or_dict):

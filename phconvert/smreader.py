@@ -128,6 +128,6 @@ def load_sm(fname, return_labels=False):
     data = data.byteswap(True).view(sm_dtype.newbyteorder())
 
     if return_labels:
-        return data['timestamp'], data['detector'], labels
+        return data['timestamp'].astype('<i8'), data['detector'].astype('<u4'), labels
     else:
-        return data['timestamp'], data['detector']
+        return data['timestamp'].astype('<i8'), data['detector'].astype('<u4')

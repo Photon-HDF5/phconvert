@@ -1142,12 +1142,12 @@ def _overflow_correction_PT2_base(times, dets, channel_bit, wraparound, version)
     
     
 if has_numba:
-    _overflow_correction_PT2_numba = numba.jit((numba.uint64[:], numba.uint8[:], numba.int8, 
-                                          numba.uint64, numba.uint64))(_overflow_correction_PT2_loop)
-    _overflow_correction_HT2_numba = numba.jit((numba.uint64[:], numba.uint8[:], numba.int8, 
-                                          numba.uint64, numba.uint64))(_overflow_correction_HT2_loop)
-    _overflow_correction_PT3_compiled = numba.jit((numba.uint64[:], numba.uint8[:], numba.uint16[:], 
-                                                numba.int8, numba.uint64, numba.uint64))(_overflow_correction_PT3_inner_numba)
+    _overflow_correction_PT2_numba = numba.jit((numba.int64[:], numba.uint8[:], numba.int8, 
+                                          numba.int64, numba.int64))(_overflow_correction_PT2_loop)
+    _overflow_correction_HT2_numba = numba.jit((numba.int64[:], numba.uint8[:], numba.int8, 
+                                          numba.int64, numba.int64))(_overflow_correction_HT2_loop)
+    _overflow_correction_PT3_compiled = numba.jit((numba.int64[:], numba.uint8[:], numba.uint16[:], 
+                                                numba.int8, numba.int64, numba.int64))(_overflow_correction_PT3_inner_numba)
     
     def _overflow_correction_PT3_numba(times, dets, dtime, channel_bit, 
                                              wraparound, version):
@@ -1169,8 +1169,8 @@ if has_numba:
             marker_ids = np.array([], dtype=dets.dtype)
         return times, dets, dtime, marker_ids
     
-    _overflow_correction_HT3_numba = numba.jit((numba.uint64[:], numba.uint8[:], numba.uint16[:], 
-                                          numba.int8, numba.uint64, numba.uint64))(_overflow_correction_HT3_loop)
+    _overflow_correction_HT3_numba = numba.jit((numba.int64[:], numba.uint8[:], numba.uint16[:], 
+                                          numba.int8, numba.uint64, numba.int64))(_overflow_correction_HT3_loop)
     _overflow_correction_PT2 = _overflow_correction_PT2_numba
     _overflow_correction_HT2 = _overflow_correction_HT2_numba
     _overflow_correction_PT3 = _overflow_correction_PT3_numba
@@ -1254,7 +1254,7 @@ def process_pturecords(records, spec, extract_markers=True, ovcfunc='auto'):
     """
     # Extract relevant time/det/nanotime stamps
     dets = np.right_shift(records, 32-spec['channel_bit']).astype(np.uint8)
-    times = np.bitwise_and(records, 2**spec['time_bit']-1).astype(np.uint64)
+    times = np.bitwise_and(records, 2**spec['time_bit']-1).astype(np.int64)
     dtime = None
     if spec['T'] == 3:
         dtime = np.bitwise_and(np.right_shift(records, spec['time_bit']), 

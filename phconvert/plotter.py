@@ -338,7 +338,7 @@ def alternation_hist_cw(d, ax:plt.Axes=None, bins:np.ndarray=None,
         plt.figure()
         ax = plt.gca()
     bins = 101 if bins is None else bins
-    hist_style_ = dict(alpha=0.5, histtype='stepfilled', lw=1.3)
+    hist_style_ = dict(alpha=0.5, lw=1.3)
     hist_style_.update(dict() if hist_style is None else hist_style)
     
     span_style_ = dict(alpha=0.1)
@@ -427,12 +427,12 @@ def alternation_hist_pulsed(d:dict, ich:int=0, bins:Union[int,np.ndarray]=None,
     meas_spec = ph_data['measurement_specs']
     nanotimes = ph_data['nanotimes']
     setup_det = d['setup'].get('detectors', dict())
-    if 'tcspc_offsets' in setup_det:
-        if np.any(setup_det['tcspc_offsets']!= 0):
+    if 'tcspc_offset' in setup_det:
+        if np.any(setup_det['tcspc_offset']!= 0):
             idxs = setup_det['id']
             spots = setup_det['spot'] if multispot else repeat(0)
             nanotimes = nanotimes.copy().astype(np.int16)
-            for idx, offset, sp in zip(idxs, setup_det['tcspc_offsets'], spots):
+            for idx, offset, sp in zip(idxs, setup_det['tcspc_offset'], spots):
                 if sp != ich:
                     continue
                 nanotimes[detectors==idx] -= offset
