@@ -58,9 +58,10 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: dwaithe/FCS_point_correlator
+          path: tests
       - name: move file
         shell: bash -1 {0}
-        run: cp focuspoint/TopFluo488-PE_8_0_7_1_1_2.pt3 tests/TopFluo488-PE_8_0_7_1_1_2.pt3
+        run: mv tests/focuspoint/TopFluo488-PE_8_0_7_1_1_2.pt3 tests/TopFluo488-PE_8_0_7_1_1_2.pt3
       - name: Install Dependencies
         shell: bash -l {0}
         run: |
