@@ -7,7 +7,7 @@ from phconvert import smreader
 
 import pytest
 
-DATADIR = 'PTUSPCSMfiles/'
+DATADIR = '../PTUSPCSMfiles/'
 
 
 def test_smreader():

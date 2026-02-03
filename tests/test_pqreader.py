@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import phconvert as phc
 
-DATADIR = 'PTUSPCSMfiles/'
+DATADIR = '../PTUSPCSMfiles/'
 
 
 def dataset1():

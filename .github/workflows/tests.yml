@@ -84,5 +84,6 @@ jobs:
       - name: Test project
         shell: bash -l {0}
         run: |
+          cd tests
           pytest
         

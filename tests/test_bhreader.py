@@ -27,8 +27,8 @@ import pytest
 #         self.assertAlmostEqual(data[3]*1e9, 9.5, 1)         # Right timestamp
 
 def test_import_SPC_150_nanotime():
-    input_file = 'PTUSPCSMfiles/test_noise.spc'
-    check_file = 'PTUSPCSMfiles/test_noise.asc'
+    input_file = '../PTUSPCSMfiles/test_noise.spc'
+    check_file = '../PTUSPCSMfiles/test_noise.asc'
 
     data = bhreader.load_spc(input_file)
     timestamps = data['photon_data']['timestamps']
