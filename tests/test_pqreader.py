@@ -145,7 +145,7 @@ def test_load_ht3():
 def test_load_pt3():
     """Test loading PT3 files."""
     fn = 'topfluorPE_2_1_1_1.pt3'
-    filename = 'FCS_point/focuspoint/' + fn
+    filename = 'FCS_point/' + fn
     assert os.path.isfile(filename), 'File not found: %s' % filename
     timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_pt3(filename)
     acq_duration = meta['header']['AcquisitionTime'] * 1e-3
