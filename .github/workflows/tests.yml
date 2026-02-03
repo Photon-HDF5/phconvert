@@ -61,7 +61,7 @@ jobs:
           path: tests
       - name: move file
         shell: bash -1 {0}
-        run: mv tests/focuspoint/TopFluo488-PE_8_0_7_1_1_2.pt3 tests/TopFluo488-PE_8_0_7_1_1_2.pt3
+        run: cp tests/nbrun.py tests/nbrun1.py
       - name: Install Dependencies
         shell: bash -l {0}
         run: |
