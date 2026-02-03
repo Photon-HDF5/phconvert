@@ -521,7 +521,7 @@ def _read_32_nonQC_records(records:np.ndarray[np.uint32],
     diferent specification for markers and overflows.
     Specify field locations with bitmask and shift arguments
     """
-    timestamps = _mask_shift(records, timestamps_bitmask, timestamps_shift, '<i8')
+    timestamps = _mask_shift(records, timestamps_bitmask, timestamps_shift, '<u8')
     ovfl       = _mask_shift(records, 0xC0000000, 30, '<u1')
     # recompute times for overflows w/ invalid photons
     timestamps += np.left_shift(np.cumsum((ovfl == 0b11)*np.bitwise_and(records, 0x0FFFFFFF)), 12)
@@ -532,7 +532,7 @@ def _read_32_nonQC_records(records:np.ndarray[np.uint32],
     ovfl = ovfl[valid]
     del valid # save memory
     # compute single time overflows
-    timestamps += np.left_shift(np.cumsum(ovfl, dtype='u8'), 12)
+    timestamps += np.left_shift(np.cumsum(ovfl, dtype='<u8'), 12)
     del ovfl # save memory
     # get routing (marker/detector) and nanotimes arrays
     # do this only after removing invalid from records to save memory
@@ -646,7 +646,7 @@ def _read_QCX04(file, meta:dict=None)->dict:
     timestamps_unit, nroute = _read_QC_header(file)
     records = np.fromfile(file, dtype='<u4')
     # read final 2 bits, which indicate the record type as photon, marker, macrotime overflow, or GAP
-    phtype = _mask_shift(records, 0xC0000000, 30, np.uint8)
+    phtype = _mask_shift(records, 0xC0000000, 30, '<u1')
     # read timestamps
     timestamps = np.bitwise_and(records, 0x00000FFF).astype('<i8')
     # adjust timestamps for overflows
@@ -658,7 +658,7 @@ def _read_QCX04(file, meta:dict=None)->dict:
     phtype = phtype[ovfl_mask]
     del ovfl_mask # save memory
     # read nanotimes
-    nanotimes = _mask_shift(records, 0x0FFF0000, 16, 'u2')
+    nanotimes = _mask_shift(records, 0x0FFF0000, 16, '<u2')
     # combine CH bits and routing bits for detectors channel
     route_ch = _mask_shift(records, 0x30000000, 28, '<u1')
     route_ch += _mask_shift(records, 0x0000F000, 10, '<u1')

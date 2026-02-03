@@ -25,6 +25,7 @@ description="Test file save"
 timestamps_unit = 5e-8
 timestamps_specs = dict(timestamps_unit=timestamps_unit)
 
+
 def make_setup(excitations, spectral, polarization, split, lifetime):
     setup = dict(num_spectral_ch=spectral, num_polarization_ch=polarization, 
                  num_split_ch=split, num_spots=1, 
@@ -36,12 +37,14 @@ def make_setup(excitations, spectral, polarization, split, lifetime):
                  )
     return setup
 
+@pytest.mark.filterwarnings("ignore")
 def test_saveminimal():
     data = dict(_filename='test.spc', description=description, 
                 photon_data=dict(timestamps=timestamps, 
                                  timestamps_specs=timestamps_specs))
     phc.hdf5.save_photon_hdf5(data, require_setup=False)
 
+@pytest.mark.filterwarnings("ignore")
 def test_saveCW():
     measurement_specs = dict(measurement_type='smFRET-usALEX',
                              alex_period=4000,

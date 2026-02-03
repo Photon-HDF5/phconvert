@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 _green = 'g'
 _red = 'r'
-_ch_rgx = re.compile(r'(spectral|polarization|split)_ch(1-9]\d*)')
+_ch_rgx = re.compile(r'(spectral|polarization|split)_ch([1-9]\d*)')
 _spec_rgx = re.compile(r'(spectral)_ch([1-9]\d*)')
 _pol_rgx = re.compile(r'(polarization)_ch([1-9]\d*)')
 _split_rgx = re.compile(r'(split)_ch([1-9]\d*)')

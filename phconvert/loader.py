@@ -96,11 +96,11 @@ def loadfile_sm(filename, software='LabVIEW Data Acquisition usALEX',
         setup['detectors'] = {'id':unique_detectors, 
                               'label':np.array([''.join(chr(c) for c in chan) 
                                                 for chan in  labels])}
-    provenance = dict(filename=filename, software=software)
+    provenance = dict(filename=str(filename), software=software)
     acquisition_duration = (timestamps[-1] - timestamps[0]) * 12.5e-9
     identity = dict(author=None, author_affiliation=None)
     data = dict(
-        _filename = filename,
+        _filename = str(filename),
         description = None,
         acquisition_duration = round(acquisition_duration),
         photon_data = photon_data,
@@ -270,7 +270,7 @@ def loadfile_ptu(filename:str):
 
     """
     load_pq = {'ptu': pqreader.load_ptu, 'ht3': pqreader.load_ht3,
-               'pt3': pqreader.load_pt3}[filename[-3:]]
+               'pt3': pqreader.load_pt3}[os.path.splitext(filename)[1][1:]]
     
     times, dets, dtime, metadata, marker_ids = load_pq(filename)
     # Creation time from the file header
@@ -280,7 +280,7 @@ def loadfile_ptu(filename:str):
     software_version = metadata.pop('software_version')
     
     provenance = dict(
-        filename=filename,
+        filename=str(filename),
         creation_time=creation_time,
         software=software,
         software_version=software_version,
@@ -315,14 +315,14 @@ def loadfile_ptu(filename:str):
         excitation_cw = None,
         detection_wavelengths = None,
         excitation_alternated = None,
-        detectors = dict(id=det_ids, counts=det_counts, label=None),
+        detectors = {'id':det_ids, 'counts':det_counts, 'label':None},
         )
     identity = dict(author=None, author_affiliation=None)
 
     if dtime is not None:
         laser_repetition_rate = float(metadata.pop('laser_repetition_rate'))
         tcspc_unit = float(metadata.pop('nanotimes_unit'))
-        tcspc_num_bins = 4096
+        tcspc_num_bins = 1<<metadata.pop('nanotimes_bits')
         tcspc_range = tcspc_num_bins * tcspc_unit
         photon_data['nanotimes'] = dtime
         photon_data['measurement_specs']['laser_repetition_rate'] = (laser_repetition_rate,)
@@ -337,7 +337,7 @@ def loadfile_ptu(filename:str):
         photon_data['measurement_specs']['detectors_specs']['non_photon_id1'] = marker_ids
 
     data = dict(
-        _filename = filename,
+        _filename = str(filename),
         acquisition_duration = acquisition_duration,
         photon_data = photon_data,
         setup = setup,
@@ -359,7 +359,7 @@ def usalex_sm(
     This dictionary can be passed to the :func:`phconvert.hdf5.save_photon_hdf5`
     function to save the data in Photon-HDF5 format.
     """
-    print(" - Loading '%s' ... " % filename)
+    print(" - Loading '%s' ... " % (filename))
     timestamps, detectors, labels = smreader.load_sm(filename,
                                                      return_labels=True)
     print(" [DONE]\n")
@@ -391,10 +391,10 @@ def usalex_sm(
         detection_wavelengths = detection_wavelengths,
         excitation_alternated=[True, True])
 
-    provenance = dict(filename=filename, software=software)
+    provenance = dict(filename=str(filename), software=software)
     acquisition_duration = (timestamps[-1] - timestamps[0]) * 12.5e-9
     data = dict(
-        _filename = filename,
+        _filename = str(filename),
         acquisition_duration = round(acquisition_duration),
         photon_data = photon_data,
         setup = setup,

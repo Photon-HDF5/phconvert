@@ -170,6 +170,7 @@ def load_ptu(filename, return_marker=False, ovcfunc='auto'):
         'tags': _convert_multi_tags(tags)}
     if spec['T'] == 3:
         meta['nanotimes_unit'] = tags['MeasDesc_Resolution']['value']
+        meta['nanotimes_bits'] = spec['dtime_bit']
         meta['laser_repetition_rate'] = tags['TTResult_SyncRate']['value']
     times, dets, dtime, marker_ids = process_pturecords(records, spec, ovcfunc=ovcfunc)
     return times, dets, dtime, meta, marker_ids
@@ -1069,7 +1070,7 @@ def _overflow_correction_HT3_base(times, dets, dtime, channel_bit, wraparound, v
     times = times[~overflows]
     dets = dets[~overflows]
     dtime = dtime[~overflows]
-    times += overflow_correction
+    times += overflow_correction.astype(times.dtype)
     markers = np.bitwise_and(dets, 2**(channel_bit-1)).astype(bool)
     marker_ids = np.unique(dets[markers])
     return times, dets, dtime, marker_ids
@@ -1090,7 +1091,7 @@ def _overflow_correction_HT2_base(times, dets, channel_bit, wraparound, version)
     overflow_correction = overflow_correction[~overflows]
     times = times[~overflows]
     dets = dets[~overflows]
-    times += overflow_correction
+    times += overflow_correction.astype(times.dtype)
     markers = np.bitwise_and(dets, 2**(channel_bit-1)).astype(bool)
     marker_ids = np.unique(dets[markers])
     return times, dets, marker_ids
@@ -1103,7 +1104,7 @@ def _overflow_correction_PT3_base(times, dets, dtime, channel_bit, wraparound, v
     """
     mask = (dets==2**channel_bit-1)
     overflow_mask = (dtime == 0) * mask
-    times += np.cumsum(overflow_mask, dtype=np.uint64)*wraparound
+    times += np.cumsum(overflow_mask, dtype=times.dtype)*wraparound
     times = times[~overflow_mask]
     dets = dets[~overflow_mask]
     dtime = dtime[~overflow_mask]
@@ -1333,15 +1334,16 @@ def process_t3records(t3records, time_bit=10, dtime_bit=15,
         A 3-element tuple containing the following 1D arrays (all of the same
         length):
 
+        - **detectors** (*arrays of uint8*): detector number. When
+          `special_bit = True` the highest bit in `detectors` will be
+          the special bit.
         - **timestamps** (*array of int64*): the macro-time (or number of sync)
           of each photons after overflow correction. Units are specified in
           the file header.
         - **nanotimes** (*array of uint16*): the micro-time (TCSPC time), i.e.
           the time lag between the photon detection and the previous laser
           sync. Units (i.e. the bin width) are specified in the file header.
-        - **detectors** (*arrays of uint8*): detector number. When
-          `special_bit = True` the highest bit in `detectors` will be
-          the special bit.
+        
     """
 
     """

@@ -160,7 +160,9 @@ def _NW_repl(n, descr):
             descr = descr.replace('{NW}', str(n))
     return descr, drop, has_nw
 
+
 _repl_funcs = (_NTH_repl, _DA_repl, _NW_repl)
+
 
 def _format_descr(matchobj, descr):
     descrchunks = descr.split('!!')
@@ -354,6 +356,8 @@ class _SpecDict:
     def _validate_HDF5(self, file, err_pool, warn_pool, descr_pool):
         for node in file.walk_nodes('/'):
             # get field information
+            if 'user' in node._v_pathname.split('/') or node._v_name == 'user':
+                continue
             descr, spec, field_match_obj, err_msg, warn_msg = self._get_subindex(node._v_pathname)
             # check for no non-spec fields
             if warn_msg:
@@ -375,8 +379,6 @@ class _SpecDict:
                 title = node._v_title
                 title = str(title) if isinstance(title, (str, np.str_)) else str(title.decode())
                 if descr != title:
-                    print('descr:', descr)
-                    print('title:', title)
                     descr_msg = 'Description (TITLE) for "%s" not compliant.' % node._v_pathname
                     if isinstance(descr_pool, list):
                         descr_pool.append(descr_msg)
@@ -436,7 +438,6 @@ class _SpecDict:
         finally:
             if close:
                 h5.close()
-
             err_pool = list() if err_pool is None else err_pool
             if strict:
                 if isinstance(warn_pool, list):
@@ -558,16 +559,16 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     if name in h5file.get_node(group):
         # Remove a pre-existing node with the same name
         h5file.remove_node(group, name)
-    save(group, name, obj=obj)
+    save(group, name, obj=obj, title=descr)
     # Set title through property access to work around pytable issue
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
-    node = h5file.get_node(group)._f_get_child(name)
-    # Ensure descr is a bytes object
-    if descr is None:
-        descr = _EMPTY
-    elif isinstance(descr, (str, np.str_)):
-            descr = descr.encode()
-    node.title = descr
+    # node = h5file.get_node(group)._f_get_child(name)
+    # # Ensure descr is a bytes object
+    # if descr is None:
+    #     descr = _EMPTY
+    # elif isinstance(descr, (str, np.str_)):
+    #         descr = descr.encode()
+    # node.title = descr
 
 
 def _iter_hdf5_dict(data_dict, prefix_list=None, user_descr=None, debug=False):
