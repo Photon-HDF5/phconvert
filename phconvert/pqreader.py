@@ -1105,7 +1105,7 @@ def _overflow_correction_PT3_base(times, dets, dtime, channel_bit, wraparound, v
     """
     mask = (dets==2**channel_bit-1)
     overflow_mask = (dtime == 0) * mask
-    times += np.cumsum(overflow_mask, dtype=times.dtype)*wraparound
+    times += np.cumsum(overflow_mask, dtype=times.dtype)*int(wraparound)
     times = times[~overflow_mask]
     dets = dets[~overflow_mask]
     dtime = dtime[~overflow_mask]
@@ -1129,7 +1129,7 @@ def _overflow_correction_PT2_base(times, dets, channel_bit, wraparound, version)
     mask = (dets==2**channel_bit-1)
     tover = np.bitwise_and(times, 0xF)
     overflow_mask = (tover == 0)*mask
-    times += np.cumsum(overflow_mask, dtype=np.uint64)*wraparound
+    times += np.cumsum(overflow_mask, dtype=np.uint64)*int(wraparound)
     times = times[~overflow_mask]
     dets = dets[~overflow_mask]
     tover = tover[~overflow_mask]
