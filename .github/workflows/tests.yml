@@ -13,13 +13,10 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14, ]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        exclude:
-          - os: macos-14
-            python-version: "3.7"
+        os: [ubuntu-latest, windows-latest, macos-latest ]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -57,6 +54,13 @@ jobs:
       # #     conda init --all
       # #     conda create -n test python=${{matrix.python-version}}
       # #     conda activate test
+      - name: checkout test files
+        uses: actions/checkout@v6
+        with:
+          repository: dwaithe/FCS_point_correlator
+      - name: move file
+        shell: bash -1 {0}
+        run: cp focuspoint/TopFluo488-PE_8_0_7_1_1_2.pt3 tests/
       - name: Install Dependencies
         shell: bash -l {0}
         run: |
