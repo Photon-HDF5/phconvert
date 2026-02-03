@@ -64,7 +64,7 @@ jobs:
       - name: check out test files
         uses: actions/checkout@v6
         with:
-          repository: PhotonHDF5/PTUSPCSMfiles
+          repository: Photon-HDF5/PTUSPCSMfiles
           path: PTUSPCSMfiles
       - name: Install Dependencies
         shell: bash -l {0}
