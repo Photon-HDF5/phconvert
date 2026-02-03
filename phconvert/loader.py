@@ -19,12 +19,333 @@ decode a new file format, these modules can provide useful examples.
 """
 
 import os
+import warnings
 import time
 import numpy as np
 
 from . import smreader
 from . import bhreader
 from . import pqreader
+
+
+def loadfile_sm(filename, software='LabVIEW Data Acquisition usALEX', 
+                       warn=False, print_warning=True):
+    """
+    Load .sm file filling in all fields that can be filled from metadata in 
+    LabVIEW acquired usALEX data file. 
+
+    Parameters
+    ----------
+    filename : str
+        Name of file to be converted.
+    software : str, optional
+        Description of software that was used to acuire the data. 
+        The default is 'LabVIEW Data Acquisition usALEX'.
+    warn : bool, optional
+        Whether or not to warn if there are potential problems in the data. 
+        The default is False.
+    print_warning : TYPE, optional
+        DESCRIPTION. The default is True.
+
+    Raises
+    ------
+    FileNotFoundError
+        Given filename does not exist on the system.
+
+    Returns
+    -------
+    data : dict
+        Dictionary of data, with unknown but necessary values provided as keys
+        with value of None. Once None values are replaced with appropriate values
+        data can be passed to :func:`hdf5.save_photon_hdf5`.
+
+    """
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f'file: {filename} does not exist')
+    timestamps, detectors, labels = smreader.load_sm(filename, 
+                                                     return_labels=True)
+    unique_detectors = np.unique(detectors)
+    if len(labels) < unique_detectors.size:
+        if warn:
+            warnings.warn("Number of labels and detector types inconsistent, check labels")
+        if print_warning:
+            print("Number of labels and detector types inconsistent, check labels")
+
+    photon_data = dict(
+        timestamps=timestamps, 
+        timestamps_specs = dict(timestamps_unit=12.5e-9),
+        detectors=detectors,
+        measurement_specs = dict(
+            measurement_type = None,
+            detectors_specs = dict(spectral_polarization_split_chN=np.unique(detectors)))
+        )
+    setup = dict(
+        num_pixels = unique_detectors.size,
+        num_spots = 1,
+        num_spectral_ch = None,
+        num_polarization_ch = None,
+        num_split_ch = None,
+        modulated_excitation = None,
+        lifetime = False,
+        excitation_wavelengths = None,
+        excitation_cw = None,
+        detection_wavelengths = None,
+        excitation_alternated=None,
+        )
+    if len(labels) == unique_detectors.size:
+        setup['detectors'] = {'id':unique_detectors, 
+                              'label':np.array([''.join(chr(c) for c in chan) 
+                                                for chan in  labels])}
+    provenance = dict(filename=str(filename), software=software)
+    acquisition_duration = (timestamps[-1] - timestamps[0]) * 12.5e-9
+    identity = dict(author=None, author_affiliation=None)
+    data = dict(
+        _filename = str(filename),
+        description = None,
+        acquisition_duration = round(acquisition_duration),
+        photon_data = photon_data,
+        setup = setup,
+        provenance = provenance,
+        identity = identity)
+    return data
+
+
+def loadfile_bh(filename, setfilename=None, spc_model='infer', SPC_type='auto'):
+    """
+    Load .spc (Beckr & Hickl) file as dictionary for saving with :func:`hdf5.save_photon_hdf5`.
+    Any field that cannot be infered from data or metadata necessary for saving
+    is given as a key with value of None. All None valued fields must be replaced
+    with appropriate value before saving. For detectors fields that cannot be
+    infered, all detectors are assigned to 
+    `photon_data(X)/measurement_specs/detectors_specs/spectral_polarization_split_chN`,
+    this element should be removed from the dictioanry, and each index within
+    assigned to the appropriate `spectral_chX`, `polarization_chX` or `split_chX`
+    array.
+
+    Parameters
+    ----------
+    filename : str
+        Name of file, must end in .spc/.SPC.
+    setfilename : str, optional
+        Name of cooresponding .set file, if not specified, infer name of set
+        filename from filename. The default is None.
+    SPC_type : str, optional
+        Identifier for card type, use only if your card is newer than phconvert.
+        Options are:
+            
+            - 'SPC-1XX' for SPC-1XX and SPC-8XX cards (this is the most common format)
+            - 'SPC-6XX-48bit' for SPC-6XX cards with 12 bit TCSPC resolution 
+              (most common for these cards)
+            - 'SPC-6XX-32bit'for SPC-6XX cards with 8 bit TCSPC resolution 
+              (most common for these cards)
+            - 'QC-X04' for SPC-QC-X04 cards 
+            - 'QC-X06'for SPC-QC-X06 cards
+    
+    spc_model : str, optional
+        **Deprecated** use SPC_type intead. Originally used to determine bit layout
+        of .spc file. Now read_set can determine layout of .spc file automatically.
+        New cards may come out that will confuse this function however, thus,
+        if you have a newer card that supported by phconvert, but still uses a
+        supported .spc format, use SPC_type argument.
+    
+    Raises
+    ------
+    FileNotFoundError
+        One or both file and/or setfile names provided do not exist on system.
+
+    Returns
+    -------
+    data : dict
+        Dictionary of fields relevant to photon-HDF5.
+    metadata : dict
+        Metadata from set file with information not pertinent to photon-HDF5,
+        data should be saved in /user/becker_hickl group.
+
+    """
+    data = bhreader.load_spc(filename, setfile=setfilename, SPC_type=SPC_type)
+    metadata        = data['meta']
+    timestamps      = data['photon_data']['timestamps'] 
+    detectors       = data['photon_data']['detectors']
+    nanotimes       = data['photon_data']['nanotimes']
+    timestamps_unit = data['photon_data']['timestamps_unit']
+    tcspc_num_bins = data['photon_data']['tcspc_num_bins']
+    det_ids, det_counts = np.unique(detectors, return_counts=True)
+    metadata.pop('header')
+    provenance = dict(filename=str(filename), software='Becker & Hickl SPCM')
+    if 'identification' in metadata:
+        identification = metadata['identification']
+        date_str = identification['Date']
+        time_str = identification['Time']
+        creation_time = date_str + ' ' + time_str
+        provenance.update({'creation_time': creation_time})
+        
+    if 'setup' in metadata:
+        print('TCSPC parameters retrived from the .SET file.')
+        sys_setup = metadata['setup']
+        # TODO : Check all TAC related derived parameters
+        tcspc_range = float(sys_setup.get('SP_TAC_R', 0.0))
+        if tcspc_range > 1e-3: tcspc_range *= 1e-9
+        tcspc_range /=  float(sys_setup.get('SP_TAC_G', 1))
+        tcspc_unit = tcspc_range / tcspc_num_bins
+        if tcspc_range == 0.0: tcspc_range = None
+        if tcspc_unit == 0.0: tcspc_unit = None
+    else:
+        tcspc_unit = None
+        tcspc_range = None
+    photon_data = dict(
+        timestamps = timestamps,
+        timestamps_specs = dict(timestamps_unit=timestamps_unit),
+        measurement_specs = dict(measurement_type = None,
+                                 detectors_specs = dict(spectral_polarization_split_chN=np.unique(detectors),),
+                                 laser_repetition_rate = 1/tcspc_range if tcspc_range is not None else None), # TODO: check this is best way to get laser rep rate
+        detectors = detectors,
+        nanotimes = nanotimes,
+        nanotimes_specs = dict(tcspc_unit = tcspc_unit,
+                               tcspc_range = tcspc_range,
+                               tcspc_num_bins = tcspc_num_bins),
+                       )
+
+    setup = dict(
+        num_pixels = np.unique(detectors).size - det_ids.size,
+        num_spots = 1,
+        num_spectral_ch = None,
+        num_polarization_ch = None,
+        num_split_ch = None,
+        modulated_excitation = True,
+        lifetime = True,
+        excitation_wavelengths = None,
+        excitation_cw = None,
+        detection_wavelengths = None,
+        excitation_alternated = None,
+        detectors = dict(id=det_ids, counts=det_counts, label=None),
+        laser_repetition_rates = np.array([1/sys_setup['SP_TAC_R'], ])
+        )
+
+    acquisition_duration = ((timestamps.max() - timestamps.min()) *
+                            timestamps_unit)
+    identity = dict(author=None, author_affiliation=None)
+
+    data = dict(
+        _filename = filename,
+        acquisition_duration = round(acquisition_duration),
+        photon_data = photon_data,
+        setup = setup,
+        provenance = provenance,
+        identity = identity,
+        user=dict(becker_hickl=metadata))
+    return data, metadata
+
+
+def loadfile_ptu(filename:str):
+    """
+    Load a .ptu (picoquant) file as dictionary for saving with :func:`hdf5.save_photon_hdf5`.
+    Any field that cannot be infered from data or metadata necessary for saving
+    is given as a key with value of None. All None valued fields must be replaced
+    with appropriate value before saving. For detectors fields that cannot be
+    infered, all detectors are assigned to 
+    `photon_data(X)/measurement_specs/detectors_specs/spectral_polarization_split_chN`,
+    this element should be removed from the dictioanry, and each index within
+    assigned to the appropriate `spectral_chX`, `polarization_chX` or `split_chX`
+    array.
+
+    Parameters
+    ----------
+    filename : str
+        Name of ptu file to load.
+        
+    Raises
+    ------
+    FileNotFoundError
+        Given filename does not exist on the system.
+
+    Returns
+    -------
+    data : dict
+        Dictionary with identical structure to photon-HDF5 format, with all
+        fields that can be infered from the metadata completed. Required fields
+        that cannot be infered are incldued with their values set to None.
+    
+    metadata : dict
+        Metadata read from picoquant header.
+
+    """
+    load_pq = {'ptu': pqreader.load_ptu, 'ht3': pqreader.load_ht3,
+               'pt3': pqreader.load_pt3}[os.path.splitext(filename)[1][1:]]
+    
+    times, dets, dtime, metadata, marker_ids = load_pq(filename)
+    # Creation time from the file header
+    creation_time = metadata.pop('creation_time')
+    
+    software = metadata.pop('software')
+    software_version = metadata.pop('software_version')
+    
+    provenance = dict(
+        filename=str(filename),
+        creation_time=creation_time,
+        software=software,
+        software_version=software_version,
+    )
+    
+    timestamps_unit = float(metadata.pop('timestamps_unit'))
+    acquisition_duration = float(metadata.pop('acquisition_duration'))
+    
+    photon_data = dict(
+        timestamps=times,
+        timestamps_specs=dict(timestamps_unit=timestamps_unit),
+        detectors=dets,
+        
+        measurement_specs=dict(
+            measurement_type=None,
+            detectors_specs=dict(spectral_polarization_split_chN=
+                                 np.setdiff1d(dets, marker_ids),
+                                 )
+            ),
+    )
+    det_ids, det_counts = np.unique(dets, return_counts=True)
+
+    setup = dict(
+        num_pixels = np.unique(dets).size - marker_ids.size,
+        num_spots = 1,
+        num_spectral_ch = None,
+        num_polarization_ch = None,
+        num_split_ch = None,
+        modulated_excitation = True,
+        lifetime = dtime is not None,
+        excitation_wavelengths = None,
+        excitation_cw = None,
+        detection_wavelengths = None,
+        excitation_alternated = None,
+        detectors = {'id':det_ids, 'counts':det_counts, 'label':None},
+        )
+    identity = dict(author=None, author_affiliation=None)
+
+    if dtime is not None:
+        laser_repetition_rate = float(metadata.pop('laser_repetition_rate'))
+        tcspc_unit = float(metadata.pop('nanotimes_unit'))
+        tcspc_num_bins = 1<<metadata.pop('nanotimes_bits')
+        tcspc_range = tcspc_num_bins * tcspc_unit
+        photon_data['nanotimes'] = dtime
+        photon_data['measurement_specs']['laser_repetition_rate'] = (laser_repetition_rate,)
+        photon_data['nanotimes_specs'] = dict(
+            tcspc_unit=tcspc_unit,
+            tcspc_num_bins = tcspc_num_bins,
+            tcspc_range = tcspc_range
+            )
+        setup['laser_repetition_rates'] = np.array([laser_repetition_rate, ])
+    
+    if marker_ids.size != 0:
+        photon_data['measurement_specs']['detectors_specs']['non_photon_id1'] = marker_ids
+
+    data = dict(
+        _filename = str(filename),
+        acquisition_duration = acquisition_duration,
+        photon_data = photon_data,
+        setup = setup,
+        provenance = provenance,
+        identity = identity,
+        user=dict(picoquant=metadata))
+    return data, metadata
+
 
 
 def usalex_sm(
@@ -38,7 +359,7 @@ def usalex_sm(
     This dictionary can be passed to the :func:`phconvert.hdf5.save_photon_hdf5`
     function to save the data in Photon-HDF5 format.
     """
-    print(" - Loading '%s' ... " % filename)
+    print(" - Loading '%s' ... " % (filename))
     timestamps, detectors, labels = smreader.load_sm(filename,
                                                      return_labels=True)
     print(" [DONE]\n")
@@ -70,10 +391,10 @@ def usalex_sm(
         detection_wavelengths = detection_wavelengths,
         excitation_alternated=[True, True])
 
-    provenance = dict(filename=filename, software=software)
+    provenance = dict(filename=str(filename), software=software)
     acquisition_duration = (timestamps[-1] - timestamps[0]) * 12.5e-9
     data = dict(
-        _filename = filename,
+        _filename = str(filename),
         acquisition_duration = round(acquisition_duration),
         photon_data = photon_data,
         setup = setup,
@@ -204,7 +525,7 @@ def nsalex_pq(filename,
                'pt3': pqreader.load_pt3}
     assert os.path.isfile(filename), "File '%s' not found." % filename
     print(" - Loading '%s' ... " % filename)
-    timestamps, detectors, nanotimes, metadata = load_pq[file_type](filename)
+    timestamps, detectors, nanotimes, metadata, marker_ids = load_pq[file_type](filename)
     print(" [DONE]\n")
 
     software = metadata.pop('software')
@@ -245,7 +566,8 @@ def nsalex_pq(filename,
             detectors_specs=dict(spectral_ch1=np.atleast_1d(donor),
                                  spectral_ch2=np.atleast_1d(acceptor))),
     )
-
+    
+    
     setup = dict(
         num_pixels=2,
         num_spots=1,
@@ -265,6 +587,12 @@ def nsalex_pq(filename,
         photon_data=photon_data,
         setup=setup,
         provenance=provenance)
+    
+    if marker_ids.size != 0:
+        photon_data['measurement_specs']['detectors_specs']['non_photon_id1'] = marker_ids
+        data['user'] = dict(
+            experimental_settings=dict()
+            )
 
     return data, metadata
 
