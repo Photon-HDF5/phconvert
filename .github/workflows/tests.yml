@@ -37,7 +37,7 @@ jobs:
            python-version: ${{matrix.python-version}}
            activate-environment: test
       - name: Apple Silicon oddities
-        if: matrix.os == 'macos-14'
+        if: matrix.os == 'macos-latest'
         shell: bash -l {0}
         run: |
           brew install c-blosc hdf5
@@ -60,7 +60,7 @@ jobs:
           repository: dwaithe/FCS_point_correlator
           path: tests
       - name: move file
-        run: cp tests/TopFluo488-PE_8_0_7_1_1_2.pt3 TopFluo488-PE_8_0_7_1_1_2.pt3
+        run: cp tests/focuspoint/TopFluo488-PE_8_0_7_1_1_2.pt3 tests/TopFluo488-PE_8_0_7_1_1_2.pt3
       - name: Install Dependencies
         shell: bash -l {0}
         run: |
