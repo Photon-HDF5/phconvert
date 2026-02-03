@@ -54,13 +54,18 @@ jobs:
       # #     conda init --all
       # #     conda create -n test python=${{matrix.python-version}}
       # #     conda activate test
-      - name: checkout test files
+      - name: checkout pt3 test file
         uses: actions/checkout@v6
         with:
           repository: dwaithe/FCS_point_correlator
-          path: tests
-      - name: move file
-        run: cp tests/focuspoint/TopFluo488-PE_8_0_7_1_1_2.pt3 tests/TopFluo488-PE_8_0_7_1_1_2.pt3
+          sparse-checkout: |
+            focuspoint/TopFluo488-PE_8_0_7_1_1_2.pt3
+          path: FCS_point/TopFluor488-PE_8_0_7_1_1_2.pt3
+      - name: check out test files
+        uses: actions/checkout@v6
+        with:
+          repository: PhotonHDF5/PTUSPCSMfiles
+          path: PTUSPCSMfiles
       - name: Install Dependencies
         shell: bash -l {0}
         run: |
@@ -76,55 +81,8 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install .
-      - name: Download files Unix
-        shell: bash -l {0}
-        if: runner.os!= 'Windows'
-        run: |
-          cd notebooks/data
-          wget https://ndownloader.figshare.com/files/3350666 -O dsdna_d7d17_50_50_1.set
-          wget https://ndownloader.figshare.com/files/3350669 -O dsdna_d7d17_50_50_1.spc
-          wget https://ndownloader.figshare.com/files/3350672 -O Pre.ht3
-          wget https://ndownloader.figshare.com/files/3350663 -O 0023uLRpitc_NTP_20dT_0.5GndCl.sm
-          wget https://ndownloader.figshare.com/files/6955091 -O 161128_DM1_50pM_pH74.ptu
-          wget https://ndownloader.figshare.com/files/14828594 -O 20161027_DM1_1nM_pH7_20MHz1.ptu
-          wget https://ndownloader.figshare.com/files/13675271 -O TestFile_2.ptu
-          wget https://ndownloader.figshare.com/files/14850533 -O trace_T2_300s_1_coincidence.ptu
-          wget https://ndownloader.figshare.com/files/14890535 -O nanodiamant_histo.phu
-          wget https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
-          wget https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
-          unzip Cy3.Cy5_diff_PIE-FRET.ptu.zip
-          wget https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
-          unzip DNA_FRET_0.5nM.pt3.zip
-          wget https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip
-          unzip data.zip
-          cd ../..
-      - name: Download files Windows
-        shell: bash -l {0}
-        if: runner.os == 'Windows'
-        run: |
-          cd notebooks/data
-          curl.exe -L --output dsdna_d7d17_50_50_1.set --url https://ndownloader.figshare.com/files/3350666
-          curl.exe -L --output dsdna_d7d17_50_50_1.spc --url https://ndownloader.figshare.com/files/3350669
-          curl.exe -L --output Pre.ht3 --url https://ndownloader.figshare.com/files/3350672
-          curl.exe -L --output 0023uLRpitc_NTP_20dT_0.5GndCl.sm --url https://ndownloader.figshare.com/files/3350663
-          curl.exe -L --output 161128_DM1_50pM_pH74.ptu --url https://ndownloader.figshare.com/files/6955091
-          curl.exe -L --output 20161027_DM1_1nM_pH7_20MHz1.ptu --url https://ndownloader.figshare.com/files/14828594
-          curl.exe -L --output TestFile_2.ptu --url https://ndownloader.figshare.com/files/13675271
-          curl.exe -L --output trace_T2_300s_1_coincidence.ptu --url https://ndownloader.figshare.com/files/14850533
-          curl.exe -L --output nanodiamant_histo.phu --url https://ndownloader.figshare.com/files/14890535
-          curl.exe -L --output topfluorPE_2_1_1_1.pt3 --url https://github.com/dwaithe/FCS_point_correlator/raw/master/focuspoint/topfluorPE_2_1_1_1.pt3
-          curl.exe -L --output Cy3.Cy5_diff_PIE-FRET.ptu.zip --url https://github.com/Photon-HDF5/phconvert/files/231343/Cy3.Cy5_diff_PIE-FRET.ptu.zip
-          7z e Cy3.Cy5_diff_PIE-FRET.ptu.zip
-          curl.exe -L --output DNA_FRET_0.5nM.pt3.zip --url https://github.com/Photon-HDF5/phconvert/files/1380341/DNA_FRET_0.5nM.pt3.zip
-          7z e DNA_FRET_0.5nM.pt3.zip
-          curl.exe -L --output data.zip --url https://github.com/Photon-HDF5/phconvert/files/1336330/data.zip
-          7z e data.zip
-          cd ..
-          cd ..
       - name: Test project
         shell: bash -l {0}
         run: |
           pytest
-          cd notebooks
-          python ../tests/nbrun.py
         

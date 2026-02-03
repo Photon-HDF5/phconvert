@@ -7,7 +7,7 @@ from phconvert import smreader
 
 import pytest
 
-DATADIR = '../PhotonHDF5_testdata/'
+DATADIR = 'PTUSPCSMfiles/'
 
 
 def test_smreader():
