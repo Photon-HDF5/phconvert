@@ -59,8 +59,8 @@ jobs:
         with:
           repository: dwaithe/FCS_point_correlator
           sparse-checkout: |
-            focuspoint/TopFluo488-PE_8_0_7_1_1_2.pt3
-          path: FCS_point
+            focuspoint/topfluorPE_2_1_1_1.pt3
+          path: FCS_point/focuspoint/topfluorPE_2_1_1_1.pt3
       - name: check out test files
         uses: actions/checkout@v6
         with:
