@@ -1007,7 +1007,8 @@ def _overflow_correction_PT3_inner_numba(times, dets, dtime, channel_bit, wrapar
     mask = np.ones(dets.shape, dtype=np.bool_)
     ch_bit = 2**channel_bit - 1
     marker_loc = list()
-    marker_ids = list()
+    detmax = 0
+    markermax = 0
     for i in range(dets.size):
         if dets[i] == ch_bit: # is a marker or overflow
             if dtime[i] == 0:
@@ -1016,15 +1017,19 @@ def _overflow_correction_PT3_inner_numba(times, dets, dtime, channel_bit, wrapar
             else:
                 times[i] += overflow
                 marker_loc.append(i)
-                marker_ids.append(dtime[i])
+                dets[i] = 0
+                if dtime[i] > markermax:
+                    markermax = dtime[i]
         else:
             times[i] += overflow
+            if dets[i] > detmax:
+                markermax = dets[i]
     times = times[mask]
     dets = dets[mask]
     dtime = dtime[mask]
     marker_loc = np.array(marker_loc)
-    marker_loc = marker_loc[mask]
-    return times, dets, dtime, marker_ids, marker_loc
+    cmax = markermax if markermax > detmax else detmax
+    return times, dets, dtime, marker_loc, cmax
 
 
 def _overflow_correction_PT2_loop(times, dets, channel_bit, wraparound, version):
@@ -1156,17 +1161,15 @@ if has_numba:
         """ Process overflows and markers of PT3 type records in a loop, 
         numba accelerated"""
         
-        res = _overflow_correction_PT3_compiled(times, dets, dtime, 
-                                                channel_bit, wraparound, version)
-        times, dets, dtime, marker_ids, marker_loc = res
-        if marker_ids:
-            marker_shift = 2**(max([int(dets.max()), int(max(marker_ids))]).bit_length())
+        res = _overflow_correction_PT3_compiled(times, dets, dtime, channel_bit, 
+                                                wraparound, version)
+        times, dets, dtime, marker_loc, cmax = res
+        if marker_loc.size:
+            marker_shift = 2**cmax.bit_length()
             if marker_shift > 255:
                 dets = dets.astype(np.int16)
-            if marker_ids:
-                dets[marker_loc] = marker_ids + marker_shift
-                dtime[marker_loc] = 0
-                marker_ids = np.unique(marker_ids+2**channel_bit)
+            dets[marker_loc] = dtime[marker_loc] + marker_shift
+            marker_ids = np.unique(dets[marker_loc])
         else:
             marker_ids = np.array([], dtype=dets.dtype)
         return times, dets, dtime, marker_ids
