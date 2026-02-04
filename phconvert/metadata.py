@@ -20,7 +20,7 @@ from collections import OrderedDict
 import json
 
 
-LATEST_FORMAT_VERSION = b'0.5rc2'
+LATEST_FORMAT_VERSION = b'0.5'
 
 _specs_file = 'specs/photon-hdf5_specs.json'
 
