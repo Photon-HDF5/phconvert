@@ -761,7 +761,7 @@ def save_photon_hdf5(data_dict:dict,
             if True prints additional debug information.
     
     Returns:
-    tables.File
+        tables.File 
         The file object of the created photonHDF5 file
 
     For description and specs of the Photon-HDF5 format see:
