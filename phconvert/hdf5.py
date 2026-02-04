@@ -28,8 +28,10 @@ import time
 import re
 from textwrap import dedent
 import tables
+import warnings
 import numpy as np
-
+from collections import OrderedDict
+from typing import Union
 
 from .metadata import (official_fields_specs, root_attributes,
                        LATEST_FORMAT_VERSION)
@@ -42,36 +44,449 @@ _EMPTY = ' '
 
 
 # Names of mandatory fields in the setup group
-_setup_mantatory_fields = ['num_pixels', 'num_spots', 'num_spectral_ch',
+_setup_mantatory_fields = ('num_pixels', 'num_spots', 'num_spectral_ch',
                            'num_polarization_ch', 'num_split_ch',
                            'modulated_excitation', 'lifetime',
-                           'excitation_alternated']
+                           'excitation_alternated')
 
 # Names of mandatory fields in the identity group
-_identity_mantatory_fields = ['format_name', 'format_version', 'format_url',
-                              'software', 'software_version', 'creation_time']
+_identity_mantatory_fields = ('format_name', 'format_version', 'format_url',
+                              'software', 'software_version', 'creation_time')
 
 # Names of fields in /setup/detectors
 _detectors_group_fields = ('id', 'id_hardware', 'counts', 'dcr', 'afterpulsing',
                            'positions', 'spot', 'module', 'label', 'tcspc_unit',
-                           'tcspc_num_bins')
+                           'tcspc_num_bins', 'tcspc_offset')
 
 # All valid measurement_type strings
-valid_meas_types = ['smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
-                    'smFRET-nsALEX', 'generic']
+valid_meas_types = ('smFRET', 'smFRET-usALEX', 'smFRET-usALEX-3c',
+                    'smFRET-nsALEX', 'generic')
 
 
+_photon_data_regex = re.compile(r'^photon_data(\d*)$')
+_excitation_regex = re.compile(r'^alex_excitation_period\d+$')
+_multi_spec_regex = re.compile(r'^(spectral|split|polarization)_ch(\d+)$')
 
-def _metapath(fullpath):
-    """Normalize a HDF5 path by removing trailing digits after "photon_data".
+class Invalid_PhotonHDF5Group(ValueError):
+    """Inidcates invalid group for photon-HDF5 format"""
+    pass
+
+
+class Invalid_PhotonHDF5(Exception):
+    """Error raised when a file is not a valid Photon-HDF5 file.
     """
-    metapath = fullpath
-    if fullpath.startswith('/photon_data'):
-        # Remove eventual digits after /photon_data
-        pattern = '/photon_data[0-9]*(.*)'
-        metapath = ('/photon_data' +
-                    re.match(pattern, fullpath).group(1))
-    return metapath
+    pass
+
+
+# regex identifies field ending in ?/! M/N
+# used to catch enumerated fields
+_file_field_regex = re.compile(r'^(\w+)(([!?])([MN]))?$')
+_file_meta_strip = lambda field: _file_field_regex.fullmatch(field).group(1)
+
+_field_meta_regex = re.compile(r'^(\w+[^\d\W])(\d+)')
+
+
+def _file_field_sub(field:str)->re.Pattern:
+    """Create regex for field name, checking if it matches a <field>_<num> style"""
+    matchobj = _file_field_regex.match(field)
+    text = '^' + matchobj.group(1)
+    if matchobj.group(2):
+        text += r'(\d*?[1-9]\d*)' if matchobj.group(4) == 'M' else r'(\d+)'
+        text += r'?' if matchobj.group(3) == '?' else r''
+    text += r'$'
+    return re.compile(text)
+
+
+def _file_field_make_tuple(fieldname):
+    fields = fieldname.strip('/').split('/')
+    return tuple(_file_field_sub(field) for field in fields)
+
+
+class _SpecDictGroup:
+    __slots__ = ('descr', 'subgroups')
+    def __init__(self, descr, subgroups):
+        if subgroups == 'group':
+            subgroups = dict()
+        self.descr = descr
+        self.subgroups = subgroups
+
+
+_NTH = {1:'first', 2:'second', 3:'thrid', 4:'fourth', 5:'fifth', 
+        6:'sixth', 7:'seventh', 8:'eighth', 9:'ninth', 10:'tenth'}
+
+_NTH_suffix = {1:'st', 2:'nd', 3:'rd'}
+
+
+def _NTH_repl(n, descr):
+    drop = False
+    has_nth = False
+    if '{NTH}' in descr:
+        has_nth = True
+        if n == 0:
+            raise ValueError("Invalid description format for field with N=0")
+        elif n in _NTH:
+            descr = descr.replace('{NTH}', _NTH[n])
+        elif n % 10 in _NTH_suffix:
+            descr = descr.replace('{NTH}', str(n)+_NTH_suffix[n])
+        else:
+            descr = descr.replace('{NTH}', str(n))
+    return descr, drop, has_nth
+
+
+def _DA_repl(n, descr):
+    drop = False
+    has_da = False
+    if '{DA}' in descr:
+        has_da = True
+        if n == 0:
+            raise ValueError("Invalid description format for field with N=0")
+        elif n > 2:
+            drop = True
+        elif n == 1:
+            descr = descr.replace('{DA}', 'donor')
+        elif n == 2:
+            descr = descr.replace('{DA}', 'acceptor')
+    return descr, drop, has_da
+
+
+def _NW_repl(n, descr):
+    drop = False
+    has_nw = False
+    if '{NW}' in descr:
+        has_nw = True
+        if n == 1:
+            descr = descr.replace('{NW}', '1 (the shortest)')
+        else:
+            descr = descr.replace('{NW}', str(n))
+    return descr, drop, has_nw
+
+
+_repl_funcs = (_NTH_repl, _DA_repl, _NW_repl)
+
+
+def _format_descr(matchobj, descr):
+    descrchunks = descr.split('!!')
+    out = str()
+    if len(matchobj.groups()) >= 1:
+        n = int(matchobj.group(1)) if matchobj.group(1)  else 0
+    else:
+        n = 0
+    for descrchunk in descrchunks:
+        keep = True
+        for func in _repl_funcs:
+            descrchunk, drop, has_pattern = func(n, descrchunk)
+            if has_pattern and drop:
+                keep = False
+        if keep:
+            out += descrchunk
+    return out
+
+
+def _match_field(groups, field):
+    for matchobj, group in groups.items():
+        field_match_obj = matchobj.fullmatch(field)
+        if field_match_obj:
+            return group, field_match_obj
+    return None, None
+
+
+class _SpecDict:
+    def __init__(self, field_descr):
+        self.root = _SpecDictGroup(*field_descr.get('/'))
+        # build dictionary from photon-hdf5_specs.json file
+        for key, vals in field_descr.items():
+            if key == '/':
+                continue
+            fields = key.strip('/').split('/') # divide by levels
+            # compile regexs for field matches
+            field_regexs = tuple(_file_field_sub(field) for field in fields) 
+            loc = self.root.subgroups
+            # build nested dictionary
+            for field in field_regexs[:-1]:
+                if field in loc:
+                    loc = loc[field].subgroups
+                else:
+                    # for when sub-group make first,
+                    # this should not happen
+                    # higher level groups should be defined first
+                    # in the spec, but the option is left open
+                    loc[field] = _SpecDictGroup('', 'group')
+            loc[field_regexs[-1]] = _SpecDictGroup(*vals)
+    
+    def _get_subindex(self, fieldstr):
+        """
+        Parameters
+        ----------
+        fieldstr: (str) group name of HDF5 group
+        
+        Returns
+        -------
+        descr: (str) (unformated) default description
+        spec: (dict or str) the dictionary of specs for the requested field if a group, 
+            otherwise string defining the type of the field (array, scalar string)
+        field_match_obj: (re.Match)
+        err_msg: When field conflicts with photon-HDF5 format definition
+        warn_msg: When field is non-standard photon-HDF5 field
+        """
+        if fieldstr == '/':
+            return self.root.descr, self.root.subgroups, re.match(r'/', fieldstr), None, None
+        fields = fieldstr.strip('/').split('/')
+        err_msg = None
+        warn_msg = None
+        # skip fields with user in them
+        upper = self.root.subgroups
+        for i, field in enumerate(fields):
+            if field == 'user':
+                descr = str()
+                upper = 'flex'
+                return '', 'flex', re.match(r'.*', '/'+'/'.join(fields)), None, None
+            if not isinstance(upper, dict):
+                err_msg = f'Field: {fields[i-1]} must be of type {upper}'
+                break
+            group, field_match_obj = _match_field(upper, field)
+            if field_match_obj is None and fields[0] != 'user':
+                lfields = '/'.join(fields[:i])
+                rfields = '/'.join(fields[i:])
+                warn_msg = f'Field: {rfields} is not a valid group for {lfields}'
+                descr = str()
+                upper = 'flex'
+                break
+            descr, upper = group.descr, group.subgroups
+        return descr, upper, field_match_obj, err_msg, warn_msg
+
+    # def get_index(self, field:str)->(str, _SpecDictGroup|str):
+    #     descr, spec, _, _, _ = self._get_subindex(field)
+    #     return descr, spec
+            
+    def get_descr(self, field):
+        """For a given field string, return the appropriate formated description"""
+        descr, _, field_match_obj, err_msg, _ = self._get_subindex(field)
+        if err_msg:
+            raise Invalid_PhotonHDF5Group(err_msg)
+        if field_match_obj is None:
+            descr = str()
+        else:
+            descr = _format_descr(field_match_obj, descr)
+        return descr
+
+    def get_type(self, field):
+        """For a given field string, return the appropriate group type string"""
+        _, spec, _, _, _ = self._get_subindex(field)
+        if not isinstance(spec, str):
+            spec = 'group'
+        return spec
+
+    def is_valid(self, fieldstr, strict=False, warn=False):
+        """Test if a given field string is valid in the photon-HDF5 spec"""
+        descr, _, field_match_obj, err_msg, warn_msg = self._get_subindex(fieldstr)
+        print(fieldstr, field_match_obj)
+        descr = _format_descr(field_match_obj, descr)
+        return descr, err_msg, warn_msg
+    
+    def _validate_dict(self, data, base_key,  err_pool=None, warn_pool=None):
+        err, warn = False, False
+        for key, val in data.items():
+            _, spec, _, err_msg, warn_msg = self._get_subindex(key)
+            if err_msg is not None:
+                err = True
+                if err_pool is not None:
+                    err_pool.append(err_msg)
+                else:
+                    err = err_msg
+                    break
+            if warn_msg is not None:
+                warn = True
+                if warn_pool is not None:
+                    warn_pool.append(warn_msg)
+            type_msg = None
+            if isinstance(spec, dict):
+                if not isinstance(val, (dict, tables.Group)):
+                    type_msg = f'Field {base_key}{key} must be a dict/group'
+            elif spec == 'array':
+                if not isinstance(val, (np.ndarray, list, tuple, tables.Array)):
+                    type_msg = f'Field {base_key}{key} must be an array'
+            elif spec == 'scalar':
+                # enough possiblities, easier to pass correct values and else invalid
+                if isinstance(val, tables.Array) and val.ndim == 0:
+                    pass
+                elif np.issubdtype(val, np.number):
+                    pass
+                else:
+                    type_msg = f'Field {base_key}{key} must be a scalar value'
+            elif spec == 'flex':
+                pass
+            else:
+                raise ValueError("Wrong type in JSON specs")
+            if type_msg is not None:
+                if isinstance(err_pool, list):
+                    err_pool.append(type_msg)
+                else:
+                    raise Invalid_PhotonHDF5Group(type_msg)
+            # Iterate over sub-fields recursively
+            if isinstance(val, dict):
+                sub_err, sub_warn = self._validate_dict(val, f'{base_key}/{key}', 
+                                                        err_pool=err_pool, 
+                                                        warn_pool=warn_pool)
+                if isinstance(sub_err, str):
+                    err = sub_err
+                    break
+                err = err or sub_err
+                warn = sub_warn if isinstance(sub_warn, str) else warn or sub_warn
+        return err, warn
+
+    def validate_dict(self, data, strict=False, warn=True, chain=False):
+        """
+        Take a dictionary and validate that all fields follow photon-HDF5 spec
+        data: (dict) Dictionary of all fields
+        strict: (bool)
+        """
+        err_pool = list() if chain else None
+        warn_pool = list() if chain else None
+        err, warn = self._validate_dict(data, '/', err_pool=err_pool, warn_pool=warn_pool)
+        if err:
+            msg = ' '.join(err_pool) if chain else err
+            raise Invalid_PhotonHDF5Group(msg)
+        if warn:
+            msg = ' '.join(warn_pool) if chain else warn
+            if strict:
+                raise Invalid_PhotonHDF5Group(msg)
+            else:
+                warnings.warn(msg)
+                
+    def _validate_HDF5(self, file, err_pool, warn_pool, descr_pool):
+        for node in file.walk_nodes('/'):
+            # get field information
+            if 'user' in node._v_pathname.split('/') or node._v_name == 'user':
+                continue
+            descr, spec, field_match_obj, err_msg, warn_msg = self._get_subindex(node._v_pathname)
+            # check for no non-spec fields
+            if warn_msg:
+                if isinstance(warn_pool, list):
+                    warn_pool.append(warn_msg)
+                elif warn_pool is True:
+                    raise Invalid_PhotonHDF5(warn_msg)
+                elif warn_pool is False:
+                    warnings.warn(warn_msg)
+            # check no fields that should be groups are nodes
+            if err_msg is not None:
+                if isinstance(err_pool, list):
+                    err_pool.append(err_msg)
+                else:
+                    raise Invalid_PhotonHDF5(err_msg)
+            # check correct description
+            if field_match_obj is not None and descr_pool is not None:
+                descr = _format_descr(field_match_obj, descr)
+                title = node._v_title
+                title = str(title) if isinstance(title, (str, np.str_)) else str(title.decode())
+                if descr != title:
+                    descr_msg = 'Description (TITLE) for "%s" not compliant.' % node._v_pathname
+                    if isinstance(descr_pool, list):
+                        descr_pool.append(descr_msg)
+                    elif descr_pool is True:
+                        raise Invalid_PhotonHDF5(descr_msg)
+                    elif descr_pool is False:
+                        warnings.warn(descr_msg)
+
+            # check for correct field type
+            type_msg = None
+            if isinstance(spec, dict):
+                if not isinstance(node, tables.Group):
+                    type_msg = f'Field {node._v_pathname} must be a group'
+            elif spec == 'array':
+                if not isinstance(node, tables.Array) or node.ndim < 1:
+                    type_msg = f'Field {node._v_pathname} must be an array'
+            elif spec == 'scalar':
+                if not isinstance(node, tables.Array) or node.ndim != 0:
+                    print(type(node))
+                    print(node.ndim)
+                    type_msg = f'Field {node._v_pathname} must be scalar value'
+            elif spec == 'string':
+                if not isinstance(node, tables.Array) or node.dtype.kind != 'S' or node.ndim != 0:
+                    type_msg = f'Field {node._v_pathname} must be string'
+            elif spec == 'flex':
+                pass
+            else:
+                raise ValueError('Wrong type in JSON specs.')
+            if type_msg is not None:
+                if isinstance(err_pool, list):
+                    err_pool.append(type_msg)
+                else:
+                    raise Invalid_PhotonHDF5(type_msg)
+        if err_pool:
+            raise Invalid_PhotonHDF5(', '.join(err_pool))
+
+    def validate_HDF5(self, file, strict=False, strict_descr=True, 
+                      warn=True, verbose=True):
+        close = True
+        if isinstance(file, str):
+            h5 = tables.open_file(file, 'r')
+        elif isinstance(file, tables.File):
+            if not file.isopen:
+                h5 = tables.open_file(file.filename, 'r')
+            else:
+                h5 = file
+                close = False
+        err_pool, warn_pool, descr_pool = None, None, None
+        if verbose:
+            err_pool, warn_pool, descr_pool = list(), list(), list()
+        else:
+            warn_pool, descr_pool = strict, strict_descr
+        try:
+            self._validate_HDF5(file, err_pool, warn_pool, descr_pool)
+        except Exception as e:
+            raise e
+        finally:
+            if close:
+                h5.close()
+            err_pool = list() if err_pool is None else err_pool
+            if strict:
+                if isinstance(warn_pool, list):
+                    err_pool += warn_pool 
+            if strict_descr is not None:
+                if isinstance(descr_pool, list):
+                    err_pool += descr_pool
+            if err_pool:
+                raise Invalid_PhotonHDF5(err_pool)
+            
+_spec_dict = _SpecDict(official_fields_specs)
+
+
+# def _chunkmetapath(chunks):
+#     """
+#     Normalize HDF5 path list by removing trailing digits from "photon_data", 
+#     and enumerated fields in "measurement_specs"
+
+#     Parameters
+#     ----------
+#     chunks : list[str]
+#         List of node names in path.
+
+#     Returns
+#     -------
+#     meta : list[str]
+#         List of node names with trailing digits removed from enumerated fields.
+
+#     """
+#     meta = [chunks for chunk in chunks] # make a copy
+#     if _photon_data_regex.match(chunks[0]):
+#         meta[0] = 'photon_data'
+#         if len(chunks) > 2 and chunks[1] == 'measurement_specs':
+#             if _excitation_regex(chunks[2]):
+#                 meta[2] = 'alex_excitation_period'
+#             elif len(chunks) > 3 and chunks[2] == 'detectors_specs':
+#                 if _multi_spec_regex.match(chunks[3]):
+#                     meta[3] = _multi_spec_regex.sub(r'\1_ch', chunks[3])
+#     return meta
+    
+
+# def _metapath(fullpath):
+#     """
+#     Normalize a HDF5 path by removing trailing digits after "photon_data" and 
+#     enumerated fields in "measurement_specs".
+#     """
+#     chunks = fullpath.strip('/').split('/')
+#     meta = _chunkmetapath(chunks)
+#     return '/' + '/'.join(meta)
 
 
 def _analyze_path(name, prefix_list):
@@ -79,7 +494,8 @@ def _analyze_path(name, prefix_list):
     Analyze an HDF5 path.
 
     Arguments:
-        name (string): name of the HDF5 node.
+        name : str
+            name of the HDF5 node.
         prefix_list (list of strings): list of group names.
 
     Returns:
@@ -87,8 +503,6 @@ def _analyze_path(name, prefix_list):
         - full_path: string representing the full HDF5 path.
         - group_path: string representing the full HDF5 path of the group
             containing `name`. Always ends with '/'.
-        - meta_path: string representing the full HDF5 path
-          with possible trailing digits removed from "/photon_dataNN"
         - is_phdata: (bool) True if `name` is a photon_data array,
             i.e. a direct child of photon_data and not a specs group.
         - is_user: (bool) True if `name` is a user-defined field.
@@ -107,14 +521,13 @@ def _analyze_path(name, prefix_list):
 
     is_user = 'user' in chunks
 
-    meta_path = _metapath(full_path)
     is_phdata = False
     if full_path.startswith('/photon_data'):
         if len(chunks) == 3 and not name.endswith('_specs'):
             is_phdata = True
-
-    return dict(full_path=full_path, group_path=group_path,
-                meta_path=meta_path, is_phdata=is_phdata, is_user=is_user)
+    description = _spec_dict.get_descr(full_path)
+    return dict(full_path=full_path, group_path=group_path, 
+                description=description, is_phdata=is_phdata, is_user=is_user)
 
 
 def _is_structured_array(obj):
@@ -146,15 +559,19 @@ def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     if name in h5file.get_node(group):
         # Remove a pre-existing node with the same name
         h5file.remove_node(group, name)
-    save(group, name, obj=obj)
+    save(group, name, obj=obj, title=descr)
     # Set title through property access to work around pytable issue
     # under python 3 (https://github.com/PyTables/PyTables/issues/469)
-    node = h5file.get_node(group)._f_get_child(name)
-    node.title = descr.encode()  # saved as binary both on py2 and py3
+    # node = h5file.get_node(group)._f_get_child(name)
+    # # Ensure descr is a bytes object
+    # if descr is None:
+    #     descr = _EMPTY
+    # elif isinstance(descr, (str, np.str_)):
+    #         descr = descr.encode()
+    # node.title = descr
 
 
-def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
-                    debug=False):
+def _iter_hdf5_dict(data_dict, prefix_list=None, user_descr=None, debug=False):
     """Recursively iterate over `data_dict` returning a dict for each item.
 
     This is an iterator returning a dict for each item in `data_dict` (i.e.
@@ -164,8 +581,8 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
     'full_path', 'group_path', 'meta_path', 'is_phdata', 'is_user',
     'description'.
     """
-    if fields_descr is None:
-        fields_descr = {}
+    if user_descr is None:
+        user_descr = dict()
     for name, value in data_dict.items():
         if name.startswith('_'):
             continue
@@ -173,7 +590,8 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
             print('Item "%s", prefix_list %s ' % (name, prefix_list))
 
         item = _analyze_path(name, prefix_list)
-        item['description'] = fields_descr.get(item['meta_path'], _EMPTY)
+        if item['full_path'] in user_descr:
+            item['description'] = user_descr.get(item['full_path'])
         item.update(name=name, value=value, curr_dict=data_dict)
         yield item
 
@@ -182,14 +600,14 @@ def _iter_hdf5_dict(data_dict, prefix_list=None, fields_descr=None,
                 print('Start Group "%s"' % (item['full_path']))
             new_prefix = [] if prefix_list is None else list(prefix_list)
             new_prefix.append(name)
-            for sub_item in _iter_hdf5_dict(value, new_prefix, fields_descr,
+            for sub_item in _iter_hdf5_dict(value, new_prefix, user_descr,
                                             debug=debug):
                 yield sub_item
             if debug:
                 print('End Group "%s"' % (item['full_path']))
 
 
-def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
+def _save_photon_hdf5_dict(group, data_dict, user_descr, prefix_list=None,
                            debug=False):
     """
     Save a hierarchical structure `data_dict` in a HDF5 `group`.
@@ -198,29 +616,32 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
         data_dict is a hierarchical dict whose values are either arrays or
         sub-dictionaries representing a sub-group.
 
-        `fields_descr` merges official and user-defined field descriptions
+        `user_descr` merges official and user-defined field descriptions
         where the key is always the normalized full path (meta path).
         The meta path is the full path where the string "/photon_dataNN"
         is replaced by "/photon_data".
     """
     h5file = group._v_file
-    for item in _iter_hdf5_dict(data_dict, prefix_list, fields_descr, debug):
+    for item in _iter_hdf5_dict(data_dict, prefix_list, user_descr, debug):
         if not item['is_user']:
             if item['description'] == _EMPTY:
                 print('WARNING: missing description for "%s"' %
                       item['meta_path'])
 
+        if item['value'] is None:
+            raise ValueError(f'Must set value for {item["name"]}')
+
         if isinstance(item['value'], tables.Array):
             # If the data is already a pytable array set only the title
-            item['value'].set_attr('TITLE', item['description'].encode())
+            item['value'].set_attr('TITLE', item['description'])
         elif isinstance(item['value'], dict):
             if item['name'] in h5file.get_node(item['group_path']):
                 # If group exists only set TITLE
                 grp = h5file.get_node(item['group_path'], item['name'])
-                grp._f_setattr('TITLE', item['description'].encode())
+                grp._f_setattr('TITLE', item['description'])
             else:
                 h5file.create_group(item['group_path'], item['name'],
-                                    title=item['description'].encode())
+                                    title=item['description'])
         else:
             # Node is not a tables.Array or a Group, write it
             _h5_write_array(item['group_path'], item['name'],
@@ -228,18 +649,18 @@ def _save_photon_hdf5_dict(group, data_dict, fields_descr, prefix_list=None,
                             chunked=item['is_phdata'], h5file=group._v_file)
 
 
-def save_photon_hdf5(data_dict,
-                     h5_fname = None,
-                     h5file = None,
-                     user_descr = None,
-                     overwrite = False,
-                     compression = dict(complevel=6, complib='zlib'),
-                     close = True,
-                     validate = True,
-                     warnings = True,
-                     skip_measurement_specs = False,
-                     require_setup = True,
-                     debug = False):
+def save_photon_hdf5(data_dict:dict,
+                     h5_fname=None,
+                     h5file:tables.File=None,
+                     user_descr:str=None,
+                     overwrite:bool=False,
+                     compression:dict=None,
+                     close=True,
+                     validate=True,
+                     warnings=True,
+                     skip_measurement_specs=False,
+                     require_setup=True,
+                     debug=False)->tables.File:
     """
     Saves the dict `data_dict` in the Photon-HDF5 format.
 
@@ -292,45 +713,61 @@ def save_photon_hdf5(data_dict,
     '_data_file' containing a reference to the pytables file.
 
     Arguments:
-        data_dict (dict): the dictionary containing the photon data.
+        data_dict : dict
+            the dictionary containing the photon data.
             The keys must strings matching valid Photon-HDF5 paths.
             The values must be scalars, arrays, strings or another dict.
-        h5_fname (string or None): file name for the output Photon-HDF5 file.
+        h5_fname : str|None
+            file name for the output Photon-HDF5 file.
             If None and h5file is also None, the file name is taken from
             ``data_dict['_filename']`` with extension changed to '.hdf5'.
-        h5file (pytables.File or None): an already open and writable HDF5
+        h5file : tables.File|None
+            an already open and writable HDF5
             file to use as container. This argument can be used to complete
             an HDF5 file already containing some arrays, or to update
             an already existing Photon-HDF5 file in-place.
             For more info see note below.
-        user_descr (dict or None): dictionary of descriptions (strings) for
+        user_descr : dict|None
+            dictionary of descriptions (strings) for
             user-defined fields. The keys must be strings representing
             the full HDF5 path of each field. The values must be
             binary (i.e. encoded) strings restricted to the ASCII set.
-        overwrite (bool): if True, a pre-existing HDF5 file with same name is
+        overwrite : bool
+            if True, a pre-existing HDF5 file with same name is
             overwritten. If False, save the new file by adding the
             suffix "new_copy" (and if a "_new_copy" file is already present
             overwrites it).
-        compression (dict): a dictionary containing the compression type
+        compression : dict
+            dictionary containing the compression type
             and level. Passed to pytables `tables.Filters()`.
-        close (bool): If True (default) the HDF5 file is closed before
+        close : bool
+            If True (default) the HDF5 file is closed before
             returning. If False the file is left open.
-        validate (bool): if True, after saving perform a validation step
+        validate : bool
+            if True, after saving perform a validation step
             raising an error if the specs are not followed.
-        warnings (bool): if True, print warnings for important optional fields
+        warnings : bool
+            if True, print warnings for important optional fields
             that are missing. If False, don't print warnings.
-        skip_measurement_specs (bool): if True don't print any warning for
+        skip_measurement_specs : bool
+            if True don't print any warning for
             missing measurement_specs group.
-        require_setup (bool): if True, raises an error if some mandatory
+        require_setup : bool
+            if True, raises an error if some mandatory
             fields in /setup are missing. If False, allows missing setup
             fields (or missing setup altogether). Use False when saving
             only detectors' dark counts.
-        debug (bool): if True prints additional debug information.
+        debug : bool
+            if True prints additional debug information.
+    
+    Returns:
+        tables.File 
+        The file object of the created photonHDF5 file
 
     For description and specs of the Photon-HDF5 format see:
     http://photon-hdf5.readthedocs.org/
 
-    Note:
+    .. note::
         The argument `h5file` accepts an already open HDF5 file for storage.
         This allows completing a partially written file (for example
         containing only photon_data arrays) or correcting and already complete
@@ -342,12 +779,13 @@ def save_photon_hdf5(data_dict,
         CArray or EArray) will be left unmodified. In either cases the TITLE
         attribute is always updated.
     """
+    compression = dict(complevel=6, complib='zlib') if compression is None else compression
     comp_filter = tables.Filters(**compression)
 
     ## Compute file names
     if h5file is not None:
-        _msg = 'Argument `h5file` must be None or a `tables.File` object.'
-        assert isinstance(h5file, tables.File), _msg
+        if not isinstance(h5file, tables.File):
+            raise TypeError('Argument `h5file` must be None or a `tables.File` object.')
         h5_fname = h5file.filename
     else:
         if h5_fname is None:
@@ -366,10 +804,10 @@ def save_photon_hdf5(data_dict,
         _populate_setup(data_dict)
     _sanitize_data(data_dict, require_setup)
     _compute_acquisition_duration(data_dict)
-
+    
     ## Create the HDF5 file
     print('Saving: %s' % h5_fname)
-    title = official_fields_specs['/'][0].encode()
+    title = _spec_dict.get_descr('/').encode()
     if h5file is None:
         h5file = tables.open_file(str(h5_fname), mode="w", title=title,
                                   filters=comp_filter)
@@ -388,11 +826,10 @@ def save_photon_hdf5(data_dict,
         h5file.root._f_setattr(name, value)
 
     ## Save everything else to disk
-    fields_descr = {k: v[0] for k, v in official_fields_specs.items()}
     if user_descr is not None:
-        fields_descr.update(user_descr)
+        user_descr = dict()
     _save_photon_hdf5_dict(h5file.root, data_dict,
-                           fields_descr=fields_descr, debug=debug)
+                           user_descr=user_descr, debug=debug)
     h5file.flush()
 
     ## Validation
@@ -404,6 +841,7 @@ def save_photon_hdf5(data_dict,
     finally:
         if close:
             h5file.close()
+    return h5file
 
 
 def _is_mutispot(h5root_or_dict):
@@ -435,12 +873,10 @@ def _populate_provenance(data_dict):
             break
 
     if orig_fname is None:
-
-        msg = """\
+        warnings.warn("""\
             WARNING: Could not locate original file '%s'.
                      File info in provenance group will not be added.
-            """ % provenance['filename']
-        print(dedent(msg))
+            """ % provenance['filename'])
     else:
         # Use metadata from the file except for creation time if
         # already present in `provenance`. i.e. the user-provided
@@ -457,19 +893,18 @@ def _compute_acquisition_duration(data_dict):
     if 'acquisition_duration' in data_dict:
         return
     try:
-        ph_data = data_dict['photon_data']
-        timestamps = ph_data['timestamps']
-        ts_specs = ph_data['timestamps_specs']
-        timestamps_unit = ts_specs['timestamps_unit']
-    except KeyError:
-        # This happens in multi-spot or when some fields are missing
-        # Missing fields will later yield an error during validation.
-        pass
-    else:
-        assert np.isreal(timestamps_unit)
-        acquisition_duration = ((timestamps.max() - timestamps.min()) *
-                                timestamps_unit)
-        data_dict['acquisition_duration'] = np.round(acquisition_duration, 1)
+        tmin = min(data_dict[phd]['timestamps_specs']['timestamps_unit']*
+                   data_dict[phd]['timestamps'].min() for phd in 
+                   _sorted_photon_data(data_dict))
+        tmax = min(data_dict[phd]['timestamps_specs']['timestamps_unit']*
+                   data_dict[phd]['timestamps'].max() for phd in 
+                   _sorted_photon_data(data_dict))
+    except:
+        warnings.warn("no timestamps, incomplete photon HDF5 file")
+    
+    acquisition_duration = tmax - tmin
+    assert np.isreal(acquisition_duration), "Non-real components"
+    data_dict['acquisition_duration'] = np.round(acquisition_duration, 1)
 
 
 def _populate_setup(data_dict):
@@ -499,7 +934,7 @@ def _autofill_laser_rep_rates(data_dict):
 
 
 def _populate_detectors_group(data):
-    det_grp = data['setup'].get('detectors', {})
+    det_grp = data['setup'].get('detectors', dict())
     if 'id' in det_grp and 'id_hardware' in det_grp and 'counts' in det_grp:
         # nothing to do
         return
@@ -512,9 +947,9 @@ def _populate_detectors_group(data):
         det_val.extend(vals)
         det_cnts.extend(counts)
         spot.extend([i] * len(vals))
-
-    det_grp.setdefault('id', np.array(det_val))
-    det_grp.setdefault('id_hardware', np.array(det_val))
+    det_val = np.array(det_val)
+    det_grp.setdefault('id', det_val)
+    det_grp.setdefault('id_hardware', det_val)
     det_grp['counts'] = np.array(det_cnts)
     if _is_mutispot(data):
         det_grp['spot'] = np.array(spot)
@@ -557,7 +992,7 @@ def _get_file_metadata(fname):
     return metadata
 
 
-def dict_from_group(group, read=True):
+def dict_from_group(group:tables.Group, read=True):
     """Return a dict with the content of a PyTables `group`."""
     out = {}
     for node in group:
@@ -576,7 +1011,7 @@ def dict_from_group(group, read=True):
     return out
 
 
-def dict_to_group(group, dictionary):
+def dict_to_group(group:tables.Group, dictionary:dict):
     """Save `dictionary` into HDF5 format in `group`.
     """
     h5file = group._v_file
@@ -598,18 +1033,18 @@ def dict_to_group(group, dictionary):
     h5file.flush()
 
 
-def load_photon_hdf5(filename, **kwargs):
+def load_photon_hdf5(filename:str, **kwargs):
     """Open a Photon-HDF5 file in pytables, validating it.
 
     Additional arguments are passed to :func:`assert_valid_photon_hdf5`.
 
     Returns:
-        The root group of the HDF5 file.
+        Pytable File object of photon-hdf5 file.
     """
     assert os.path.isfile(filename)
     h5file = tables.open_file(filename)
     assert_valid_photon_hdf5(h5file, **kwargs)
-    return h5file.root
+    return h5file
 
 ##
 # Utility functions
@@ -656,7 +1091,7 @@ def _check_version(filename):
     return version
 
 
-def _sorted_photon_data_tables(h5file):
+def _sorted_photon_data_tables(h5file:tables.File):
     """Return a sorted list of keys "photon_dataN", sorted by N.
 
     If there is only one "photon_data" (with no N) it returns the list
@@ -664,7 +1099,7 @@ def _sorted_photon_data_tables(h5file):
     """
     prefix = 'photon_data'
     ph_datas = [n for n in h5file.root._f_iter_nodes()
-                if n._v_name.startswith(prefix)]
+                if _photon_data_regex.fullmatch(n._v_name)]
 
     if len(ph_datas) > 1:
         ph_datas.sort(key=lambda x: int(x._v_name[len(prefix):]))
@@ -678,16 +1113,15 @@ def _sorted_photon_data(data_dict):
     ['photon_data'].
     """
     prefix = 'photon_data'
-    keys = [k for k in data_dict.keys() if k.startswith(prefix)]
+    keys = [k for k in data_dict.keys() if _photon_data_regex.fullmatch(k)]
     if len(keys) > 1:
         keys.sort(key=lambda x: int(x[len(prefix):]))
     return keys
 
 
-def photon_data_mapping(h5file, name='timestamps'):
+def photon_data_mapping(h5file:tables.File, name='timestamps'):
     """Return a mapping (OrderedDict) between ch and photon_data array.
     """
-    from collections import OrderedDict
     mapping = OrderedDict()
     prefix = 'photon_data'
     for ph_data in _sorted_photon_data_tables(h5file):
@@ -700,7 +1134,7 @@ def photon_data_mapping(h5file, name='timestamps'):
 
 def _is_sequence(obj):
     is_sequence = False
-    if isinstance(obj, tuple) or isinstance(obj, list):
+    if isinstance(obj, (tuple, list)):
         is_sequence = True
     elif isinstance(obj, np.ndarray):
         is_sequence = obj.ndim > 0
@@ -715,27 +1149,26 @@ def _normalize_bools(data_dict):
         else:
             if isinstance(value, bool):
                 data_dict[name] = int(value)
-            elif _is_sequence(value) and isinstance(value[0], bool):
+            elif _is_sequence(value) and all(isinstance(v, bool) for v in value):
                 data_dict[name] = np.asarray(value, dtype='uint8')
 
 
 def _normalize_detectors_specs(data_dict):
-    base = '/photon_data/measurement_specs/detectors_specs/'
-    names = ['spectral_ch1', 'spectral_ch2', 'split_ch1', 'split_ch2',
-             'polarization_ch1', 'polarization_ch2']
-    cast_fields = [base + name for name in names]
-
-    # Retrive the detectors' dtype (from first photon_data group in multi-spot)
-    ph_data = data_dict[_sorted_photon_data(data_dict)[0]]
-    if 'detectors' not in ph_data:
-        return
-    dtype = ph_data['detectors'].dtype
-
-    for item in _iter_hdf5_dict(data_dict):
-        if item['meta_path'] in cast_fields:
-            cdict = item['curr_dict']
-            cdict[item['name']] = np.array(item['value'],
-                                           dtype=dtype, ndmin=1)
+    # Retrive just photon data fields
+    ph_datas = tuple(data_dict[ph_data] for ph_data in 
+                     _sorted_photon_data(data_dict))
+    
+    dtype = ph_datas[0]['detectors'].dtype if 'detectors' in ph_datas[0] else None
+    
+    for ph_data in ph_datas:
+        if 'detectors' in ph_data and 'measurement_specss' in ph_data:
+            ph_data['detectors'] = np.array(ph_data['detectors'], 
+                                            dtype=dtype, ndmin=1)
+            meas_specs = ph_data['measurement_specs']
+            for key, val in meas_specs.items():
+                if not _multi_spec_regex.fullmatch(key):
+                    continue
+                meas_specs[key] = np.array(val, dtype=dtype, ndmin=1)
 
 
 def _normalize_setup_arrays(data_dict):
@@ -746,14 +1179,13 @@ def _normalize_setup_arrays(data_dict):
     # Useful when input is from YAML whose parser retrives floats a strings
     setup = data_dict['setup']
     # Arrays of float fields in setup group
-    names_aof = ['detection_wavelengths', 'excitation_wavelengths',
+    names_aof = ('detection_wavelengths', 'excitation_wavelengths',
                  'excitation_input_powers', 'detection_polarizations',
                  'excitation_intensity', 'detection_split_ch_ratios',
-                 'laser_repetition_rates']
+                 'laser_repetition_rates')
     for name in names_aof:
         if name in setup:
-            setup[name] = np.array([float(v) for v in setup[name]],
-                                   dtype=float)
+            setup[name] = np.asarray(setup[name], dtype=np.float64)
 
 
 def _normalize_detectors_group(data_dict):
@@ -766,48 +1198,76 @@ def _normalize_detectors_group(data_dict):
             det_grp[name] = np.asarray(det_grp[name])
 
 
-def _convert_scalar_item(item):
-    """Cast a scalar item (from _iter_hdf5_dict) to scalar."""
-    # Special case for scalar fields which are string in data_dict.
-    # thus requiring a conversion. This happens when the YAML parser
-    # fails to detect floats in exponential form.
-    scalar_value = item['value']
-    if isinstance(item['value'], str):
-        msg = """\
-        Wrong data type: field `%s` must be a scalar.
-                         Instead it is the string %s
-                         which I'm unable to convert to int or float.\
-        """ % (item['meta_path'], repr(item['value']))
-        try:
-            scalar_value = int(item['value'])
-        except ValueError:
-            pass
-            try:
-                scalar_value = float(item['value'])
-            except ValueError:
-                raise Invalid_PhotonHDF5(dedent(msg))
+# def _convert_scalar_item(item):
+#     """Cast a scalar item (from _iter_hdf5_dict) to scalar."""
+#     # Special case for scalar fields which are string in data_dict.
+#     # thus requiring a conversion. This happens when the YAML parser
+#     # fails to detect floats in exponential form.
+#     scalar_value = item['value']
+#     if isinstance(item['value'], str):
+#         msg = """\
+#         Wrong data type: field `%s` must be a scalar.
+#                          Instead it is the string %s
+#                          which I'm unable to convert to int or float.\
+#         """ % (item['meta_path'], repr(item['value']))
+#         try:
+#             scalar_value = int(item['value'])
+#         except ValueError:
+#             pass
+#             try:
+#                 scalar_value = float(item['value'])
+#             except ValueError:
+#                 raise Invalid_PhotonHDF5(dedent(msg))
 
-    # If a scalar field is 1-element sequence, convert it to scalar
-    if not np.isscalar(item['value']):
+#     # If a scalar field is 1-element sequence, convert it to scalar
+#     if not np.isscalar(item['value']):
+#         try:
+#             # sequences are converted to array then to scalar
+#             scalar_value = np.asarray(item['value']).item()
+#         except ValueError:
+#             raise Invalid_PhotonHDF5('Cannot convert "%s" to scalar.'
+#                                      % item['meta_path'])
+#     return scalar_value
+
+
+def _convert_scalar_field(field, val):
+    if isinstance(val, str):
         try:
-            # sequences are converted to array then to scalar
-            scalar_value = np.asarray(item['value']).item()
+            val = int(val)
         except ValueError:
-            raise Invalid_PhotonHDF5('Cannot convert "%s" to scalar.'
-                                     % item['meta_path'])
-    return scalar_value
+            try:
+                val = float(val)
+            except ValueError:
+                raise Invalid_PhotonHDF5Group(f"Field {field} cannot be "
+                                              "converted to integer or floating "
+                                              "point value")
+    if not np.isscalar(val):
+        try:
+            val = np.asarray(val).item()
+        except ValueError:
+            raise Invalid_PhotonHDF5Group(f"Cannot convert {field} to scalar")
+    return val
+
+def _norm_scalars(upper, data_dict):
+    for key, val in data_dict.items():
+        full_key = f'{upper}/{key}'
+        if isinstance(val, dict):
+            _norm_scalars(full_key, val)
+        elif _spec_dict.get_type(full_key) == 'scalar':
+            data_dict[key] = _convert_scalar_field(full_key, val)
 
 
 def _normalize_scalars(data_dict):
     """Make sure all scalar fields are scalars."""
     # scalar fields conversions
-    for item in _iter_hdf5_dict(data_dict):
-        if item['is_user']:
-            continue
-        if official_fields_specs[item['meta_path']][1] == 'scalar':
-            scalar_value = _convert_scalar_item(item)
-            curr_dict = item['curr_dict']
-            curr_dict[item['name']] = scalar_value
+    _norm_scalars('/', data_dict)
+    # for item in _iter_hdf5_dict(data_dict):
+    #     if item['is_user']:
+    #         continue
+    #     if official_fields_specs.get_type(item['meta_path']) == 'scalar':
+    #         scalar_value = _convert_scalar_item(item)
+    #         curr_dict = item['curr_dict']
+    #         curr_dict[item['name']] = scalar_value
 
 
 def _sanitize_data(data_dict, require_setup=True):
@@ -841,7 +1301,6 @@ def _sanitize_data(data_dict, require_setup=True):
         for name in _setup_mantatory_fields:
             if name not in setup:
                 raise Invalid_PhotonHDF5('missing "%s" in setup group.' % name)
-
     # Cast booleans to integers
     _normalize_bools(data_dict)
     # Cast fields in detectors_specs
@@ -852,29 +1311,28 @@ def _sanitize_data(data_dict, require_setup=True):
     _normalize_scalars(data_dict)
     # Convert fields in /setup/detectors to numpy arrays
     _normalize_detectors_group(data_dict)
-
+    
 
 ##
 # Validation functions
 #
 
-class Invalid_PhotonHDF5(Exception):
-    """Error raised when a file is not a valid Photon-HDF5 file.
-    """
-    pass
-
-
-def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
+def _assert_valid(condition:bool, msg:str, strict:bool=True, norepeat:bool=False, pool:list=None):
     """Assert `condition` and raise Invalid_PhotonHDF5(msg) on fail.
 
     Arguments:
-        condition (bool): must evaluate to True for a valid Photon-HDF5 file.
-        msg (string): meassage to be printed in case `condition` is False.
-        strict (bool): if True, raise Invalid_PhotonHDF5 when `condition` is
+        condition : bool
+            must evaluate to True for a valid Photon-HDF5 file.
+        msg : str
+            meassage to be printed in case `condition` is False.
+        strict : bool
+            if True, raise Invalid_PhotonHDF5 when `condition` is
             False. Else, print only a warning.
-        norepeat (bool): if True, do not repeat the same message more than
+        norepeat : bool
+            if True, do not repeat the same message more than
             once. The message is considered printed if present in `pool`.
-        pool (list): stores the message that have been printed (to avoid
+        pool : list
+            stores the message that have been printed (to avoid
             repetition). The first time pass an empty list, then keep passing
             the same list to avoid repetitions.
 
@@ -891,26 +1349,34 @@ def _assert_valid(condition, msg, strict=True, norepeat=False, pool=None):
         if strict:
             raise Invalid_PhotonHDF5(msg)
         else:
-            print('Photon-HDF5 WARNING: %s' % msg)
+            warnings.warn(f'Photon-HDF5 WARNING: {msg}')
     return condition
 
 
-def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
-                      norepeat=False, pool=None, verbose=False):
+def _assert_has_field(name, group, msg=None, msg_add=None, 
+                      mandatory=True, norepeat=False, pool=None, 
+                      verbose=False):
     """Assert that field `name` is in `group`.
 
     Arguments:
-        name (string): field name whose existence is being tested.
-        group (tables.Group): group which should contain `name`.
-        msg (string or None): optional message to be printed in case of
+        name : str
+            field name whose existence is being tested.
+        group : tables.Group
+            group which should contain `name`.
+        msg : str|None
+            optional message to be printed in case of
             missing field. When None a default meassage is printed.
-        msg_add (string or None): an optional message to be added to the
+        msg_add : str|None
+            an optional message to be added to the
             default message in case of missing field.
-        mandatory (bool): if True, raise and Invalid_PhotonHDF5 error when
+        mandatory : bool
+            if True, raise and Invalid_PhotonHDF5 error when
             the field is missing. If False, print only a warning message.
-        norepeat (bool): if True, do not repeat the same message more than
+        norepeat : bool
+            if True, do not repeat the same message more than
             once. The message is considered printed if present in `pool`.
-        pool (list): stores the message that have been printed (to avoid
+        pool : list
+            stores the message that have been printed (to avoid
             repetition). The first time pass an empty list, then keep passing
             the same list to avoid repetitions.
 
@@ -926,7 +1392,7 @@ def _assert_has_field(name, group, msg=None, msg_add=None, mandatory=True,
     return _assert_valid(name in group, msg, mandatory, norepeat, pool)
 
 
-def _assert_valid_detectors(h5file):
+def _assert_valid_detectors(h5file:tables.File)->None:
     detectors = h5file.root.setup.detectors
     det_ids = detectors.id.read()
     if 'counts' in detectors:
@@ -936,28 +1402,36 @@ def _assert_valid_detectors(h5file):
     else:
         spot = np.zeros(len(det_ids), dtype='uint8')
 
-    m = 'detectors/%s length (%d) is not equal to the number of detectors (%d).'
+    msg = 'detectors/%s length (%d) is not equal to the number of detectors (%d).'
     for field in _detectors_group_fields:
         if field in detectors:
             values = detectors._f_get_child(field)
             _assert_valid(len(values) == len(det_ids),
-                          msg=m % (field, len(values), len(det_ids)))
+                          msg=msg % (field, len(values), len(det_ids)))
 
     msg = 'Detector %d in spot %d not found in detectors/id.'
     msgc = 'Wrong counts (%d instead of %d) for detector %d in spot %d.'
     for i, ph_data in enumerate(_sorted_photon_data_tables(h5file)):
         if 'detectors' not in ph_data:
             break
+        _assert_valid(ph_data.detectors.shape == ph_data.timestamps.shape,
+                      "timestamps and detectors have inconsistent numbers of photons")
+        if 'particles' in ph_data:
+            _assert_valid(ph_data.particles.shape == ph_data.timestamps.shape,
+                          "timestamps and particles have inconsistent numbers of photons")
+            
         vals, cnts = np.unique(ph_data.detectors[:], return_counts=True)
         det_ids_spot = det_ids[spot == i]
         for v, c in zip(vals, cnts):
             _assert_valid(v in det_ids_spot, msg=msg % (v, i))
             if 'counts' in detectors:
                 csaved = det_counts[spot == i][det_ids_spot == v]
-                _assert_valid(c == csaved, msg=msgc % (csaved, c, v, i))
+                if csaved.size > 1:
+                    raise Invalid_PhotonHDF5(f'Replicate detector ids f{v} in  spot{i}')
+                _assert_valid(c == csaved, msg=msgc % (csaved[0], c, v, i))
 
 
-def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
+def assert_valid_photon_hdf5(datafile:Union[str, tables.File], warnings:bool=True, verbose:bool=False,
                              strict_description=True, require_setup=True,
                              skip_measurement_specs=False):
     """
@@ -975,17 +1449,24 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
     - if /setup/lifetime is True (i.e. 1), assures
       that nanotimes and nanotimes_specs are present
 
-    Arguments:
-        datafile (string or tables.File): input data file to be validated
-        warnings (bool): if True, print warnings for important optional fields
+    Arguments
+    ---------
+        datafile (string or tables.File): str|tables.File
+            input data file to be validated
+        warnings : bool
+            if True, print warnings for important optional fields
             that are missing. If False, don't print warnings.
-        verbose (bool): if True print details about the performed tests.
-        strict_description (bool): if True consider a non-conforming
+        verbose : bool
+            if True print details about the performed tests.
+        strict_description : bool
+            if True consider a non-conforming
             description (TITLE) a specs violation.
-        require_setup (bool): if True, raises an error if some mandatory
+        require_setup : bool
+            if True, raises an error if some mandatory
             fields in /setup are missing. If False, allows missing setup
             fields (or missing setup altogether).
-        skip_measurement_specs (bool): if True don't print any warning for
+        skip_measurement_specs : bool
+            if True don't print any warning for
             missing measurement_specs group.
     """
     if isinstance(datafile, tables.File):
@@ -998,23 +1479,24 @@ def assert_valid_photon_hdf5(datafile, warnings=True, verbose=False,
     else:
         msg = 'datafile must be a path (string) or a pytables File.'
         raise ValueError(msg)
-
-    _assert_valid_fields(h5file, strict_description=strict_description,
-                         verbose=verbose)
+    _spec_dict.validate_HDF5(h5file, strict=strict_description, verbose=verbose)
+    # _assert_valid_fields(h5file, strict_description=strict_description,
+    #                      verbose=verbose)
     _assert_has_field('acquisition_duration', h5file.root, verbose=verbose)
     _assert_has_field('description', h5file.root, verbose=verbose)
     if require_setup:
         _assert_setup(h5file, warnings=warnings, verbose=verbose)
     _assert_identity(h5file, warnings=warnings, verbose=verbose)
 
-    pool = []
-    kwargs = dict(setup=h5file.root.setup, pool=pool, norepeat=True,
-                  skip_measurement_specs=skip_measurement_specs)
-    for ph_data in _sorted_photon_data_tables(h5file):
-        _check_photon_data_tables(ph_data, **kwargs)
+    pool = list()
+    if require_setup:
+        kwargs = dict(setup=h5file.root.setup, pool=pool, norepeat=True,
+                      skip_measurement_specs=skip_measurement_specs)
+        for ph_data in _sorted_photon_data_tables(h5file):
+            _check_photon_data_tables(ph_data, **kwargs)
 
 
-def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
+def _assert_setup(h5file:tables.File, warnings:bool=True, strict:bool=True, verbose:bool=False):
     """Assert that setup exists and contains the mandatory fields.
     """
     if not _assert_has_field('setup', h5file.root, mandatory=strict,
@@ -1032,7 +1514,8 @@ def _assert_setup(h5file, warnings=True, strict=True, verbose=False):
                               verbose=verbose)
 
 
-def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
+def _assert_identity(h5file:tables.File, warnings:bool=True, strict:bool=True, 
+                     verbose=False)->None:
     """Assert that identity group exists and contains the mandatory fields.
     """
     if _assert_has_field('identity', h5file.root, mandatory=strict,
@@ -1048,72 +1531,74 @@ def _assert_identity(h5file, warnings=True, strict=True, verbose=False):
                               verbose=verbose)
 
 
-def _assert_valid_fields(h5file, strict_description=True, verbose=False):
-    """Assert compliance of field names, descriptions and data types.
+# def _assert_valid_fields(h5file, strict_description=True, verbose=False):
+#     """Assert compliance of field names, descriptions and data types.
 
-    Test that all the field names, the descriptions (TITLE attribute) and
-    data types are compliant with the Photon-HDF5 specs.
-    """
-    for node in h5file.root._f_walknodes():
-        pathname = node._v_pathname
-        metaname = _metapath(pathname)
-        title = node._v_title
-        if verbose:
-            print('- Checking name, description and type: "%s".' % pathname)
+#     Test that all the field names, the descriptions (TITLE attribute) and
+#     data types are compliant with the Photon-HDF5 specs.
+#     """
+#     for node in h5file.root._f_walknodes():
+#         pathname = node._v_pathname
+#         metaname = _metapath(pathname)
+#         title = node._v_title
+#         if verbose:
+#             print('- Checking name, description and type: "%s".' % pathname)
 
-        ## Test non empty title string
-        msg = 'Empty TITLE attribute for "%s"' % pathname
-        _assert_valid(len(title) > 0, msg, strict=strict_description)
+#         ## Test non empty title string
+#         msg = 'Empty TITLE attribute for "%s"' % pathname
+#         _assert_valid(len(title) > 0, msg, strict=strict_description)
 
-        ## Test description is a binary string
-        # This depends on how pytables loads the string and fails for some
-        # fields (e.g. user fields in BH file) under python 3.
-        # The test is disable for the time being.
-        #msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
-        #_assert_valid(isinstance(title, bytes), msg, strict=strict_description)
+#         ## Test description is a binary string
+#         # This depends on how pytables loads the string and fails for some
+#         # fields (e.g. user fields in BH file) under python 3.
+#         # The test is disable for the time being.
+#         #msg = 'TITLE attribute for "%s" is not a binary string.' % pathname
+#         #_assert_valid(isinstance(title, bytes), msg, strict=strict_description)
 
-        if pathname.endswith('/user') or '/user/' in pathname:
-            pass
-        else:
-            # Check field names
-            msg = 'Wrong field name "%s".' % metaname
-            _assert_valid(metaname in official_fields_specs.keys(), msg)
+#         if pathname.endswith('/user') or '/user/' in pathname:
+#             pass
+#         else:
+#             # Check field names
+#             msg = 'Wrong field name "%s".' % metaname
+#             _assert_valid(metaname in official_fields_specs.keys(), msg)
 
-            # Check fields use official description
-            msg = 'Description (TITLE) for "%s" not compliant.' % metaname
-            _assert_valid(title.decode() == official_fields_specs[metaname][0],
-                          msg, strict=strict_description)
+#             # Check fields use official description
+#             msg = 'Description (TITLE) for "%s" not compliant.' % metaname
+#             _assert_valid(title.decode() == official_fields_specs[metaname][0],
+#                           msg, strict=strict_description)
 
-            # Check fields have correct type
-            official_type = official_fields_specs[metaname][1]
+#             # Check fields have correct type
+#             official_type = official_fields_specs[metaname][1]
 
-            if official_type == 'group':
-                msg = '"%s" must be a group.' % pathname
-                _assert_valid(isinstance(node, tables.Group), msg)
-            elif official_type == 'string':
-                msg = 'Data in "%s" is not a binary string.' % pathname
-                _assert_valid(node.ndim == 0, msg)
-                _assert_valid(node.dtype.kind == 'S', msg)
-                _assert_valid(isinstance(node.read(), bytes), msg)
-            elif official_type == 'scalar':
-                msg = '"%s" must be scalar.' % pathname
-                _assert_valid(node.ndim == 0, msg)
-            elif official_type == 'array':
-                msg = '"%s" must be an array.' % pathname
-                _assert_valid(node.ndim >= 1, msg)
-                # check that photon_data arrays are strictly 1D
-                ph_data_arrays = ('timestamps', 'detectors', 'nanotimes',
-                                  'particles')
-                if node._v_name in ph_data_arrays:
-                    msg = ('The array /photon_data/%s must be 1D. '
-                           'It is %dD instead.' % (node._v_name, node.ndim))
-                    _assert_valid(node.ndim == 1, msg)
-            else:
-                raise ValueError('Wrong type in JSON specs.')
+#             if official_type == 'group':
+#                 msg = '"%s" must be a group.' % pathname
+#                 _assert_valid(isinstance(node, tables.Group), msg)
+#             elif official_type == 'string':
+#                 msg = 'Data in "%s" is not a binary string.' % pathname
+#                 _assert_valid(node.ndim == 0, msg)
+#                 _assert_valid(node.dtype.kind == 'S', msg)
+#                 _assert_valid(isinstance(node.read(), bytes), msg)
+#             elif official_type == 'scalar':
+#                 msg = '"%s" must be scalar.' % pathname
+#                 _assert_valid(node.ndim == 0, msg)
+#             elif official_type == 'array':
+#                 msg = '"%s" must be an array.' % pathname
+#                 _assert_valid(node.ndim >= 1, msg)
+#                 # check that photon_data arrays are strictly 1D
+#                 ph_data_arrays = ('timestamps', 'detectors', 'nanotimes',
+#                                   'particles')
+#                 if node._v_name in ph_data_arrays:
+#                     msg = ('The array /photon_data/%s must be 1D. '
+#                            'It is %dD instead.' % (node._v_name, node.ndim))
+#                     _assert_valid(node.ndim == 1, msg)
+#             else:
+#                 raise ValueError('Wrong type in JSON specs.')
 
 
-def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
-                              skip_measurement_specs=False, verbose=False):
+def _check_photon_data_tables(ph_data, setup=None,
+                              norepeat=False, pool=None,
+                              skip_measurement_specs=False,
+                              verbose=False):
     """Assert that the photon_data group follows the Photon-HDF5 specs.
     """
     _assert_has_field('timestamps', ph_data, verbose=verbose)
@@ -1144,9 +1629,11 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     kwargs = dict(msg_add=msg, verbose=verbose)
 
     # Read number of channels in each branch
-    num_ch = dict(spectral=setup.num_spectral_ch.read(),
-                  split=setup.num_split_ch.read(),
-                  polarization=setup.num_polarization_ch.read())
+    num_ch = {'spectral':None, 'polarization':None, 'split':None}
+    if setup is not None:
+        num_ch = dict(spectral=setup.num_spectral_ch.read(),
+                      split=setup.num_split_ch.read(),
+                      polarization=setup.num_polarization_ch.read())
 
     # Check for spectral channels
     if meas_type in ('smFRET', 'smFRET-usALEX', 'smFRET-nsALEX'):
@@ -1195,7 +1682,7 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
     laser alternation and CW lasers. However, there is no alex_period
     field in measurement_specs. alex_period is mandatory in measurements
     using alternation and CW lasers."""
-    if all(setup.excitation_cw[:]):
+    if setup is not None and all(setup.excitation_cw[:]):
         if any(setup.excitation_alternated[:]):
             _assert_has_field('alex_period', meas_specs,
                               msg_add=dedent(msg_cw))
@@ -1210,10 +1697,12 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
                 _assert_valid(field not in meas_specs, msg0 + msg1 % field)
 
     if 'nanotimes' in ph_data and 'lifetime' in setup:
+        _assert_valid(setup is not None, 
+                      "Measuremnts containing nanotimes, require setup group")
         _assert_valid(setup.lifetime.read(),
                       'Lifetime is False but nanotimes are present.')
 
-    if 'lifetime' in setup and setup.lifetime.read():
+    if setup is not None and 'lifetime' in setup and setup.lifetime.read():
         msg = """\
         According to /setup/lifetime (=True) this file should be a
         TCSPC measurement. However /setup/excitation_cw says that all
@@ -1233,6 +1722,8 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
 
     # us-ALEX fields
     if meas_type in ('smFRET-usALEX', 'smFRET-usALEX-3c'):
+        _assert_valid(setup is not None, 
+                      f"setup gropu required for {meas_type} measurements")
         msg = 'All lasers need to be CW in %s measurements.'
         _assert_valid(all(setup.excitation_cw[:]), msg=msg % meas_type)
         msg = 'All lasers need to be alternated in %s measurements.'
@@ -1241,6 +1732,8 @@ def _check_photon_data_tables(ph_data, setup, norepeat=False, pool=None,
 
     # ns-ALEX / PIE fields
     if meas_type == 'smFRET-nsALEX':
+        _assert_valid(setup is not None, 
+                      f"setup gropu required for {meas_type} measurements")
         msg = 'All lasers need to be pulsed in smFRET-nsALEX measurements.'
         _assert_valid(all(~setup.excitation_cw[:]), msg=msg)
         _assert_has_field('lifetime', setup, **kwargs)
@@ -1264,11 +1757,12 @@ def print_attrs(node, which='user'):
         print('\t    %s' % repr(node._v_attrs[attr]))
 
 
-def print_children(group):
+def print_children(group:tables.Group):
     """Print all the sub-groups in `group` and leaf-nodes children of `group`.
 
     Parameters:
-        group (pytables group): the group to be printed.
+        group : tables.Group
+            the group to be printed.
     """
     for name, value in group._v_children.items():
         if isinstance(value, tables.Group):
@@ -1276,7 +1770,7 @@ def print_children(group):
         else:
             content = value.read()
         title = value._v_title
-        if isinstance(title, bytes):
+        if isinstance(title, (bytes, np.bytes_)):
             title = title.decode()
         print(name)
         print('    Content:     %s' % content)

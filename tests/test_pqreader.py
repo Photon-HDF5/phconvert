@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import phconvert as phc
 
-DATADIR = 'notebooks/data/'
+DATADIR = '../PTUSPCSMfiles/'
 
 
 def dataset1():
@@ -36,8 +36,14 @@ def dataset5():
     return fname
 
 
+def dataset6():
+    fn = 'RawData.ptu' # 'rtGenericT3'
+    fname = DATADIR + fn
+    return fname
+
+
 @pytest.fixture(scope="module",
-                params=[dataset1, dataset2, dataset3, dataset4, dataset5])
+                params=[dataset1, dataset2, dataset3, dataset4, dataset5, dataset6])
 def filename(request):
     fname = request.param()
     return fname
@@ -94,15 +100,16 @@ def test_read_ptu_recordtype(filename):
 def test_ptu_overflow_correction(filename):
     """Test PTU overflow correction for rtHydraHarpT3 records."""
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_ptu(filename, ovcfunc='base')
-    timestamps2, detectors2, nanotimes2, meta2 = phc.pqreader.load_ptu(
+    timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_ptu(filename, ovcfunc='base')
+    timestamps2, detectors2, nanotimes2, meta2, marker_ids2 = phc.pqreader.load_ptu(
         filename, ovcfunc='numba')
-    assert (timestamps == timestamps2).all()
+    assert np.all(timestamps == timestamps2)
+
 
 def test_load_ptu(filename):
     """Test consistency of data loaded from PTU files."""
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_ptu(filename)
+    timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_ptu(filename)
     # Test metadata
     tags = meta['tags']
     acq_duration = tags['MeasDesc_AcquisitionTime']['value'] * 1e-3
@@ -120,7 +127,7 @@ def test_load_ptu(filename):
     if nanotimes is not None:
         assert 'laser_repetition_rate' in meta
         assert 1e6 < meta['laser_repetition_rate'] > 10e6
-        assert ((nanotimes >= 0) * (nanotimes < 4096)).all()
+        assert np.all((nanotimes >= 0) * (nanotimes < 4096))
 
 
 def test_load_ht3():
@@ -128,11 +135,11 @@ def test_load_ht3():
     fn = 'Pre.ht3'
     filename = DATADIR + fn
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_ht3(filename)
+    timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_ht3(filename)
     acq_duration = meta['header']['Tacq'] * 1e-3
     acq_duration2 = (timestamps[-1] - timestamps[0]) * meta['timestamps_unit']
     assert abs(acq_duration - acq_duration2) < 0.1
-    assert (np.diff(timestamps) >= 0).all()
+    assert np.all(np.diff(timestamps) >= 0)
 
 
 def test_load_pt3():
@@ -140,7 +147,7 @@ def test_load_pt3():
     fn = 'topfluorPE_2_1_1_1.pt3'
     filename = DATADIR + fn
     assert os.path.isfile(filename), 'File not found: %s' % filename
-    timestamps, detectors, nanotimes, meta = phc.pqreader.load_pt3(filename)
+    timestamps, detectors, nanotimes, meta, marker_ids = phc.pqreader.load_pt3(filename)
     acq_duration = meta['header']['AcquisitionTime'] * 1e-3
     acq_duration2 = (timestamps[-1] - timestamps[0]) * meta['timestamps_unit']
     # The two acquisition times should match. TODO: find out why they don't
@@ -154,12 +161,12 @@ def test_load_phu():
     filename = DATADIR + fn
     assert os.path.isfile(filename), 'File not found: %s' % filename
     hist, bin_size, meta = phc.pqreader.load_phu(filename)
-    
+
     # test acquisition duration
     acq_duration = meta['tags']['MeasDesc_AcquisitionTime']['value'] * 1e-3
     acq_duration2 = meta['acquisition_duration']
     assert acq_duration == acq_duration2 == 10
-    
+
     # test hist.shape
     tags = meta['tags']
     num_curves = tags['HistoResult_NumberOfCurves']['value']
@@ -176,6 +183,3 @@ def test_load_phu():
     # test `bin_size`
     bin_size2 = [tag['value'] for tag in tags['HistResDscr_MDescResolution']]
     assert np.array_equal(bin_size, bin_size2)
-    
-
-   

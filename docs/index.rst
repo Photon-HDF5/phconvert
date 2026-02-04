@@ -8,15 +8,20 @@ Welcome to phconvert's documentation!
 
 :Version: |version| (`release notes <https://github.com/Photon-HDF5/phconvert/releases/>`__)
 
-`phconvert <http://photon-hdf5.github.io/phconvert/>`__ is a python 2 & 3 library
+`phconvert <http://photon-hdf5.github.io/phconvert/>`__ is a python 3 library
 which helps writing valid
 `Photon-HDF5 <https://www.photon-hdf5.org>`_ files.
 This document contains the API documentation for phconvert.
 
-The phconvert library contains two main modules: `hdf5` and `loader`.
+The phconvert library contains two main modules: `hdf5` and `loader` for reading and writing files.
 The former contains functions to save and validate Photon-HDF5 files.
 The latter, contains functions to load other formats to be converted to
 Photon-HDF5.
+
+The `plotter` and `helperfuncs` modules contain utility functions that assist users in inspecting
+the itermeiate steps in converting from a raw data file into photon-HDF5, the first primarily
+in determining the ideal alternation periods for ALEX/PIE measuremtns, the latter for determining
+missing metadata.
 
 The phconvert repository contains a set the notebooks to convert
 existing formats to Photon-HDF5 or to write Photon-HDF5 from scratch:
@@ -24,7 +29,15 @@ existing formats to Photon-HDF5 or to write Photon-HDF5 from scratch:
 - `phconvert notebooks <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/>`_
   (`read online <http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/blob/master/notebooks/>`__).
 
-In particular see notebook `Writing Photon-HDF5 files <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/Writing%20Photon-HDF5%20files.ipynb>`_
+Particularly the notebooks
+
+- `Load-PTU <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/Load-PTU.ipynb>`__
+- `Load-SPC <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/Load-SPC.ipynb>`__
+
+demonstrate the full process using the latest version of phconvert for converting picoquant and
+Becker & Hickl files to photon-HDF5.
+
+See notebook `Writing Photon-HDF5 files <https://github.com/Photon-HDF5/phconvert/blob/master/notebooks/Writing%20Photon-HDF5%20files.ipynb>`_
 (`read online <http://nbviewer.ipython.org/github/Photon-HDF5/phconvert/blob/master/notebooks/Writing%20Photon-HDF5%20files.ipynb>`__)
 as an example of writing Photon-HDF5 files from scratch.
 
@@ -40,6 +53,8 @@ Contents:
 
    hdf5
    loader
+   plotter
+   helperfuncs
    pqreader
    bhreader
 

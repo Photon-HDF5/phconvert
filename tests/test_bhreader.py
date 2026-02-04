@@ -1,8 +1,6 @@
-import unittest
 from phconvert import bhreader
 import numpy as np
 import pandas as pd
-import os.path
 
 import pytest
 
@@ -29,14 +27,20 @@ import pytest
 #         self.assertAlmostEqual(data[3]*1e9, 9.5, 1)         # Right timestamp
 
 def test_import_SPC_150_nanotime():
-    input_file = 'tests/test_files/test_noise.spc'
-    check_file = 'tests/test_files/test_noise.asc'
+    input_file = '../PTUSPCSMfiles/test_noise.spc'
+    check_file = '../PTUSPCSMfiles/test_noise.asc'
 
-    data = bhreader.load_spc(input_file, 'SPC-150')
-    check = pd.read_csv(check_file, delimiter=' ', dtype='int64', usecols=[0,1], header=None).values.T
-    
-    assert data[2].size == check[1].size
-    assert np.equal(data[2], check[1]).all()
-    assert np.equal(data[0], check[0]).all()
-    assert round(data[3]*1e9, 1) == 9.5
+    data = bhreader.load_spc(input_file)
+    timestamps = data['photon_data']['timestamps']
+    nanotimes = data['photon_data']['nanotimes']
+    detectors = data['photon_data']['detectors']
+    macroclock = data['photon_data']['timestamps_unit']
+    assert timestamps.size == nanotimes.size == detectors.size
+    timecheck, nanocheck = pd.read_csv(check_file, delimiter=' ', dtype='int64', usecols=[0,1], header=None).values.T
+    assert nanotimes.size == nanocheck.size
+    assert np.all(nanotimes == nanocheck)
+    assert np.all(timestamps == timecheck)
+    assert round(macroclock*1e9, 1) == 9.5
 
+# def test_import_SPC_600_nanotime():
+#     input_file = cd .
