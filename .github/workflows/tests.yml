@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           auto-update-conda: true
           activate-environment: test
@@ -24,7 +24,7 @@ jobs:
         run: |
           conda install -c conda-forge pooch
       - name: Download Files
-        shell: bach -l {0}
+        shell: bash -l {0}
         run: |
           cd tests
           python fetch_files.py
