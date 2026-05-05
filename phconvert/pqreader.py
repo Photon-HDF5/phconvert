@@ -224,7 +224,7 @@ def load_ht3(filename, ovcfunc=None):
     meta.update({'timestamps_unit': timestamps_unit,
                  'nanotimes_unit': nanotimes_unit,
                  'acquisition_duration': meta['header']['Tacq'][0] * 1e-3,
-                 'laser_repetition_rate': meta['ttmode']['SyncRate'],
+                 'laser_repetition_rate': meta['ttmode']['SyncRate'][0],
                  'software': meta['header']['CreatorName'][0].decode(),
                  'software_version': meta['header']['CreatorVersion'][0].decode(),
                  'creation_time': creation_time,
@@ -258,7 +258,7 @@ def load_pt3(filename, ovcfunc=None):
     meta.update({'timestamps_unit': timestamps_unit,
                  'nanotimes_unit': nanotimes_unit,
                  'acquisition_duration': acquisition_duration,
-                 'laser_repetition_rate': meta['ttmode']['InpRate0'],
+                 'laser_repetition_rate': meta['ttmode']['InpRate0'][0],
                  'software': meta['header']['CreatorName'][0].decode(),
                  'software_version': meta['header']['CreatorVersion'][0].decode(),
                  'creation_time': creation_time,
@@ -404,8 +404,8 @@ def ht3_reader(filename):
         # The remainings are all T3 records
         t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'][0])
 
-        timestamps_unit = 1./ttmode['SyncRate']
-        nanotimes_unit = 1e-12*header['Resolution']
+        timestamps_unit = 1./ttmode['SyncRate'][0]
+        nanotimes_unit = 1e-12*header['Resolution'][0]
 
         metadata = dict(header=header, dispcurve=dispcurve, params=params,
                         repeatgroup=repeatgroup, hardware=hardware,
@@ -519,8 +519,8 @@ def pt3_reader(filename):
         # The remainings are all T3 records
         t3records = np.fromfile(f, dtype='uint32', count=ttmode['nRecords'][0])
 
-        timestamps_unit = 1./ttmode['InpRate0']
-        nanotimes_unit = 1e-9*hardware['Resolution']
+        timestamps_unit = 1./ttmode['InpRate0'][0]
+        nanotimes_unit = 1e-9*hardware['Resolution'][0]
 
         metadata = dict(header=header, dispcurve=dispcurve, params=params,
                         repeatgroup=repeatgroup, hardware=hardware,

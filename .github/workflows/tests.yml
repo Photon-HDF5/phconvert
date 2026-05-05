@@ -9,7 +9,32 @@ on:
       branch:
         - master
 jobs:
-  build:
+  download:
+    runs-on: ubuntu-lates
+      - uses: actions/checkout@v6
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          activate-environment: test
+          channels: conda-forge
+          python-version: "3.12"
+        - name: Install Pooch
+          shell: bach -l {0}
+          run: |
+            conda install -c conda-forge pooch
+        - name: Download Files
+          shell: bach -l {0}
+          run: |
+            cd tests
+            python fetch_files.py
+        - uses: action/cache@v5
+          id: filecache
+          with:
+            path: ./notebooks/data
+            enableCrossOsArchive: true
+            key: testfiles
+  test:
+    needs: download
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
@@ -25,6 +50,13 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Resore Cached Files
+        id: cache-action
+        uses: actions/cache/restore@v5
+        with:
+          path: notebooks/data
+          key: testfiles
+          enableCrossOsArchive: true
       # # - name: Setup Python ${{matrix.python-version}}
       # #   uses: actions/setup-python@v4
       # #   with:
@@ -48,11 +80,11 @@ jobs:
           brew install c-blosc hdf5
           export HDF5_DIR=/opt/homebrew/opt/hdf5
           export BLOSC_DIR=/opt/homebrew/opt/c-blosc
-      - name: check out test files
-        uses: actions/checkout@v6
-        with:
-          repository: Photon-HDF5/PTUSPCSMfiles
-          path: PTUSPCSMfiles
+      # - name: check out test files
+      #  uses: actions/checkout@v6
+      #  with:
+      #    repository: Photon-HDF5/PTUSPCSMfiles
+      #    path: PTUSPCSMfiles
       - name: Install Dependencies
         shell: bash -l {0}
         run: |
@@ -73,4 +105,6 @@ jobs:
         run: |
           cd tests
           pytest
+          cd ../notebooks
+          python ../tests/nbrun.py
         

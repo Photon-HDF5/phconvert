@@ -17,10 +17,11 @@ is performed by low-level functions in other modules
 decode a new file format, these modules can provide useful examples.
 
 """
-
 import os
+from typing import Union
 import warnings
 import time
+
 import numpy as np
 
 from . import smreader
@@ -403,7 +404,7 @@ def usalex_sm(
     return data
 
 
-def nsalex_bh(filename_spc,
+def nsalex_bh(filename_spc:str,
               donor = 4,
               acceptor = 6,
               alex_period_donor = (10, 1500),
@@ -411,7 +412,7 @@ def nsalex_bh(filename_spc,
               excitation_wavelengths = (532e-9, 635e-9),
               detection_wavelengths = (580e-9, 680e-9),
               allow_missing_set = False,
-              tcspc_num_bins=None, tcspc_unit=None):
+              tcspc_num_bins=None, tcspc_unit=None, filename_set:Union[None,str]=None):
     """Load a .spc and (optionally) .set files for ns-ALEX and return 2 dict.
 
     The first dictionary can be passed to the
@@ -427,23 +428,15 @@ def nsalex_bh(filename_spc,
     # Load .SPC file
     assert os.path.isfile(filename_spc), "File '%s' not found." % filename_spc
     print(" - Loading '%s' ... " % filename_spc)
-    timestamps, detectors, nanotimes, timestamps_unit = \
-        bhreader.load_spc(filename_spc)
+    ph_data = bhreader.load_spc(filename_spc, setfile=filename_set)
     print(" [DONE]\n")
-
-    # Load .SET file
-    filename_set = filename_spc[:-3] + 'set'
-    if os.path.isfile(filename_set):
-        metadata = bhreader.load_set(filename_set)
-    elif allow_missing_set:
-        metadata = {}
-        msg = 'SET file not found. You need to pass "%s".'
-        assert tcspc_num_bins is not None, msg % 'tcspc_num_bins'
-        assert tcspc_unit is not None, msg % 'tcspc_unit'
-        print('SET file not found. Using passed TCSPC parameters.')
-    else:
-        raise IOError("File '%s' not found." % filename_set)
-
+    photon_data = ph_data['photon_data']
+    timestamps = photon_data['timestamps']
+    timestamps_unit = photon_data.pop('timestamps_unit')
+    non_photon_ids = photon_data.pop('marker_ids')
+    photon_data.pop('tcspc_num_bins')
+    metadata = ph_data['meta']
+    
     # Extract the creation time from the .SET file metadata as it will be
     # more reliable than the creation time from the file system
     provenance = dict(filename=filename_spc, software=software)
@@ -454,32 +447,32 @@ def nsalex_bh(filename_spc,
         creation_time = date_str + ' ' + time_str
         provenance.update({'creation_time': creation_time})
 
-    if 'sys_params' in metadata:
+    if 'setup' in metadata:
         print('TCSPC parameters retrived from the .SET file.')
-        sys_params = metadata['sys_params']
+        sys_params = metadata['setup']
         tcspc_num_bins = int(sys_params['SP_ADC_RE'])
         tcspc_unit = float(sys_params['SP_TAC_TC'])
-        #tcspc_range = sys_params['SP_TAC_R']  # redundant info
-    tcspc_range = tcspc_num_bins * tcspc_unit
-
-    photon_data = dict(
-        timestamps = timestamps,
-        timestamps_specs = dict(timestamps_unit=timestamps_unit),
-        detectors = detectors,
-        nanotimes = nanotimes,
-
-        nanotimes_specs = dict(
-            tcspc_unit = tcspc_unit,
-            tcspc_range = tcspc_range,
-            tcspc_num_bins = tcspc_num_bins),
-        measurement_specs = dict(
-            measurement_type = 'smFRET-nsALEX',
-            laser_repetition_rate = 1 / timestamps_unit,
-            alex_excitation_period1 = alex_period_donor,
-            alex_excitation_period2 = alex_period_acceptor,
-            detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
-                                   spectral_ch2 = np.atleast_1d(acceptor))),
-    )
+        # tcspc_range = sys_params['SP_TAC_R']  # redundant info
+    if tcspc_num_bins is not None and tcspc_unit is not None:
+        tcspc_range = tcspc_num_bins * tcspc_unit
+    else:
+        tcspc_range = None
+    nanotimes_specs = dict(
+        tcspc_unit = tcspc_unit,
+        tcspc_range = tcspc_range,
+        tcspc_num_bins = tcspc_num_bins)
+    measurement_specs = dict(
+        measurement_type = 'smFRET-nsALEX',
+        laser_repetition_rate = 1 / tcspc_range if tcspc_range is not None else None,
+        alex_excitation_period1 = alex_period_donor,
+        alex_excitation_period2 = alex_period_acceptor,
+        detectors_specs = dict(spectral_ch1 = np.atleast_1d(donor),
+                               spectral_ch2 = np.atleast_1d(acceptor)))
+    if isinstance(non_photon_ids, np.ndarray) and non_photon_ids.size:
+        measurement_specs['detectors_specs']['non_photon_id1'] = non_photon_ids
+    photon_data['measurement_specs'] = measurement_specs
+    photon_data['nanotimes_specs'] = nanotimes_specs
+    photon_data['timestamps_specs'] = {'timestamps_unit':timestamps_unit}
 
     setup = dict(
         num_pixels = 2,
@@ -651,10 +644,10 @@ def nsalex_t3r(filename,
     print(" [DONE]\n")
 
     timestamps_unit = float(metadata.pop('timestamps_unit'))
-    tcspc_unit = float(metadata.pop('nanotimes_unit'))
+    tcspc_unit = float(metadata.pop('nanotimes_unit')[0])
     tcspc_num_bins = 4096
     tcspc_range = tcspc_num_bins * tcspc_unit
-    laser_repetition_rate = float(metadata['ttmode']['SyncRate'])
+    laser_repetition_rate = float(metadata['ttmode']['SyncRate'][0])
     acquisition_duration = float(metadata['header']['AcquisitionTime'][0] * 1e-3)
     software = str(metadata['header']['SoftwareVersion'][0])
     software_version = str(metadata['header']['HardwareVersion'][0])

@@ -4,6 +4,7 @@
 #
 # Copyright (C) 2014-2015 Antonino Ingargiola <tritemio@gmail.com>
 #
+# Copyrigh (C) 2026-2027 Paul David Harris <harripd@gmail.com>
 """
 This module defines the string descriptions for all the fields in the
 **Photon-HDF5** format.
@@ -40,9 +41,6 @@ root_attributes = OrderedDict([
     ('format_version', LATEST_FORMAT_VERSION),
     ('format_url', b'http://photon-hdf5.org/'),
 ])
-
-        
-        
 
 
 official_fields_specs = _get_fields_descr()

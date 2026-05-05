@@ -11,6 +11,14 @@
         "A user-defined comment describing the data file.",
         "string"
     ],
+    "/format_name": [
+        "Name of the file format.",
+        "string"
+    ],
+    "/format_version": [
+        "Version for the Photon-HDF5 format.",
+        "string"
+    ],
     "/photon_data?N": [
         "Group containing arrays of photon-data.",
         "group"

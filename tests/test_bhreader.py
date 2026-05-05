@@ -26,9 +26,11 @@ import pytest
 #         self.assertTrue(np.equal(data[0], check[0]).all())  # Equal microtimes
 #         self.assertAlmostEqual(data[3]*1e9, 9.5, 1)         # Right timestamp
 
+data_dir = 'test_files/'
+
 def test_import_SPC_150_nanotime():
-    input_file = '../PTUSPCSMfiles/test_noise.spc'
-    check_file = '../PTUSPCSMfiles/test_noise.asc'
+    input_file = data_dir + 'test_noise.spc'
+    check_file = data_dir + 'test_noise.asc'
 
     data = bhreader.load_spc(input_file)
     timestamps = data['photon_data']['timestamps']

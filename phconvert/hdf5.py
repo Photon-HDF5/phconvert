@@ -353,7 +353,7 @@ class _SpecDict:
             else:
                 warnings.warn(msg)
                 
-    def _validate_HDF5(self, file, err_pool, warn_pool, descr_pool):
+    def _validate_HDF5(self, file, err_pool:list, warn_pool:list, descr_pool:list):
         for node in file.walk_nodes('/'):
             # get field information
             if 'user' in node._v_pathname.split('/') or node._v_name == 'user':
@@ -447,7 +447,8 @@ class _SpecDict:
                     err_pool += descr_pool
             if err_pool:
                 raise Invalid_PhotonHDF5(err_pool)
-            
+
+
 _spec_dict = _SpecDict(official_fields_specs)
 
 
@@ -540,6 +541,7 @@ def _is_structured_array(obj):
 def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     """Writes `obj` in the pytables HDF5 `group` with name `name`.
     """
+    print(name, type(obj))
     if isinstance(group, str):
         assert h5file is not None
     else:
@@ -650,17 +652,17 @@ def _save_photon_hdf5_dict(group, data_dict, user_descr, prefix_list=None,
 
 
 def save_photon_hdf5(data_dict:dict,
-                     h5_fname=None,
+                     h5_fname:str=None,
                      h5file:tables.File=None,
                      user_descr:str=None,
                      overwrite:bool=False,
                      compression:dict=None,
-                     close=True,
-                     validate=True,
-                     warnings=True,
-                     skip_measurement_specs=False,
-                     require_setup=True,
-                     debug=False)->tables.File:
+                     close:bool=True,
+                     validate:bool=True,
+                     warnings:bool=True,
+                     skip_measurement_specs:bool=False,
+                     require_setup:bool=True,
+                     debug:bool=False)->tables.File:
     """
     Saves the dict `data_dict` in the Photon-HDF5 format.
 
@@ -712,56 +714,58 @@ def save_photon_hdf5(data_dict:dict,
     As a side effect `data_dict` is modified by adding the key
     '_data_file' containing a reference to the pytables file.
 
-    Arguments:
-        data_dict : dict
-            the dictionary containing the photon data.
-            The keys must strings matching valid Photon-HDF5 paths.
-            The values must be scalars, arrays, strings or another dict.
-        h5_fname : str|None
-            file name for the output Photon-HDF5 file.
-            If None and h5file is also None, the file name is taken from
-            ``data_dict['_filename']`` with extension changed to '.hdf5'.
-        h5file : tables.File|None
-            an already open and writable HDF5
-            file to use as container. This argument can be used to complete
-            an HDF5 file already containing some arrays, or to update
-            an already existing Photon-HDF5 file in-place.
-            For more info see note below.
-        user_descr : dict|None
-            dictionary of descriptions (strings) for
-            user-defined fields. The keys must be strings representing
-            the full HDF5 path of each field. The values must be
-            binary (i.e. encoded) strings restricted to the ASCII set.
-        overwrite : bool
-            if True, a pre-existing HDF5 file with same name is
-            overwritten. If False, save the new file by adding the
-            suffix "new_copy" (and if a "_new_copy" file is already present
-            overwrites it).
-        compression : dict
-            dictionary containing the compression type
-            and level. Passed to pytables `tables.Filters()`.
-        close : bool
-            If True (default) the HDF5 file is closed before
-            returning. If False the file is left open.
-        validate : bool
-            if True, after saving perform a validation step
-            raising an error if the specs are not followed.
-        warnings : bool
-            if True, print warnings for important optional fields
-            that are missing. If False, don't print warnings.
-        skip_measurement_specs : bool
-            if True don't print any warning for
-            missing measurement_specs group.
-        require_setup : bool
-            if True, raises an error if some mandatory
-            fields in /setup are missing. If False, allows missing setup
-            fields (or missing setup altogether). Use False when saving
-            only detectors' dark counts.
-        debug : bool
-            if True prints additional debug information.
+    Parameters
+    ----------
+    data_dict : dict
+        the dictionary containing the photon data.
+        The keys must strings matching valid Photon-HDF5 paths.
+        The values must be scalars, arrays, strings or another dict.
+    h5_fname : str|None
+        file name for the output Photon-HDF5 file.
+        If None and h5file is also None, the file name is taken from
+        ``data_dict['_filename']`` with extension changed to '.hdf5'.
+    h5file : tables.File|None
+        an already open and writable HDF5
+        file to use as container. This argument can be used to complete
+        an HDF5 file already containing some arrays, or to update
+        an already existing Photon-HDF5 file in-place.
+        For more info see note below.
+    user_descr : dict|None
+        dictionary of descriptions (strings) for
+        user-defined fields. The keys must be strings representing
+        the full HDF5 path of each field. The values must be
+        binary (i.e. encoded) strings restricted to the ASCII set.
+    overwrite : bool
+        if True, a pre-existing HDF5 file with same name is
+        overwritten. If False, save the new file by adding the
+        suffix "new_copy" (and if a "_new_copy" file is already present
+        overwrites it).
+    compression : dict
+        dictionary containing the compression type
+        and level. Passed to pytables `tables.Filters()`.
+    close : bool
+        If True (default) the HDF5 file is closed before
+        returning. If False the file is left open.
+    validate : bool
+        if True, after saving perform a validation step
+        raising an error if the specs are not followed.
+    warnings : bool
+        if True, print warnings for important optional fields
+        that are missing. If False, don't print warnings.
+    skip_measurement_specs : bool
+        if True don't print any warning for
+        missing measurement_specs group.
+    require_setup : bool
+        if True, raises an error if some mandatory
+        fields in /setup are missing. If False, allows missing setup
+        fields (or missing setup altogether). Use False when saving
+        only detectors' dark counts.
+    debug : bool
+        if True prints additional debug information.
     
-    Returns:
-        tables.File 
+    Returns
+    -------
+    tables.File 
         The file object of the created photonHDF5 file
 
     For description and specs of the Photon-HDF5 format see:
@@ -804,7 +808,7 @@ def save_photon_hdf5(data_dict:dict,
         _populate_setup(data_dict)
     _sanitize_data(data_dict, require_setup)
     _compute_acquisition_duration(data_dict)
-    
+
     ## Create the HDF5 file
     print('Saving: %s' % h5_fname)
     title = _spec_dict.get_descr('/').encode()
@@ -848,7 +852,7 @@ def _is_mutispot(h5root_or_dict):
     return 'photon_data' not in h5root_or_dict
 
 
-def _populate_identity(data_dict, h5file):
+def _populate_identity(data_dict:dict, h5file:tables.File)->None:
     """Populate identity metadata adding info from the newly created file.
     """
     identity = _get_identity(h5file)
@@ -857,9 +861,11 @@ def _populate_identity(data_dict, h5file):
     if 'identity' not in data_dict:
         data_dict['identity'] = {}
     data_dict['identity'].update(identity)
+    data_dict['format_name'] = identity['format_name']
+    data_dict['format_version'] = identity['format_version']
 
 
-def _populate_provenance(data_dict):
+def _populate_provenance(data_dict:dict)->None:
     """Try to find the original data file to fill provenance fields.
     """
     if 'provenance' not in data_dict:
@@ -1046,15 +1052,22 @@ def load_photon_hdf5(filename:str, **kwargs):
     assert_valid_photon_hdf5(h5file, **kwargs)
     return h5file
 
-##
+###################
 # Utility functions
-#
+###################
 
-def _get_version(h5file):
+def _get_version(h5file:tables.File)->str:
     """Return file format version string (unicode on both py2 and py3).
 
-    Arguments:
-        h5file (pytables File): pytables File object.
+    Parameters
+    ----------
+    h5file : tables.File
+        pytables File object.
+    
+    Returns
+    -------
+    str
+        string representation of version of Photon-HDF5 file
     """
     version = None
     format_name = root_attributes['format_name']
@@ -1079,11 +1092,18 @@ def _get_version(h5file):
     return version
 
 
-def _check_version(filename):
+def _check_version(filename:str|os.PathLike)->str:
     """Return file format version string (unicode on both py2 and py3).
 
-    Arguments:
-        filename (string): path of the data file.
+    Parameters
+    ----------
+    filename : str
+        path of the data file.
+        
+    Returns
+    -------
+    str
+        Version string
     """
     assert os.path.isfile(filename)
     with tables.open_file(filename) as h5file:
@@ -1091,7 +1111,7 @@ def _check_version(filename):
     return version
 
 
-def _sorted_photon_data_tables(h5file:tables.File):
+def _sorted_photon_data_tables(h5file:tables.File)->list[tables.Node]:
     """Return a sorted list of keys "photon_dataN", sorted by N.
 
     If there is only one "photon_data" (with no N) it returns the list
@@ -1270,7 +1290,12 @@ def _normalize_scalars(data_dict):
     #         curr_dict[item['name']] = scalar_value
 
 
-def _sanitize_data(data_dict, require_setup=True):
+def _assert_has_key(dict_, key, dict_name):
+    if key not in dict_:
+        raise Invalid_PhotonHDF5('missing %s in %s.' % (key, dict_name))
+
+
+def _sanitize_data(data_dict:dict, require_setup:bool=True)->None:
     """Perform type conversions to strictly conform to Photon-HDF5 specs.
 
     Conversions implemented:
@@ -1282,10 +1307,6 @@ def _sanitize_data(data_dict, require_setup=True):
     - for some setup fields, convert sequences of strings to arrays of floats
     - convert /setup/detectors fields into numpy arrays.
     """
-    def _assert_has_key(dict_, key, dict_name):
-        if key not in dict_:
-            raise Invalid_PhotonHDF5('missing %s in %s.' % (key, dict_name))
-
     for ph_data_name in _sorted_photon_data(data_dict):
         ph_data = data_dict[ph_data_name]
         for name in ['timestamps', 'timestamps_specs']:
@@ -1313,31 +1334,34 @@ def _sanitize_data(data_dict, require_setup=True):
     _normalize_detectors_group(data_dict)
     
 
-##
+######################
 # Validation functions
-#
+######################
 
-def _assert_valid(condition:bool, msg:str, strict:bool=True, norepeat:bool=False, pool:list=None):
+def _assert_valid(condition:bool, msg:str, strict:bool=True, norepeat:bool=False, pool:list=None)->bool:
     """Assert `condition` and raise Invalid_PhotonHDF5(msg) on fail.
 
-    Arguments:
-        condition : bool
-            must evaluate to True for a valid Photon-HDF5 file.
-        msg : str
-            meassage to be printed in case `condition` is False.
-        strict : bool
-            if True, raise Invalid_PhotonHDF5 when `condition` is
-            False. Else, print only a warning.
-        norepeat : bool
-            if True, do not repeat the same message more than
-            once. The message is considered printed if present in `pool`.
-        pool : list
-            stores the message that have been printed (to avoid
-            repetition). The first time pass an empty list, then keep passing
-            the same list to avoid repetitions.
+    Parameters
+    ----------
+    condition : bool
+        must evaluate to True for a valid Photon-HDF5 file.
+    msg : str
+        meassage to be printed in case `condition` is False.
+    strict : bool
+        if True, raise Invalid_PhotonHDF5 when `condition` is
+        False. Else, print only a warning.
+    norepeat : bool
+        if True, do not repeat the same message more than
+        once. The message is considered printed if present in `pool`.
+    pool : list
+        stores the message that have been printed (to avoid
+        repetition). The first time pass an empty list, then keep passing
+        the same list to avoid repetitions.
 
-    Returns:
-        Boolean, pass-through the input argument `condition`.
+    Returns
+    -------
+    bool
+        pass-through the input argument `condition`.
     """
     if norepeat:
         if msg in pool:
@@ -1431,9 +1455,10 @@ def _assert_valid_detectors(h5file:tables.File)->None:
                 _assert_valid(c == csaved, msg=msgc % (csaved[0], c, v, i))
 
 
-def assert_valid_photon_hdf5(datafile:Union[str, tables.File], warnings:bool=True, verbose:bool=False,
-                             strict_description=True, require_setup=True,
-                             skip_measurement_specs=False):
+def assert_valid_photon_hdf5(datafile:Union[str, tables.File], warnings:bool=True, 
+                             verbose:bool=False, strict_description:bool=True, 
+                             require_setup=True, skip_measurement_specs:bool=False,
+                             require_rootformat:bool=False)->None:
     """
     Asserts that ``datafile`` follows the Photon-HDF5 specs.
 
@@ -1451,23 +1476,30 @@ def assert_valid_photon_hdf5(datafile:Union[str, tables.File], warnings:bool=Tru
 
     Arguments
     ---------
-        datafile (string or tables.File): str|tables.File
-            input data file to be validated
-        warnings : bool
-            if True, print warnings for important optional fields
-            that are missing. If False, don't print warnings.
-        verbose : bool
-            if True print details about the performed tests.
-        strict_description : bool
-            if True consider a non-conforming
-            description (TITLE) a specs violation.
-        require_setup : bool
-            if True, raises an error if some mandatory
-            fields in /setup are missing. If False, allows missing setup
-            fields (or missing setup altogether).
-        skip_measurement_specs : bool
-            if True don't print any warning for
-            missing measurement_specs group.
+    datafile (string or tables.File): str|tables.File
+        input data file to be validated
+    warnings : bool
+        if True, print warnings for important optional fields
+        that are missing. If False, don't print warnings.
+    verbose : bool
+        if True print details about the performed tests.
+    strict_description : bool
+        if True consider a non-conforming
+        description (TITLE) a specs violation.
+    require_setup : bool
+        if True, raises an error if some mandatory
+        fields in /setup are missing. If False, allows missing setup
+        fields (or missing setup altogether).
+    skip_measurement_specs : bool
+        if True don't print any warning for
+        missing measurement_specs group.
+    require_rootformat : bool
+        Require format_name and format_version string arrays in root group.
+        These fields are redundant with the identically named fields of ``identity``,
+        and the redundancy was always named in the official photon-HDF5 spec, however
+        previous versions of phconvert did not include these groups, and thus
+        nearly all example files only contain these groups in the ``identity``
+        group. The default is False.
     """
     if isinstance(datafile, tables.File):
         h5file = datafile
@@ -1487,7 +1519,10 @@ def assert_valid_photon_hdf5(datafile:Union[str, tables.File], warnings:bool=Tru
     if require_setup:
         _assert_setup(h5file, warnings=warnings, verbose=verbose)
     _assert_identity(h5file, warnings=warnings, verbose=verbose)
-
+    if require_rootformat:
+        _assert_has_field('format_name', h5file.root, verbose=verbose)
+        _assert_has_field('format_version', h5file.root, verbose=verbose)
+    
     pool = list()
     if require_setup:
         kwargs = dict(setup=h5file.root.setup, pool=pool, norepeat=True,

@@ -178,9 +178,7 @@ def _get_detectors_specs(ph_data:dict, group_dets:bool, sort_spectral:bool,
     
     det_spec = ph_data['measurement_specs']['detectors_specs']
     
-    non_photon = set(val for key, val in det_spec.items() if _nph_rgx.fullmatch(key))
-    if non_photon:
-        non_photon = set(chain(*non_photon))
+    non_photon = set(chain.from_iterable(val for key, val in det_spec.items() if _nph_rgx.fullmatch(key)))
     
     det_groups = dict()
     if group_dets:
