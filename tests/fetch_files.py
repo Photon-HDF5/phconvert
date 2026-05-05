@@ -6,7 +6,7 @@ import pooch
 
 DATASET_DIR = u'../notebooks/data'
 
-repo = pooch.create(path=DATASET_DIR, base_url='doi:10.5281/zenodo.20035771')
+repo = pooch.create(path=DATASET_DIR, base_url='doi:10.5281/zenodo.20038738')
 repo.load_registry_from_doi()
 
 files = ('161128_DM1_50pM_pH74.ptu', '20161027_DM1_1nM_pH7_20MHz1.ptu', 'Cy3+Cy5_diff_PIE-FRET.ptu',

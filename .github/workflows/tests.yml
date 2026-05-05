@@ -55,7 +55,7 @@ jobs:
         id: cache-action
         uses: actions/cache/restore@v5
         with:
-          path: notebooks/data
+          path: ./notebooks/data
           key: testfiles
           enableCrossOsArchive: true
       # # - name: Setup Python ${{matrix.python-version}}

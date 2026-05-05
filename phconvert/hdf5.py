@@ -1092,7 +1092,7 @@ def _get_version(h5file:tables.File)->str:
     return version
 
 
-def _check_version(filename:str|os.PathLike)->str:
+def _check_version(filename:Union[str,os.PathLike])->str:
     """Return file format version string (unicode on both py2 and py3).
 
     Parameters
