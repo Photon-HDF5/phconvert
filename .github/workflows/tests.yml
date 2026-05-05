@@ -20,7 +20,7 @@ jobs:
           channels: conda-forge
           python-version: "3.12"
       - name: Install Pooch
-        shell: bach -l {0}
+        shell: bash -l {0}
         run: |
           conda install -c conda-forge pooch
       - name: Download Files
