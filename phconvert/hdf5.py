@@ -279,7 +279,6 @@ class _SpecDict:
     def is_valid(self, fieldstr, strict=False, warn=False):
         """Test if a given field string is valid in the photon-HDF5 spec"""
         descr, _, field_match_obj, err_msg, warn_msg = self._get_subindex(fieldstr)
-        print(fieldstr, field_match_obj)
         descr = _format_descr(field_match_obj, descr)
         return descr, err_msg, warn_msg
     
@@ -397,8 +396,6 @@ class _SpecDict:
                     type_msg = f'Field {node._v_pathname} must be an array'
             elif spec == 'scalar':
                 if not isinstance(node, tables.Array) or node.ndim != 0:
-                    print(type(node))
-                    print(node.ndim)
                     type_msg = f'Field {node._v_pathname} must be scalar value'
             elif spec == 'string':
                 if not isinstance(node, tables.Array) or node.dtype.kind != 'S' or node.ndim != 0:
@@ -541,7 +538,6 @@ def _is_structured_array(obj):
 def _h5_write_array(group, name, obj, descr=None, chunked=False, h5file=None):
     """Writes `obj` in the pytables HDF5 `group` with name `name`.
     """
-    print(name, type(obj))
     if isinstance(group, str):
         assert h5file is not None
     else:
@@ -879,10 +875,9 @@ def _populate_provenance(data_dict:dict)->None:
             break
 
     if orig_fname is None:
-        warnings.warn("""\
-            WARNING: Could not locate original file '%s'.
-                     File info in provenance group will not be added.
-            """ % provenance['filename'])
+        if 'creation_time' not in provenance:
+            warnings.warn("WARNING: Could not locate original file '%s'. " % provenance['filename'] + 
+                          "File info in provenance group will not be added. ")
     else:
         # Use metadata from the file except for creation time if
         # already present in `provenance`. i.e. the user-provided

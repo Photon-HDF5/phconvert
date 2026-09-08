@@ -8,7 +8,7 @@ import warnings
 import time
 import re
 
-_date_regex = re.compile(r'(?P<first>\d{1,4})([\-/])(?P<month>\d{1,2})\2(?P<last>\d{1,4})')
+_date_regex = re.compile(r'(?P<first>\d{1,4})([\.\-/])(?P<month>\d{1,2})\2(?P<last>\d{1,4})')
 _time_regex = re.compile(r'(?P<hour>\d{1,2})(?P<tsep>[\.:])(?P<min>\d{1,2})(?P<hassec>\2(?P<sec>[0-6]?\d)((\.|\2)(?P<subsec>\d+))?)?(?P<ampm>\s*[AaPp][Mm])?')
 
 
@@ -36,12 +36,29 @@ def _normalize_time(text:str, year_first=None, year_width:int=4)->str:
     sdate = _date_regex.match(match.group('second'))
     stime = _time_regex.match(match.group('second'))
     # identify which order date and time are in
-    if fdate and not ftime:
-        date_match, time_match = fdate, stime
-    elif ftime and not fdate:
-        date_match, time_match = sdate, ftime
+    dup_f = fdate is not None and ftime is not None
+    dup_s = sdate is not None and stime is not None
+    n_valid = sum(v is not None for v in (fdate, ftime, sdate, stime))
+    if n_valid == 2 and not dup_f and not dup_s:
+        date_match, time_match = (sdate, ftime) if fdate is None else (fdate, stime)
+    elif n_valid == 3:
+        if not dup_f:
+            date_match, time_match = (sdate, ftime) if fdate is None else (fdate, stime)
+        else:
+            date_match, time_match = (fdate, stime) if sdate is None else (sdate, ftime)
+    elif n_valid == 4:
+        if stime.group('tsep') == ":":
+            date_match, time_match = fdate, stime
+        else:
+            date_match, time_match = sdate, ftime
     else:
-        raise ValueError(f"The string '{text}' cannot be interpreted as a date in any acceptable format, appears as repeated day or time of day")
+        raise ValueError("time not specified in legible manner")
+    # if fdate and not ftime:
+    #     date_match, time_match = fdate, stime
+    # elif ftime and not fdate:
+    #     date_match, time_match = sdate, ftime
+    # else:
+    #     raise ValueError(f"The string '{text}' cannot be interpreted as a date in any acceptable format, appears as repeated day or time of day")
     # process time fields
     hour = _fill_num(time_match.group('hour'), '00', 'hour')
     if time_match.group('ampm') and time_match.group('ampm').lower() == 'pm':

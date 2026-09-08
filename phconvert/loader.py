@@ -207,16 +207,14 @@ def loadfile_bh(filename, setfilename=None, spc_model='infer', SPC_type='auto'):
                        )
 
     setup = dict(
-        num_pixels = np.unique(detectors).size - det_ids.size,
+        num_pixels = None,
         num_spots = 1,
         num_spectral_ch = None,
         num_polarization_ch = None,
         num_split_ch = None,
         modulated_excitation = True,
         lifetime = True,
-        excitation_wavelengths = None,
         excitation_cw = None,
-        detection_wavelengths = None,
         excitation_alternated = None,
         detectors = dict(id=det_ids, counts=det_counts, label=None),
         laser_repetition_rates = np.array([1/sys_setup['SP_TAC_R'], ])
@@ -312,11 +310,9 @@ def loadfile_ptu(filename:str):
         num_split_ch = None,
         modulated_excitation = True,
         lifetime = dtime is not None,
-        excitation_wavelengths = None,
         excitation_cw = None,
-        detection_wavelengths = None,
         excitation_alternated = None,
-        detectors = {'id':det_ids, 'counts':det_counts, 'label':None},
+        detectors = {'id':det_ids, 'counts':det_counts, 'label':None}
         )
     identity = dict(author=None, author_affiliation=None)
 
