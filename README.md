@@ -18,6 +18,8 @@ or open an [issue on GitHub](https://github.com/Photon-HDF5/phconvert/issues).
 
 ## What's new
 
+** Sep 2026:** PhConvert 0.10.2 released, fixed ``plotter.alternation_hist``
+
 **Feb. 2025:** PhConvert 0.10 released
 
 **Nov. 2018:** Phconvert 0.9 released, see the [release notes](https://github.com/Photon-HDF5/phconvert/releases/tag/0.9).
